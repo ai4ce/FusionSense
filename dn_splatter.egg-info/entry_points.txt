@@ -1,0 +1,15 @@
+[console_scripts]
+gs-mesh = dn_splatter.export_mesh:entrypoint
+
+[nerfstudio.dataparser_configs]
+coolermap = dn_splatter:CoolerMapDataParserSpecification
+gsdf = dn_splatter:GSDFStudioDataParserSpecification
+mushroom = dn_splatter:MushroomDataParserSpecification
+normal-nerfstudio = dn_splatter:NormalNerfstudioSpecification
+nrgbd = dn_splatter:NRGBDDataParserSpecification
+replica = dn_splatter:ReplicaDataParserSpecification
+scannetpp = dn_splatter:ScanNetppDataParserSpecification
+
+[nerfstudio.method_configs]
+dn_splatter = dn_splatter.dn_config:dn_splatter
+dn_splatter_big = dn_splatter.dn_config:dn_splatter_big
