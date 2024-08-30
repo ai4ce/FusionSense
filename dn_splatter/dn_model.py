@@ -2,6 +2,7 @@
 Depth + normal splatter
 """
 
+import os
 import math
 import random
 import time
@@ -21,6 +22,7 @@ from dn_splatter.metrics import DepthMetrics, NormalMetrics, RGBMetrics
 from dn_splatter.utils.camera_utils import get_colored_points_from_depth, project_pix
 from dn_splatter.utils.knn import knn_sk
 from dn_splatter.utils.normal_utils import normal_from_depth_image
+from dn_splatter.utils.utils import depth_to_colormap
 
 try:
     from gsplat.rendering import rasterization
@@ -809,6 +811,22 @@ class DNSplatterModel(SplatfactoModel):
             + sparse_loss
             + self.config.sdf_loss_lambda * sdf_loss
         )
+
+        if self.step % 100 == 0:
+            # sensor_depth_gt_color = depth_to_colormap(sensor_depth_gt)
+            # depth_out_color = depth_to_colormap(depth_out)
+            # row0 = torch.cat([gt_img, sensor_depth_gt_color, gt_normal], dim=0)
+            # row1 = torch.cat([pred_img, depth_out_color, pred_normal], dim=0)
+            row0 = torch.cat([gt_img, gt_normal], dim=0)
+            row1 = torch.cat([pred_img, pred_normal], dim=0)
+            
+            image_to_show = torch.cat([row0, row1], dim=1)
+            image_to_show = image_to_show.permute(2, 0, 1) 
+            image_to_show = torch.clamp(image_to_show, 0, 1)
+            
+            os.makedirs("log_images", exist_ok = True)
+            from torchvision.utils import save_image
+            save_image(image_to_show, f"log_images/{self.step}.jpg")
 
         return {"main_loss": main_loss, "scale_reg": scale_reg}
 

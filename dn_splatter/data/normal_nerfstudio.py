@@ -57,6 +57,7 @@ class NormalNerfstudio(Nerfstudio):
     downscale_factor: Optional[int] = None
 
     def get_normal_filepaths(self):
+        # return glob.glob(f"{self.normal_save_dir}/*.png")
         return natsorted(glob.glob(f"{self.normal_save_dir}/*.png"))
 
     def _load_points3D_normals(self, points, colors, transform_matrix: torch.Tensor):
@@ -189,55 +190,59 @@ class NormalNerfstudio(Nerfstudio):
 
         normal_filenames = self.get_normal_filepaths()
 
-        has_split_files_spec = any(
-            f"{split}_filenames" in meta for split in ("train", "val", "test")
-        )
-        if f"{split}_filenames" in meta:
-            # Validate split first
-            split_filenames = set(
-                self._get_fname(Path(x), data_dir) for x in meta[f"{split}_filenames"]
-            )
-            unmatched_filenames = split_filenames.difference(image_filenames)
-            if unmatched_filenames:
-                raise RuntimeError(
-                    f"Some filenames for split {split} were not found: {unmatched_filenames}."
-                )
+        # has_split_files_spec = any(
+        #     f"{split}_filenames" in meta for split in ("train", "val", "test")
+        # )
+        # if f"{split}_filenames" in meta:
+        #     # Validate split first
+        #     split_filenames = set(
+        #         self._get_fname(Path(x), data_dir) for x in meta[f"{split}_filenames"]
+        #     )
+        #     unmatched_filenames = split_filenames.difference(image_filenames)
+        #     if unmatched_filenames:
+        #         raise RuntimeError(
+        #             f"Some filenames for split {split} were not found: {unmatched_filenames}."
+        #         )
 
-            indices = [
-                i for i, path in enumerate(image_filenames) if path in split_filenames
-            ]
-            CONSOLE.log(f"[yellow] Dataset is overriding {split}_indices to {indices}")
-            indices = np.array(indices, dtype=np.int32)
-        elif has_split_files_spec:
-            raise RuntimeError(
-                f"The dataset's list of filenames for split {split} is missing."
-            )
-        else:
-            # find train and eval indices based on the eval_mode specified
-            if self.config.eval_mode == "fraction":
-                i_train, i_eval = get_train_eval_split_fraction(
-                    image_filenames, self.config.train_split_fraction
-                )
-            elif self.config.eval_mode == "filename":
-                i_train, i_eval = get_train_eval_split_filename(image_filenames)
-            elif self.config.eval_mode == "interval":
-                i_train, i_eval = get_train_eval_split_interval(
-                    image_filenames, self.config.eval_interval
-                )
-            elif self.config.eval_mode == "all":
-                CONSOLE.log(
-                    "[yellow] Be careful with '--eval-mode=all'. If using camera optimization, the cameras may diverge in the current implementation, giving unpredictable results."
-                )
-                i_train, i_eval = get_train_eval_split_all(image_filenames)
-            else:
-                raise ValueError(f"Unknown eval mode {self.config.eval_mode}")
+        #     indices = [
+        #         i for i, path in enumerate(image_filenames) if path in split_filenames
+        #     ]
+        #     CONSOLE.log(f"[yellow] Dataset is overriding {split}_indices to {indices}")
+        #     indices = np.array(indices, dtype=np.int32)
+        # elif has_split_files_spec:
+        #     raise RuntimeError(
+        #         f"The dataset's list of filenames for split {split} is missing."
+        #     )
+        # else:
+        #     # find train and eval indices based on the eval_mode specified
+        #     if self.config.eval_mode == "fraction":
+        #         i_train, i_eval = get_train_eval_split_fraction(
+        #             image_filenames, self.config.train_split_fraction
+        #         )
+        #     elif self.config.eval_mode == "filename":
+        #         i_train, i_eval = get_train_eval_split_filename(image_filenames)
+        #     elif self.config.eval_mode == "interval":
+        #         i_train, i_eval = get_train_eval_split_interval(
+        #             image_filenames, self.config.eval_interval
+        #         )
+        #     elif self.config.eval_mode == "all":
+        #         CONSOLE.log(
+        #             "[yellow] Be careful with '--eval-mode=all'. If using camera optimization, the cameras may diverge in the current implementation, giving unpredictable results."
+        #         )
+        #         i_train, i_eval = get_train_eval_split_all(image_filenames)
+        #     else:
+        #         raise ValueError(f"Unknown eval mode {self.config.eval_mode}")
 
-            if split == "train":
-                indices = i_train
-            elif split in ["val", "test"]:
-                indices = i_eval
-            else:
-                raise ValueError(f"Unknown dataparser split {split}")
+        #     if split == "train":
+        #         indices = i_train
+        #     elif split in ["val", "test"]:
+        #         indices = i_eval
+        #     else:
+        #         raise ValueError(f"Unknown dataparser split {split}")
+            
+        sorted_filenames = natsorted(image_filenames)
+        indices = [image_filenames.index(path) for path in sorted_filenames]        
+        indices = np.array(indices, dtype=np.int32)
 
         if "orientation_override" in meta:
             orientation_method = meta["orientation_override"]
@@ -263,6 +268,7 @@ class NormalNerfstudio(Nerfstudio):
         poses[:, :3, 3] *= scale_factor
 
         # Choose image_filenames and poses based on split, but after auto orient and scaling the poses.
+        # image_filenames = natsorted(image_filenames)
         image_filenames = [image_filenames[i] for i in indices]
         mask_filenames = (
             [mask_filenames[i] for i in indices] if len(mask_filenames) > 0 else []
@@ -271,11 +277,13 @@ class NormalNerfstudio(Nerfstudio):
             [depth_filenames[i] for i in indices] if len(depth_filenames) > 0 else []
         )
 
-        normal_filenames = (
-            [Path(normal_filenames[i]) for i in indices]
-            if len(normal_filenames) > 0
-            else []
-        )
+        # normal_filenames = (
+        #     [Path(normal_filenames[i]) for i in indices]
+        #     if len(normal_filenames) > 0
+        #     else []
+        # )
+        normal_filenames = [Path(filename) for filename in normal_filenames] if normal_filenames else []
+
 
         stems = [name.stem for name in image_filenames]
         for name in normal_filenames:
@@ -442,15 +450,17 @@ class NormalNerfstudio(Nerfstudio):
                     if "applied_transform" not in transforms:
                         transforms["applied_transform"] = meta["applied_transform"]
 
-                    ply_filename = "sparse_pc.ply"
-                    create_ply_from_colmap(
-                        filename=ply_filename,
-                        recon_dir=colmap_path,
-                        output_dir=self.config.data,
-                        applied_transform=applied_transform,
-                    )
-                    ply_file_path = data_dir / ply_filename
-                    transforms["ply_file_path"] = ply_filename
+                    if "ply_file_path" not in transforms:
+                    # if True:
+                        ply_filename = "sparse_pc.ply"
+                        create_ply_from_colmap(
+                            filename=ply_filename,
+                            recon_dir=colmap_path,
+                            output_dir=self.config.data,
+                            applied_transform=applied_transform,
+                        )
+                        ply_file_path = data_dir / ply_filename
+                        transforms["ply_file_path"] = ply_filename
 
                     # This was the applied_transform value
 

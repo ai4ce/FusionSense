@@ -4,7 +4,7 @@ import os
 import random
 from pathlib import Path
 from typing import List, Literal, Optional, Union
-
+import matplotlib.pyplot as plt 
 import cv2
 import numpy as np
 import open3d as o3d
@@ -631,3 +631,27 @@ def save_outputs_helper(
             os.getcwd() + f"/{render_output_path}/gt/normal/{image_name}.png",
             verbose=False,
         )
+
+def depth_to_colormap(depth_image):
+    # 确保 depth_image 是 [H, W, 1] 的形状，并移除最后一个维度
+    depth_image = depth_image.squeeze(-1)  # [H, W]
+
+    # 归一化深度图像到 [0, 1] 范围内
+    depth_min = depth_image.min()
+    depth_max = depth_image.max()
+    depth_image = (depth_image - depth_min) / (depth_max - depth_min + 1e-5)  # 防止除以零
+
+    # 使用 PyTorch 的 linspace 创建一个 colormap
+    colormap = torch.stack([torch.linspace(0, 1, 256),
+                            torch.linspace(0, 1, 256).flip(0),
+                            torch.linspace(1, 0, 256)], dim=1)  # 创建 [256, 3] 的 colormap
+
+    # 确保 colormap 和 depth_image 在同一个设备上
+    colormap = colormap.to(depth_image.device)
+
+    # 将 depth_image 的值映射到 colormap 的索引z    
+    depth_image = (depth_image * 255).long()  # 将深度值缩放到 [0, 255] 并转换为整数
+    colored_image = colormap[depth_image]  # 使用索引查找对应的 RGB 值
+
+    # 调整维度为 [H, W, 3]
+    return colored_image
