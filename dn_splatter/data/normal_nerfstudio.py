@@ -553,6 +553,7 @@ class NormalNerfstudio(Nerfstudio):
             metadata["normal_format"] = self.config.normal_format
 
         if self.config.load_touches:
+            print("load touches...")
             self.touch_data_dir = self.config.data / "touch"
             touch_meta = load_from_json(self.touch_data_dir / "transforms_train.json")
             touch_filenames = self.get_touch_filepaths()
@@ -561,27 +562,25 @@ class NormalNerfstudio(Nerfstudio):
             # sort the touch frames by fname
             touchnames = []
             for frame in touch_meta["frames"]:
-                filepath = Path(frame["file_path"]) # tr_1.png
+                filepath = "touch" / Path(frame["file_path"]) # tr_1.png
                 fname = self._get_fname(filepath, self.touch_data_dir)
                 touchnames.append(fname) # tr_1
             inds = np.argsort(touchnames)
             touchframes = [touch_meta["frames"][ind] for ind in inds]
             for frame in touchframes:
-                filepath = Path(frame["file_path"])
+                filepath = "touch" / Path(frame["file_path"])
                 fname = self._get_fname(filepath, data_dir)
-                touch_npy_filenames.append(fname)
-                touch_png_filenames.append(fname)
+                touch_npy_filenames.append(fname.with_suffix(".npy"))
+                touch_png_filenames.append(fname.with_suffix(".png"))
                 # rotation, transform_matrix, position, quaternion
 
             metadata["touch_filenames"] = touch_filenames
             metadata["load_touches"] = True
             touch_patches = []
             for ind, touch_fn in zip(range(len(touch_npy_filenames)), touch_npy_filenames):
-                t = f"{touch_fn}.npy"
+                t = f"{touch_fn}"
                 # TO TEST: can this load npy files?
-                single_touch_pcd = self._load_3D_points(
-                    t, transform_matrix, scale_factor
-                )
+                single_touch_pcd = torch.from_numpy(np.load(t))
                 if single_touch_pcd is not None:
                     # estimate normals for touch patch
                     pcd = o3d.geometry.PointCloud()
@@ -591,8 +590,8 @@ class NormalNerfstudio(Nerfstudio):
                     pcd.normalize_normals()
                     touch_patch_normals = torch.from_numpy(np.asarray(pcd.normals, dtype=np.float32))
                     touch_patch = {
-                        "points_xyz": single_touch_pcd["points_xyz"],
-                        "points_rgb": single_touch_pcd["points_rgb"],
+                        "points_xyz": single_touch_pcd,
+                        "points_rgb": torch.rand_like(single_touch_pcd),
                         "normals": touch_patch_normals,
                     }
                     touch_patches.append(touch_patch)
