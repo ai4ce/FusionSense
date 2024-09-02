@@ -29,11 +29,11 @@ Integrates the vision, touch, and common-sense information of foundational model
     ```
     
     You will get a point cloud file `foreground_pcd.ply`, and a screenshot `voxels.png` of checking whether the generated VisualHull is correct.    
-    ![vis_hull](assets/voxels.png)  
+    <img src="assets/voxels.png" width="300">
 
 4. **RealSense depth & [Metric3Dv2](https://github.com/YvanYin/Metric3D) depth**:
 
-    
+
 
 
 ```bash
