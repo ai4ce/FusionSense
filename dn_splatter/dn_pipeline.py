@@ -101,12 +101,41 @@ class DNSplatterPipeline(VanillaPipeline):
                 normals = self.datamanager.train_dataparser_outputs.metadata[
                     "points3D_normals"
                 ]  # type: ignore
-                seed_pts = (pts, pts_rgb, normals)
+
+                # initialize patch points 
+                if "touch_patches" in self.datamanager.train_dataparser_outputs.metadata:
+                    touch_patches = self.datamanager.train_dataparser_outputs.metadata[
+                        "touch_patches"    
+                    ] # type: ignore
+                    touch_patch = touch_patches[current_touch_index]
+                    touch_pts = torch.cat((pts, touch_patch["points_xyz"])).detach() # disable position gradient
+                    touch_pts_rgb = torch.cat((pts_rgb, touch_patch["points_rgb"]))
+                    touch_pts_normals = torch.cat((normals, touch_patch["normals"]))
+
+                    max_xyz = torch.max(touch_pts, axis=0).values
+                    min_xyz = torch.min(touch_pts, axis=0).values
+                    diag_xyz = (max_xyz - min_xyz) * 0.05
+                    min_aabb = min_xyz-diag_xyz
+                    max_aabb = max_xyz+diag_xyz
+                    mask_x = (pts[:, 0] >= min_aabb[0]) & (pts[:, 0] <= max_aabb[0])
+                    mask_y = (pts[:, 1] >= min_aabb[1]) & (pts[:, 1] <= max_aabb[1])
+                    mask_z = (pts[:, 2] >= min_aabb[2]) & (pts[:, 2] <= max_aabb[2])
+                    aabb_mask = mask_x & mask_y & mask_z
+                    # only train points in aabb, so detach other points in the background
+                    bg_pts = pts[~aabb_mask].detach()
+                    bg_pts_rgb = pts_rgb[~aabb_mask].detach()
+                    bg_pts_normal = normals[~aabb_mask].detach()
+
+                    fused_pts = torch.cat((pts[aabb_mask], bg_pts, touch_pts))
+                    fused_pts_rgb = torch.cat((pts_rgb[aabb_mask], bg_pts_rgb, touch_pts_rgb))
+                    fused_pts_normals = torch.cat((normals[aabb_mask], bg_pts_normal, touch_pts_normals))
+                    seed_pts = (fused_pts, fused_pts_rgb, fused_pts_normals)
+                else:
+                    seed_pts = (pts, pts_rgb, normals)
             else:
                 seed_pts = (pts, pts_rgb)
 
         self.datamanager.to(device)
-        # TODO(ethan): get rid of scene_bounds from the model
         assert self.datamanager.train_dataset is not None, "Missing input dataset"
 
         self._model = config.model.setup(

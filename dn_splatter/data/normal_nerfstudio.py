@@ -48,6 +48,9 @@ class NormalNerfstudioConfig(NerfstudioDataParserConfig):
     load_pcd_normals: bool = True
     """Whether to load pcd normals for normal initialisation"""
 
+    load_touches: bool = True
+    """Set to true to load normal maps"""
+
 
 @dataclass
 class NormalNerfstudio(Nerfstudio):
@@ -59,6 +62,12 @@ class NormalNerfstudio(Nerfstudio):
     def get_normal_filepaths(self):
         # return glob.glob(f"{self.normal_save_dir}/*.png")
         return natsorted(glob.glob(f"{self.normal_save_dir}/*.png"))
+    
+    """
+    touch filepath, which are stored in .npy as 2d numpy array
+    """
+    def get_touch_filepaths(self):
+        return natsorted(glob.glob(f"{self.touch_data_dir}/*.npy"))
 
     def _load_points3D_normals(self, points, colors, transform_matrix: torch.Tensor):
         """Initialise gaussian scales/rots with normals predicted from pcd"""
@@ -77,15 +86,54 @@ class NormalNerfstudio(Nerfstudio):
             @ transform_matrix.T
         )
         return {"points3D_normals": points3D_normals}
-
+    
+    # """Custom function to load touch point clouds"""
+    # def load_touch_points(self, path, transform_matrix: torch.Tensor):
+    #     points_from_touches = o3d.geometry.PointCloud()
+    #     points_from_touches.points = o3d.utility.Vector3dVector(points.numpy())
+    #     points_from_touches.colors = o3d.utility.Vector3dVector(colors.numpy())
+    #     """Estimate normals to add to the touch points"""
+    #     points_from_touches.estimate_normals(
+    #         search_param=o3d.geometry.KDTreeSearchParamHybrid(radius=0.1, max_nn=30)
+    #     )
+    #     points_from_touches.normalize_normals()
+    #     """Apply transformation"""
+    #     points_from_touches = (
+    #         torch.cat(
+    #             (points_from_touches, torch.ones_like(points_from_touches[..., :1])), -1
+    #         )
+    #         @ transform_matrix.T
+    #     )
+    #     return {"touch_points": points_from_touches}
+    
     def _generate_dataparser_outputs(self, split="train"):
         assert (
             self.config.data.exists()
         ), f"Data directory {self.config.data} does not exist."
         self.normal_save_dir = self.config.data / Path("normals_from_pretrain")
-
+        
         meta = load_from_json(self.config.data / "transforms.json")
         data_dir = self.config.data
+        touch_data_dir = self.config.data / "touch"
+        touch_meta = load_from_json(touch_data_dir / "transforms_train.json")
+
+        touch_npy_filenames = []
+        touch_png_filenames = []
+        # sort the touch frames by fname
+        touchnames = []
+        for frame in touch_meta["frames"]:
+            filepath = Path(frame["file_path"]) # tr_1.png
+            fname = self._get_fname(filepath, touch_data_dir)
+            touchnames.append(fname) # tr_1
+        inds = np.argsort(touchnames)
+        touchframes = [touch_meta["frames"][ind] for ind in inds]
+        for frame in touchframes:
+            filepath = Path(frame["file_path"])
+            fname = self._get_fname(filepath, data_dir)
+            touch_npy_filenames.append(fname)
+            touch_png_filenames.append(fname)
+            # rotation, transform_matrix, position, quaternion
+        
 
         image_filenames = []
         mask_filenames = []
@@ -189,6 +237,7 @@ class NormalNerfstudio(Nerfstudio):
         """
 
         normal_filenames = self.get_normal_filepaths()
+        touch_filenames = self.get_touch_filepaths()
 
         # has_split_files_spec = any(
         #     f"{split}_filenames" in meta for split in ("train", "val", "test")
@@ -498,6 +547,37 @@ class NormalNerfstudio(Nerfstudio):
             metadata["normal_filenames"] = normal_filenames
             metadata["load_normals"] = True
             metadata["normal_format"] = self.config.normal_format
+
+        if self.config.load_touches:
+            metadata["touch_filenames"] = touch_filenames
+            metadata["load_touches"] = True
+            touch_patches = []
+            for ind, touch_fn in zip(range(len(touch_npy_filenames)), touch_npy_filenames):
+                t = f"{touch_fn}.npy"
+                # TO TEST: can this load npy files?
+                single_touch_pcd = self._load_3D_points(
+                    t, transform_matrix, scale_factor
+                )
+                if single_touch_pcd is not None:
+                    # estimate normals for touch patch
+                    pcd = o3d.geometry.PointCloud()
+                    pcd.points = o3d.utility.Vector3dVector(single_touch_pcd.numpy())
+                    pcd.colors = o3d.utility.Vector3dVector(single_touch_pcd.numpy())
+                    pcd.estimate_normals(search_param=o3d.geometry.KDTreeSearchParamHybrid(radius=0.1, max_nn=30))
+                    pcd.normalize_normals()
+                    touch_patch_normals = torch.from_numpy(np.asarray(pcd.normals, dtype=np.float32))
+                    touch_patch = {
+                        "points_xyz": single_touch_pcd["points_xyz"],
+                        "points_rgb": single_touch_pcd["points_rgb"],
+                        "normals": touch_patch_normals,
+                    }
+                    touch_patches.append(touch_patch)
+                else:
+                    Warning(f"Warning: npy file {t} does not contain any points")
+            """
+            touch_patches: an array of touch patches, each should 
+            """
+            metadata.update({"touch_patches": touch_patches})
 
         dataparser_outputs = DataparserOutputs(
             image_filenames=image_filenames,
