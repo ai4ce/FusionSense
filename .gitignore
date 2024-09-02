@@ -9,7 +9,6 @@ mesh_exports/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
-dn_splatter/__pycache__/*
 *.py[cod]
 *$py.class
 

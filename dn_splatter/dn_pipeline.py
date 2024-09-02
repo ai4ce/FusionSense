@@ -115,7 +115,7 @@ class DNSplatterPipeline(VanillaPipeline):
 
                     max_xyz = torch.max(touch_pts, axis=0).values
                     min_xyz = torch.min(touch_pts, axis=0).values
-                    diag_xyz = (max_xyz - min_xyz) * 0.05
+                    diag_xyz = (max_xyz - min_xyz) * 0.1
                     min_aabb = min_xyz-diag_xyz
                     max_aabb = max_xyz+diag_xyz
                     mask_x = (pts[:, 0] >= min_aabb[0]) & (pts[:, 0] <= max_aabb[0])
