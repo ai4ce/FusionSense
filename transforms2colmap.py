@@ -19,7 +19,7 @@ args = parser.parse_args()
 
 path = args.path
 
-ros2opencv = np.array([[1, 0, 0, 0], [0, 0, 1, 0], [0, 1, 0, 0], [0, 0, 0, 1]])
+ros2opencv = np.array([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]])
 blender2opencv = np.array([[1, 0, 0, 0], [0, -1, 0, 0], [0, 0, -1, 0], [0, 0, 0, 1]])
 # 注意：最后输出的图片名字要按自然字典序排列，例：0, 1, 100, 101, 102, 2, 3...因为colmap内部是这么排序的
 fnames = list(sorted(os.listdir(os.path.join(path,'images'))))
@@ -47,7 +47,7 @@ with open(os.path.join(path,'created/sparse/cameras.txt'), 'w') as f:
         if not (fname.endswith('.png') or fname.endswith('.jpg')):
             fname += '.png'
         # blend到opencv的转换：y轴和z轴方向翻转
-        pose = np.array(frame['transform_matrix']) @ blender2opencv
+        pose = np.array(frame['transform_matrix']) @ ros2opencv
         fname2pose.update({fname: pose})
 
 with open(os.path.join(path,'created/sparse/images.txt'), 'w') as f:
@@ -60,7 +60,7 @@ with open(os.path.join(path,'created/sparse/images.txt'), 'w') as f:
         w2c = np.linalg.inv(pose)
         Translation = w2c[:3, 3]
         R = np.linalg.inv(pose[:3, :3])
-        T = -np.matmul(R, pose[:3, 3])
+        T = -np.matmul(R, pose[:3, 3])*10
         q0 = 0.5 * math.sqrt(1 + R[0, 0] + R[1, 1] + R[2, 2])
         q1 = (R[2, 1] - R[1, 2]) / (4 * q0)
         q2 = (R[0, 2] - R[2, 0]) / (4 * q0)

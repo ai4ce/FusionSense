@@ -302,6 +302,7 @@ class NormalNerfstudio(Nerfstudio):
             orientation_method = self.config.orientation_method
 
         poses = torch.from_numpy(np.array(poses).astype(np.float32))
+        poses[:, :3, 1:3] *= -1     # FusionSense to nerfstudio format
         poses, transform_matrix = camera_utils.auto_orient_and_center_poses(
             poses,
             method=orientation_method,
@@ -500,7 +501,6 @@ class NormalNerfstudio(Nerfstudio):
                         transforms["applied_transform"] = meta["applied_transform"]
 
                     if "ply_file_path" not in transforms:
-                    # if True:
                         ply_filename = "sparse_pc.ply"
                         create_ply_from_colmap(
                             filename=ply_filename,
@@ -533,6 +533,15 @@ class NormalNerfstudio(Nerfstudio):
                 if sparse_points is not None:
                     metadata.update(sparse_points)
             self.prompted_user = True
+
+        if "object_pc_path" in meta:
+            object_pc_path = data_dir / meta["object_pc_path"]
+            visual_hull = self._load_3D_points(
+                    object_pc_path, transform_matrix, scale_factor
+                )
+            visual_hull_pts = {"visual_hull": visual_hull["points3D_xyz"]}
+            if visual_hull is not None:
+                metadata.update(visual_hull_pts)
 
         if self.config.load_pcd_normals:
             metadata.update(
