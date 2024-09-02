@@ -137,6 +137,7 @@ class DNSplatterModel(SplatfactoModel):
     config: DNSplatterModelConfig
 
     def populate_modules(self):
+        """Instantiate the model"""
         if self.seed_points is not None and not self.config.random_init:
             means = torch.nn.Parameter(self.seed_points[0])  # (Location, Color)
         else:
@@ -1043,6 +1044,15 @@ class DNSplatterModel(SplatfactoModel):
                 args=[training_callback_attributes.optimizers],
             )
         )
+        ## 
+        # cbs.append(
+        #     TrainingCallback(
+        #         [TrainingCallbackLocation.AFTER_TRAIN_ITERATION],
+        #         self.add_next_touch_patch,
+        #         update_every_num_iters=self.config.train_next_touch_every,
+        #         args=[training_callback_attributes.optimizers],
+        #     )
+        # )
 
         return cbs
 

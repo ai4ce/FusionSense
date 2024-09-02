@@ -128,6 +128,8 @@ class DNSplatterDataManager(FullImageDatamanager):
                     data["image"].shape[:2],
                     antialias=None,
                 ).permute(1, 2, 0)
+        # if self.load_touches:
+        #     assert "touch" in data
 
         assert (
             len(self.train_dataset.cameras.shape) == 1
