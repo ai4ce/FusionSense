@@ -283,6 +283,25 @@ class DNSplatterModel(SplatfactoModel):
                 and self.step % reset_interval
                 > self.num_train_data + self.config.refine_every
             )
+            
+            # if self.step == self.config.max_num_iterations - 1:
+            if self.step == False:
+                do_densification = False
+                assert (
+                    self.xys_grad_norm is not None
+                    and self.vis_counts is not None
+                    and self.max_2Dsize is not None
+                )
+                avg_grad_norm = (
+                    (self.xys_grad_norm / self.vis_counts)
+                    * 0.5
+                    * max(self.last_size[0], self.last_size[1])
+                )
+                high_grads = (avg_grad_norm > self.config.densify_grad_thresh).squeeze()
+                self.gauss_params["features_dc"][high_grads] = torch.tensor([[1.0, 0.0, 0.0]], device=self.gauss_params["features_dc"].device)
+                fc_rest = torch.zeros(self.gauss_params["features_rest"].shape[1], 3, device=self.gauss_params["features_rest"].device)
+                self.gauss_params["features_rest"][high_grads] = fc_rest
+
             if do_densification:
                 # then we densify
                 assert (
@@ -363,13 +382,25 @@ class DNSplatterModel(SplatfactoModel):
                 self.remove_from_all_optim(optimizers, deleted_mask)
 
             # cull_gs_points that far to the object model
-            visual_hull = self.kwargs["metadata"]['visual_hull'].to(self.device)
-            distances = torch.cdist(self.means, visual_hull)
-            min_distances = distances.min(dim=-1).values
-            hull_mask = (min_distances > 0.02) & (min_distances <= 0.1)
-            self.max_2Dsize = None
-            deleted_mask = self.cull_gaussians(hull_mask)
-            self.remove_from_all_optim(optimizers, deleted_mask)
+            if 'visual_hull' in self.kwargs["metadata"]:
+                visual_hull = self.kwargs["metadata"]['visual_hull'].to(self.device)
+                center = visual_hull.mean(dim=0)
+                distances_to_center = torch.norm(self.means - center, dim=1)
+                r_threshold = 0.2 * self.kwargs["metadata"]['scale_factor']
+                close_mask = distances_to_center <= r_threshold
+                filtered_means = self.means[close_mask]
+                distances = torch.cdist(filtered_means, visual_hull)
+                min_distances = distances.min(dim=-1).values
+                filtered_hull_mask  = (min_distances > 0.005 * self.kwargs["metadata"]['scale_factor']) & (min_distances <= 0.05 * self.kwargs["metadata"]['scale_factor'])
+                # hull_mask = (min_distances > 0.02) & (min_distances <= 0.1)
+
+                hull_mask = torch.zeros(self.means.shape[0], dtype=torch.bool, device=self.device)
+                hull_mask[close_mask] = filtered_hull_mask
+                self.max_2Dsize = None
+                deleted_mask = self.cull_gaussians(hull_mask)
+                self.remove_from_all_optim(optimizers, deleted_mask)
+                del distances, min_distances, hull_mask, visual_hull
+
             if (
                 self.step < self.config.stop_split_at
                 and self.step % reset_interval == self.config.refine_every
@@ -452,7 +483,7 @@ class DNSplatterModel(SplatfactoModel):
             if not self.step % skip_steps == 0 and self.step % skip_steps not in range(
                 1, margin + 1
             ):
-                self.opacities = torch.where(
+                self.opacities.data = torch.where(
                     self.opacities >= self.config.binary_opacities_threshold,
                     torch.ones_like(self.opacities),
                     torch.zeros_like(self.opacities),
@@ -827,12 +858,12 @@ class DNSplatterModel(SplatfactoModel):
         )
 
         if self.step % 100 == 0:
-            # sensor_depth_gt_color = depth_to_colormap(sensor_depth_gt)
+            sensor_depth_gt_color, depth_out_color = depth_to_colormap(sensor_depth_gt, depth_out)
             # depth_out_color = depth_to_colormap(depth_out)
-            # row0 = torch.cat([gt_img, sensor_depth_gt_color, gt_normal], dim=0)
-            # row1 = torch.cat([pred_img, depth_out_color, pred_normal], dim=0)
-            row0 = torch.cat([gt_img, gt_normal], dim=0)
-            row1 = torch.cat([pred_img, pred_normal], dim=0)
+            row0 = torch.cat([gt_img, sensor_depth_gt_color, gt_normal], dim=0)
+            row1 = torch.cat([pred_img, depth_out_color, pred_normal], dim=0)
+            # row0 = torch.cat([gt_img, gt_normal], dim=0)
+            # row1 = torch.cat([pred_img, pred_normal], dim=0)
             
             image_to_show = torch.cat([row0, row1], dim=1)
             image_to_show = image_to_show.permute(2, 0, 1) 

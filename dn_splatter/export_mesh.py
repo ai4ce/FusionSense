@@ -778,6 +778,10 @@ class TSDFFusion(GSMeshExporter):
             print("samples per frame: ", samples_per_frame)
             points = []
             colors = []
+            visual_hull = pipeline.datamanager.train_dataset.metadata['visual_hull']
+            transform_matrix = pipeline.datamanager.train_dataset._dataparser_outputs.dataparser_transform
+            transform_matrix = transform_matrix.numpy()
+            scale_factor = pipeline.datamanager.train_dataset._dataparser_outputs.dataparser_scale
             for image_idx, data in enumerate(
                 pipeline.datamanager.train_dataset
             ):  # type: ignore
@@ -820,24 +824,28 @@ class TSDFFusion(GSMeshExporter):
                 )
 
             vertices, faces = TSDFvolume.extract_triangle_mesh(min_weight=5)
-            # remove outside aabb
-            aabb = pipeline.datamanager.train_dataset.scene_box.aabb.cpu().numpy()
-            mask = (
-                (vertices[:, 0] >= aabb[0, 0])
-                & (vertices[:, 0] <= aabb[1, 0])
-                & (vertices[:, 1] >= aabb[0, 1])
-                & (vertices[:, 1] <= aabb[1, 1])
-                & (vertices[:, 2] >= aabb[0, 2])
-                & (vertices[:, 2] <= aabb[1, 2])
-            )
-            filtered_vertices = vertices[mask]
-            index_map = np.zeros(len(vertices), dtype=np.int32)
-            index_map[mask] = np.arange(len(filtered_vertices))
-            new_faces = index_map[faces]
-            valid_faces = np.all(new_faces < len(filtered_vertices), axis=1)
-            filtered_faces = new_faces[valid_faces]
+
+            visual_hull = np.array(visual_hull, dtype=np.float32)
+
+            from scipy.spatial.distance import cdist
+            distances = cdist(vertices, visual_hull)
+            min_distances = np.min(distances, axis=1)
+            hull_mask = min_distances < 0.01 * scale_factor
+            height_mask = vertices[:, 2] > np.min(visual_hull[:, 2]) + 0.01
+            hull_mask = hull_mask & height_mask
+            filtered_vertices = vertices[hull_mask]
+
+            original_to_new_indices = -np.ones(vertices.shape[0], dtype=int)
+            original_to_new_indices[hull_mask] = np.arange(filtered_vertices.shape[0])
+            filtered_faces = original_to_new_indices[faces]
+            valid_faces_mask = np.all(filtered_faces != -1, axis=1)
+            
             vertices = filtered_vertices
-            faces = filtered_faces
+            faces = filtered_faces[valid_faces_mask]
+
+            # transform vertices back to original scale
+            vertices = (vertices/scale_factor - transform_matrix[:3, 3].T) @ transform_matrix[:3, :3]
+
 
             mesh = o3d.geometry.TriangleMesh()
             mesh.vertices = o3d.utility.Vector3dVector(vertices)
