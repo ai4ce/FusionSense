@@ -107,6 +107,7 @@ class DNSplatterPipeline(VanillaPipeline):
                     touch_patches = self.datamanager.train_dataparser_outputs.metadata[
                         "touch_patches"    
                     ] # type: ignore
+                    current_touch_index = 0
                     touch_patch = touch_patches[current_touch_index]
                     touch_pts = torch.cat((pts, touch_patch["points_xyz"])).detach() # disable position gradient
                     touch_pts_rgb = torch.cat((pts_rgb, touch_patch["points_rgb"]))

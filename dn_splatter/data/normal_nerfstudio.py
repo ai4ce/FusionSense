@@ -114,26 +114,6 @@ class NormalNerfstudio(Nerfstudio):
         
         meta = load_from_json(self.config.data / "transforms.json")
         data_dir = self.config.data
-        touch_data_dir = self.config.data / "touch"
-        touch_meta = load_from_json(touch_data_dir / "transforms_train.json")
-
-        touch_npy_filenames = []
-        touch_png_filenames = []
-        # sort the touch frames by fname
-        touchnames = []
-        for frame in touch_meta["frames"]:
-            filepath = Path(frame["file_path"]) # tr_1.png
-            fname = self._get_fname(filepath, touch_data_dir)
-            touchnames.append(fname) # tr_1
-        inds = np.argsort(touchnames)
-        touchframes = [touch_meta["frames"][ind] for ind in inds]
-        for frame in touchframes:
-            filepath = Path(frame["file_path"])
-            fname = self._get_fname(filepath, data_dir)
-            touch_npy_filenames.append(fname)
-            touch_png_filenames.append(fname)
-            # rotation, transform_matrix, position, quaternion
-        
 
         image_filenames = []
         mask_filenames = []
@@ -237,7 +217,6 @@ class NormalNerfstudio(Nerfstudio):
         """
 
         normal_filenames = self.get_normal_filepaths()
-        touch_filenames = self.get_touch_filepaths()
 
         # has_split_files_spec = any(
         #     f"{split}_filenames" in meta for split in ("train", "val", "test")
@@ -558,6 +537,26 @@ class NormalNerfstudio(Nerfstudio):
             metadata["normal_format"] = self.config.normal_format
 
         if self.config.load_touches:
+            self.touch_data_dir = self.config.data / "touch"
+            touch_meta = load_from_json(self.touch_data_dir / "transforms_train.json")
+            touch_filenames = self.get_touch_filepaths()
+            touch_npy_filenames = []
+            touch_png_filenames = []
+            # sort the touch frames by fname
+            touchnames = []
+            for frame in touch_meta["frames"]:
+                filepath = Path(frame["file_path"]) # tr_1.png
+                fname = self._get_fname(filepath, self.touch_data_dir)
+                touchnames.append(fname) # tr_1
+            inds = np.argsort(touchnames)
+            touchframes = [touch_meta["frames"][ind] for ind in inds]
+            for frame in touchframes:
+                filepath = Path(frame["file_path"])
+                fname = self._get_fname(filepath, data_dir)
+                touch_npy_filenames.append(fname)
+                touch_png_filenames.append(fname)
+                # rotation, transform_matrix, position, quaternion
+
             metadata["touch_filenames"] = touch_filenames
             metadata["load_touches"] = True
             touch_patches = []
@@ -586,7 +585,8 @@ class NormalNerfstudio(Nerfstudio):
             """
             touch_patches: an array of touch patches, each should 
             """
-            metadata.update({"touch_patches": touch_patches})
+            if (len(touch_patches) > 0):
+                metadata.update({"touch_patches": touch_patches})
 
         dataparser_outputs = DataparserOutputs(
             image_filenames=image_filenames,
