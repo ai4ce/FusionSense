@@ -80,6 +80,11 @@ Integrates the vision, touch, and common-sense information of foundational model
                         --load-pcd-normals True --load-3D-points True  --normal-format opencv
     ```
 
+9. **Mesh Extraction**:
+    ```python
+    gs-mesh {dn, tsdf, sugar-coarse, gaussians, marching} --load-config [PATH] --output-dir [PATH]
+    ```
+
 ## Dataset Format
 ```bash
 tr-rabbit/
