@@ -2,6 +2,7 @@
 Integrates the vision, touch, and common-sense information of foundational models, customized to the agent's perceptual needs.
 
 ## Dataset Format
+```bash
 tr-rabbit/
 │
 ├── transforms.json
@@ -20,7 +21,7 @@ tr-rabbit/
 │
 ├── object.ply
 └── merged_pcd.ply
-
+```
 
 ## Usage
 ```bash
