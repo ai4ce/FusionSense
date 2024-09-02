@@ -2,6 +2,24 @@
 Integrates the vision, touch, and common-sense information of foundational models, customized to the agent's perceptual needs.
 
 ## Dataset Format
+tr-rabbit/
+│
+├── transforms.json
+│
+├── images/
+│   ├── rgb_1.png
+│   └── rgb_2.png
+│
+├── normals_from_pretrain/
+│   ├── rgb_1.png
+│   └── rgb_2.png
+│
+├── realsense_depth/
+│   ├── depth_1.png
+│   └── depth_2.png
+│
+├── object.ply
+└── merged_pcd.ply
 
 
 ## Usage
