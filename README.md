@@ -15,7 +15,7 @@ Integrates the vision, touch, and common-sense information of foundational model
     `eg. 'transparent white statue.'`   
 
     ```python   
-    python /home/ks8018/Grounded-SAM-2/grounded_sam2_hf_model_imgs_MaskExtract.py   
+    python grounded_sam2_hf_model_imgs_MaskExtract.py   
     ```   
     run the script to extract masks.   
 
@@ -63,7 +63,7 @@ Integrates the vision, touch, and common-sense information of foundational model
 
     To use initial pts, set `"ply_file_path": "merged_pcd.ply"`     
 
-    To use Visual Hull prune surprised method, set `"object_pc_path": "object.ply"`    
+    To use Visual Hull prune supervised method, set `"object_pc_path": "object.ply"`    
 
 8. **Train**:
 
