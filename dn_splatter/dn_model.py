@@ -344,6 +344,8 @@ class DNSplatterModel(SplatfactoModel):
                 )
 
                 deleted_mask = self.cull_gaussians(splits_mask)
+                print(deleted_mask.shape)
+                input('...')
             elif (
                 self.step >= self.config.stop_split_at
                 and self.config.continue_cull_post_densification
@@ -355,6 +357,18 @@ class DNSplatterModel(SplatfactoModel):
 
             if deleted_mask is not None:
                 self.remove_from_all_optim(optimizers, deleted_mask)
+
+            # # cull_gs_points that far to the object model
+            # visual_hull = self.kwargs["metadata"]['visual_hull'].to(self.device)
+            # hull_mask = torch.zeros_like(self.means[:, 0], dtype=torch.bool)
+            # for mean in self.means:
+            #     dist = torch.cdist(mean[None], visual_hull)
+            #     dist_min = dist.min(dim=-1).values
+            #     mask = (dist_min >= 0.01) & (dist_min <= 0.05)
+            #     hull_mask |= mask.any()
+            # print(hull_mask.shape)
+            # input('...')
+
 
             if (
                 self.step < self.config.stop_split_at
