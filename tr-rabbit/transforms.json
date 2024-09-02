@@ -12,6 +12,7 @@
     "camera_model": "OPENCV",
     "ply_file_path": "merged_pcd.ply",
     "object_pc_path": "object.ply",
+    "mesh_aabb": true,
     "frames": [
         {
             "file_path": "images/rgb_0.png",
