@@ -820,6 +820,24 @@ class TSDFFusion(GSMeshExporter):
                 )
 
             vertices, faces = TSDFvolume.extract_triangle_mesh(min_weight=5)
+            # remove outside aabb
+            aabb = pipeline.datamanager.train_dataset.scene_box.aabb.cpu().numpy()
+            mask = (
+                (vertices[:, 0] >= aabb[0, 0])
+                & (vertices[:, 0] <= aabb[1, 0])
+                & (vertices[:, 1] >= aabb[0, 1])
+                & (vertices[:, 1] <= aabb[1, 1])
+                & (vertices[:, 2] >= aabb[0, 2])
+                & (vertices[:, 2] <= aabb[1, 2])
+            )
+            filtered_vertices = vertices[mask]
+            index_map = np.zeros(len(vertices), dtype=np.int32)
+            index_map[mask] = np.arange(len(filtered_vertices))
+            new_faces = index_map[faces]
+            valid_faces = np.all(new_faces < len(filtered_vertices), axis=1)
+            filtered_faces = new_faces[valid_faces]
+            vertices = filtered_vertices
+            faces = filtered_faces
 
             mesh = o3d.geometry.TriangleMesh()
             mesh.vertices = o3d.utility.Vector3dVector(vertices)

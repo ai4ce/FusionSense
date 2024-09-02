@@ -494,6 +494,22 @@ class NormalNerfstudio(Nerfstudio):
             if visual_hull is not None:
                 metadata.update(visual_hull_pts)
 
+            if meta["mesh_aabb"]:
+                xyz_min = visual_hull_pts["visual_hull"][:, :3].min(axis=0).values - 0.05
+                xyz_max = visual_hull_pts["visual_hull"][:, :3].max(axis=0).values + 0.05
+                print(xyz_min, xyz_max)
+                # aabb_scale = (xyz_max - xyz_min).max() / 2 + 0.05
+                scene_box = SceneBox(
+                    aabb=torch.tensor(
+                        [
+                            [xyz_min[0], xyz_min[1], xyz_min[2]],
+                            [xyz_max[0], xyz_max[1], xyz_max[2]],
+                        ],
+                        dtype=torch.float32,
+                    )
+                )
+
+
         if self.config.load_pcd_normals:
             metadata.update(
                 self._load_points3D_normals(
