@@ -112,7 +112,7 @@ class NormalNerfstudio(Nerfstudio):
         ), f"Data directory {self.config.data} does not exist."
         self.normal_save_dir = self.config.data / Path("normals_from_pretrain")
         
-        meta = load_from_json(self.config.data / "realsense_transform.json")
+        meta = load_from_json(self.config.data / "transforms.json")
         data_dir = self.config.data
 
         image_filenames = []
@@ -186,7 +186,7 @@ class NormalNerfstudio(Nerfstudio):
                 )
 
             image_filenames.append(fname)
-            poses.append(np.array(frame["transformation_matrix"]))
+            poses.append(np.array(frame["transform_matrix"]))
             if "mask_path" in frame:
                 mask_filepath = Path(frame["mask_path"])
                 mask_fname = self._get_fname(
@@ -207,13 +207,13 @@ class NormalNerfstudio(Nerfstudio):
             len(mask_filenames) == len(image_filenames)
         ), """
         Different number of image and mask filenames.
-        You should check that mask_path is specified for every frame (or zero frames) in realsense_transform.json.
+        You should check that mask_path is specified for every frame (or zero frames) in transforms.json.
         """
         assert len(depth_filenames) == 0 or (
             len(depth_filenames) == len(image_filenames)
         ), """
         Different number of image and depth filenames.
-        You should check that depth_file_path is specified for every frame (or zero frames) in realsense_transform.json.
+        You should check that depth_file_path is specified for every frame (or zero frames) in transforms.json.
         """
 
         normal_filenames = self.get_normal_filepaths()
@@ -472,7 +472,7 @@ class NormalNerfstudio(Nerfstudio):
                         create_ply_from_colmap,
                     )
 
-                    with open(self.config.data / "realsense_transform.json") as f:
+                    with open(self.config.data / "transforms.json") as f:
                         transforms = json.load(f)
 
                     # Update dataset if missing the applied_transform field.
@@ -493,7 +493,7 @@ class NormalNerfstudio(Nerfstudio):
                     # This was the applied_transform value
 
                     with open(
-                        self.config.data / "realsense_transform.json", "w", encoding="utf-8"
+                        self.config.data / "transforms.json", "w", encoding="utf-8"
                     ) as f:
                         json.dump(transforms, f, indent=4)
                 else:
@@ -587,8 +587,9 @@ class NormalNerfstudio(Nerfstudio):
                 np_pts = np_pts[mask]
                 print(np_pts.shape)
                 
-                # load normals
+                # load and apply normals
                 normal = torch.from_numpy(np.load(self.config.data / Path(frame["normal_path"]))) # .npy file
+                
                 touch_patch = {
                     "points_xyz": torch.from_numpy(np_pts),
                     "points_rgb": torch.ones_like(torch.tensor(pcd.points)) * 255., # init touch points to be white
