@@ -112,7 +112,7 @@ class NormalNerfstudio(Nerfstudio):
         ), f"Data directory {self.config.data} does not exist."
         self.normal_save_dir = self.config.data / Path("normals_from_pretrain")
         
-        meta = load_from_json(self.config.data / "transforms.json")
+        meta = load_from_json(self.config.data / "realsense_transform.json")
         data_dir = self.config.data
 
         image_filenames = []
@@ -186,7 +186,7 @@ class NormalNerfstudio(Nerfstudio):
                 )
 
             image_filenames.append(fname)
-            poses.append(np.array(frame["transform_matrix"]))
+            poses.append(np.array(frame["transformation_matrix"]))
             if "mask_path" in frame:
                 mask_filepath = Path(frame["mask_path"])
                 mask_fname = self._get_fname(
@@ -207,13 +207,13 @@ class NormalNerfstudio(Nerfstudio):
             len(mask_filenames) == len(image_filenames)
         ), """
         Different number of image and mask filenames.
-        You should check that mask_path is specified for every frame (or zero frames) in transforms.json.
+        You should check that mask_path is specified for every frame (or zero frames) in realsense_transform.json.
         """
         assert len(depth_filenames) == 0 or (
             len(depth_filenames) == len(image_filenames)
         ), """
         Different number of image and depth filenames.
-        You should check that depth_file_path is specified for every frame (or zero frames) in transforms.json.
+        You should check that depth_file_path is specified for every frame (or zero frames) in realsense_transform.json.
         """
 
         normal_filenames = self.get_normal_filepaths()
@@ -472,7 +472,7 @@ class NormalNerfstudio(Nerfstudio):
                         create_ply_from_colmap,
                     )
 
-                    with open(self.config.data / "transforms.json") as f:
+                    with open(self.config.data / "realsense_transform.json") as f:
                         transforms = json.load(f)
 
                     # Update dataset if missing the applied_transform field.
@@ -493,7 +493,7 @@ class NormalNerfstudio(Nerfstudio):
                     # This was the applied_transform value
 
                     with open(
-                        self.config.data / "transforms.json", "w", encoding="utf-8"
+                        self.config.data / "realsense_transform.json", "w", encoding="utf-8"
                     ) as f:
                         json.dump(transforms, f, indent=4)
                 else:
@@ -553,50 +553,48 @@ class NormalNerfstudio(Nerfstudio):
             metadata["normal_format"] = self.config.normal_format
 
         if self.config.load_touches:
+            metadata["load_touches"] = True
             print("load touches...")
-            self.touch_data_dir = self.config.data / "touch"
-            touch_meta = load_from_json(self.touch_data_dir / "transforms_train.json")
+            self.touch_data_dir = self.config.data / "tactile"
+            touch_meta = load_from_json(self.config.data / "gelsight_transform.json")
             touch_filenames = self.get_touch_filepaths()
-            touch_npy_filenames = []
-            touch_png_filenames = []
+            touch_patch_filenames = []
+            touch_mask_filenames = []
+            touch_normal_filenames = []
             # sort the touch frames by fname
             touchnames = []
-            for frame in touch_meta["frames"]:
-                filepath = "touch" / Path(frame["file_path"]) # tr_1.png
-                fname = self._get_fname(filepath, self.touch_data_dir)
-                touchnames.append(fname) # tr_1
-            inds = np.argsort(touchnames)
-            touchframes = [touch_meta["frames"][ind] for ind in inds]
-            for frame in touchframes:
-                filepath = "touch" / Path(frame["file_path"])
-                fname = self._get_fname(filepath, data_dir)
-                touch_npy_filenames.append(fname.with_suffix(".npy"))
-                touch_png_filenames.append(fname.with_suffix(".png"))
-                # rotation, transform_matrix, position, quaternion
-
+            # for frame in touch_meta["frames"]:
+            #     filepath = Path(frame["patch_path"])
+            #     fname = self._get_fname(filepath, self.touch_data_dir)
+            #     touchnames.append(fname)
+            # inds = np.argsort(touchnames)
+            # touchframes = [touch_meta["frames"][ind] for ind in inds]
+            touchframes = touch_meta["frames"]
             metadata["touch_filenames"] = touch_filenames
-            metadata["load_touches"] = True
             touch_patches = []
-            for ind, touch_fn in zip(range(len(touch_npy_filenames)), touch_npy_filenames):
-                t = f"{touch_fn}"
-                # TO TEST: can this load npy files?
-                single_touch_pcd = torch.from_numpy(np.load(t))
-                if single_touch_pcd is not None:
-                    # estimate normals for touch patch
-                    pcd = o3d.geometry.PointCloud()
-                    pcd.points = o3d.utility.Vector3dVector(single_touch_pcd.numpy())
-                    pcd.colors = o3d.utility.Vector3dVector(single_touch_pcd.numpy())
-                    pcd.estimate_normals(search_param=o3d.geometry.KDTreeSearchParamHybrid(radius=0.1, max_nn=30))
-                    pcd.normalize_normals()
-                    touch_patch_normals = torch.from_numpy(np.asarray(pcd.normals, dtype=np.float32))
-                    touch_patch = {
-                        "points_xyz": single_touch_pcd,
-                        "points_rgb": torch.rand_like(single_touch_pcd),
-                        "normals": touch_patch_normals,
-                    }
-                    touch_patches.append(touch_patch)
-                else:
-                    Warning(f"Warning: npy file {t} does not contain any points")
+            for frame in touchframes:
+                # filepath = Path(frame["patch_path"])
+                # fname = self._get_fname(filepath, data_dir)
+                # touch_patch_filenames.append(fname.with_suffix(".pcd"))
+                pcd = o3d.io.read_point_cloud(str(self.config.data / frame["patch_path"]))
+                # apply transform
+                tr = torch.tensor(frame["transformation_matrix"]) # 4x4 homogenous
+                pcd.transform(tr)
+
+                mask = np.asarray(o3d.io.read_point_cloud(str(self.config.data / frame["mask_path"])).points)[:, 2] == 1
+                # assert mask.shape == np.asarray(pcd.points).shape[0]
+                np_pts = np.asarray(pcd.points)
+                np_pts = np_pts[mask]
+                print(np_pts.shape)
+                
+                # load normals
+                normal = torch.from_numpy(np.load(self.config.data / Path(frame["normal_path"]))) # .npy file
+                touch_patch = {
+                    "points_xyz": torch.from_numpy(np_pts),
+                    "points_rgb": torch.ones_like(torch.tensor(pcd.points)) * 255., # init touch points to be white
+                    "normals": normal,
+                }
+                touch_patches.append(touch_patch)
             """
             touch_patches: an array of touch patches, each should 
             """

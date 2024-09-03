@@ -32,6 +32,6 @@ def npy_to_ply(npy_file, ply_file):
 if __name__ == "__main__":
     # Example usage
     npy_file = "datasets/touch-rabbit/points_touch.npy"  # Replace with your .npy file path
-    ply_file = "datasets/touch-rabbit/points_touch.ply" # Replace with your desired .ply file path
+    ply_file = "datasets/touch-rabbit/tr_0.ply" # Replace with your desired .ply file path
     
     npy_to_ply(npy_file, ply_file)
