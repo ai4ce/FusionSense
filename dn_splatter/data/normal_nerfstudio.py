@@ -537,7 +537,6 @@ class NormalNerfstudio(Nerfstudio):
                     )
                 )
 
-
         if self.config.load_pcd_normals:
             metadata.update(
                 self._load_points3D_normals(
@@ -572,20 +571,36 @@ class NormalNerfstudio(Nerfstudio):
             touchframes = touch_meta["frames"]
             metadata["touch_filenames"] = touch_filenames
             touch_patches = []
-            for frame in touchframes:
+            for ind, frame in zip(range(len(touchframes)), touchframes):
                 # filepath = Path(frame["patch_path"])
                 # fname = self._get_fname(filepath, data_dir)
                 # touch_patch_filenames.append(fname.with_suffix(".pcd"))
                 pcd = o3d.io.read_point_cloud(str(self.config.data / frame["patch_path"]))
-                # apply transform
+                # distance between gel pixels
+                gel_scale_factor = 6.34e-5
                 tr = torch.tensor(frame["transformation_matrix"]) # 4x4 homogenous
+                sc = np.array([
+                    [gel_scale_factor, 0, 0, 0],
+                    [0, gel_scale_factor, 0, 0],
+                    [0, 0, gel_scale_factor, 0],
+                    [0, 0, 0, 1]
+                ])
+                # Compute the centroid of the point cloud, Move the centroid to the origin
+                tl = np.array([
+                    [1, 0, 0, -np.mean(np.asarray(pcd.points), axis=0)[0]],
+                    [0, 1, 0, -np.mean(np.asarray(pcd.points), axis=0)[1]],
+                    [0, 0, 1, 0],
+                    [0, 0, 0, 1]
+                ])
+                # apply scale and transform
+                pcd.transform(tl)
+                pcd.transform(sc)
                 pcd.transform(tr)
 
                 mask = np.asarray(o3d.io.read_point_cloud(str(self.config.data / frame["mask_path"])).points)[:, 2] == 1
                 # assert mask.shape == np.asarray(pcd.points).shape[0]
                 np_pts = np.asarray(pcd.points)
                 np_pts = np_pts[mask]
-                print(np_pts.shape)
                 
                 # load and apply normals
                 normal = torch.from_numpy(np.load(self.config.data / Path(frame["normal_path"]))) # .npy file
@@ -595,6 +610,10 @@ class NormalNerfstudio(Nerfstudio):
                     "points_rgb": torch.ones_like(torch.tensor(pcd.points)) * 255., # init touch points to be white
                     "normals": normal,
                 }
+                ply_f = str(self.config.data / f"touch_patch_{ind}.ply")  # Replace with your desired file path
+                save_pcd = o3d.geometry.PointCloud()
+                save_pcd.points = o3d.utility.Vector3dVector(np_pts)
+                o3d.io.write_point_cloud(ply_f, save_pcd)
                 touch_patches.append(touch_patch)
             """
             touch_patches: an array of touch patches, each should 
