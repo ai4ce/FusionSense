@@ -143,7 +143,7 @@ class DNSplatterPipeline(VanillaPipeline):
             seed_pts = (pts, pts_rgb)
         else:
             CONSOLE.print(f"[bold yellow] Not loading points3D_xyz")
-            CONSOLE.print(self.datamanager.train_dataparser_outputs.metadata)
+            # CONSOLE.print(self.datamanager.train_dataparser_outputs.metadata)
 
         self.datamanager.to(device)
         assert self.datamanager.train_dataset is not None, "Missing input dataset"
