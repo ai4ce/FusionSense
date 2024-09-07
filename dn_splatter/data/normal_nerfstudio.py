@@ -562,77 +562,47 @@ class NormalNerfstudio(Nerfstudio):
             touch_meta = load_from_json(self.config.data / "gelsight_transform.json")
             touchframes = touch_meta["frames"]
             metadata["touch_filenames"] = self.get_touch_filepaths()
+            # touch_patches = torch.nn.ParameterDict(
+            #     {
+            #     "points_xyz": torch.empty((0,3)),
+            #     "points_rgb": torch.empty((0,3)),
+            #     "normals": torch.empty((0,3)),
+            #     "transformation_matrix": torch.empty((0))
+            # })
             touch_patches = []
-            camera_pts = np.ndarray((len(touchframes), 3))
-            for ind, touchframe in zip(range(len(touchframes)), touchframes):
-                pcd = torch.from_numpy(np.asarray(o3d.io.read_point_cloud(str(self.config.data / touchframe["patch_path"])).points))
-                
-                gel_scale_factor = 6.34e-5                 # distance between gel pixels
+            for _, touchframe in zip(range(len(touchframes)), touchframes):
+                pcd = torch.from_numpy(np.asarray(o3d.io.read_point_cloud(str(self.config.data / touchframe["patch_path"])).points)).to(dtype=torch.float)
+                gel_scale_factor = 6.34e-5 # distance between gel pixels
                 tr = torch.tensor(touchframe["transformation_matrix"], dtype=pcd.dtype) # 4x4 homogenous
-                camera_pts[ind, :] = tr.numpy()[:3, 3]
                 scale = torch.tensor([
                     [gel_scale_factor, 0, 0, 0],
                     [0, gel_scale_factor, 0, 0],
                     [0, 0, gel_scale_factor, 0],
                     [0, 0, 0, 1]
                 ], dtype=pcd.dtype)
-                # rot_only = torch.tensor([
-                #     [tr.numpy()[0, 0],  tr.numpy()[0, 1],  tr.numpy()[0, 2], 0],
-                #     [tr.numpy()[1, 0],  tr.numpy()[1, 1],  tr.numpy()[1, 2], 0],
-                #     [tr.numpy()[2, 0],  tr.numpy()[2, 1],  tr.numpy()[2, 2], 0],
-                #     [0, 0, 0, 1]
-                # ], dtype=pcd.dtype)
-                # trans_only = torch.tensor([
-                #     [1, 0, 0, camera_pts[ind, 0]],
-                #     [0, 1, 0, camera_pts[ind, 1]],
-                #     [0, 0, 1, camera_pts[ind, 2]],
-                #     [0, 0, 0, 1]
-                # ], dtype=pcd.dtype)
-                # # Compute the centroid of the point cloud, Move the centroid to the origin
-                # cen = torch.tensor([
-                #     [1, 0, 0, -torch.mean(pcd, axis=0)[0]],
-                #     [0, 1, 0, -torch.mean(pcd, axis=0)[1]],
-                #     [0, 0, 1, 0],
-                #     [0, 0, 0, 1]
-                # ], dtype=pcd.dtype)
-                # pcd_hom = torch.cat([pcd, torch.ones((pcd.shape[0], 1), dtype=pcd.dtype)], dim=1) @ rot_only.T @ scale @ trans_only.T
-                # pcd = pcd_hom[:, :3]
-
+                mat = scale @ tr.T
                 # apply touch patch mask
                 mask = np.asarray(o3d.io.read_point_cloud(str(self.config.data / touchframe["mask_path"])).points)[:, 2] == 1
                 np_pts = pcd[mask]
-                
                 # load normals as 3D normal vectors
-                pcd_normals = torch.from_numpy(np.load(self.config.data / Path(touchframe["normal_path"]))) # .npy file
+                pcd_normals = torch.from_numpy(np.load(self.config.data / Path(touchframe["normal_path"]))).reshape(-1, 2)[mask] # mask MxNx2 file
                 x = pcd_normals[..., 0]
                 y = pcd_normals[..., 1]
                 z = np.sqrt(np.maximum(1.0 - x**2 - y**2, 0.0))
-                pcd_normal3D = torch.stack((x, y, z))
-                
+                pcd_normal3D = torch.stack((x, y, z)).to(dtype=torch.float).T # (MxN)x2
+                assert pcd_normal3D.dtype == np_pts.dtype == mat.dtype
                 touch_patch = {
                     "points_xyz": np_pts,
-                    "points_rgb": torch.cat((torch.ones_like(pcd[:, :1]), torch.zeros_like(pcd[:, 1:])), dim=1) * 255., # init touch points to be white
+                    "points_rgb": torch.ones_like(np_pts, dtype=pcd.dtype) * 255., # init touch points to be white
                     "normals": pcd_normal3D,
-                    "transformation_matrix": scale @ tr.T
+                    "transformation_matrix": mat
                 }
-                # save camera position as a reference
-                ply_f = str(self.config.data / f"touch_patch_{ind}.ply") 
-                save_pcd = o3d.geometry.PointCloud()
-                save_pcd.points = o3d.utility.Vector3dVector(np_pts)
-                o3d.io.write_point_cloud(ply_f, save_pcd)
-                # add to array of patches
                 touch_patches.append(touch_patch)
-            """
-            touch_patches: an array of touch patches, each should 
-            """
-            cameras_pcd = o3d.geometry.PointCloud()
-            cameras_pcd.points = o3d.utility.Vector3dVector(torch.tensor(camera_pts))
-            o3d.io.write_point_cloud(str(self.config.data / f"camera_patch.ply"), cameras_pcd)
-
-            if (len(touch_patches) > 0):
-                metadata.update({"touch_patches": touch_patches})
-            else:
-                CONSOLE.log("[bold red] Warning: no touch patches were loaded, check your touch file path and params")
+                ## add to array of patches
+                # for name, param in touch_patches.items():
+                #     touch_patches[name] = torch.cat((param.detach(), touch_patch[name]),dim=0)
+            metadata.update({"touch_patches": touch_patches})
+            # CONSOLE.log("[bold red] Warning: no touch patches were loaded, check your touch file path and params")
 
         dataparser_outputs = DataparserOutputs(
             image_filenames=image_filenames,

@@ -4,6 +4,8 @@ pyproject.toml
 dn_splatter/__init__.py
 dn_splatter/dn_config.py
 dn_splatter/dn_datamanager.py
+dn_splatter/dn_local_model.py
+dn_splatter/dn_local_pipeline.py
 dn_splatter/dn_model.py
 dn_splatter/dn_pipeline.py
 dn_splatter/export_mesh.py
