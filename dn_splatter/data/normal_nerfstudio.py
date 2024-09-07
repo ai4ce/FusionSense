@@ -48,6 +48,11 @@ class NormalNerfstudioConfig(NerfstudioDataParserConfig):
     load_pcd_normals: bool = True
     """Whether to load pcd normals for normal initialisation"""
 
+    # orientation_method: Literal["pca", "up", "vertical", "none"] = "none"
+    # center_method: Literal["poses", "focus", "none"] = "none"
+    # auto_scale_poses: bool = False
+    # scene_scale: float = 5.0
+    # """We set scale and bbox by ourselves"""
 
 @dataclass
 class NormalNerfstudio(Nerfstudio):
@@ -253,7 +258,7 @@ class NormalNerfstudio(Nerfstudio):
             orientation_method = self.config.orientation_method
 
         poses = torch.from_numpy(np.array(poses).astype(np.float32))
-        poses[:, :3, 1:3] *= -1     # FusionSense to nerfstudio format
+        poses[:, :3, 1:3] *= -1     # FusionSense to nerfstudio formata
         poses, transform_matrix = camera_utils.auto_orient_and_center_poses(
             poses,
             method=orientation_method,
@@ -305,6 +310,15 @@ class NormalNerfstudio(Nerfstudio):
                 dtype=torch.float32,
             )
         )
+        # scene_box = SceneBox(
+        #     aabb=torch.tensor(
+        #         [
+        #             [-aabb_scale, -aabb_scale, -aabb_scale],
+        #             [aabb_scale, aabb_scale, aabb_scale],
+        #         ],
+        #         dtype=torch.float32,
+        #     )
+        # )
 
         if "camera_model" in meta:
             camera_type = CAMERA_MODEL_TO_TYPE[meta["camera_model"]]
@@ -494,20 +508,20 @@ class NormalNerfstudio(Nerfstudio):
             if visual_hull is not None:
                 metadata.update(visual_hull_pts)
 
-            if meta["mesh_aabb"]:
-                xyz_min = visual_hull_pts["visual_hull"][:, :3].min(axis=0).values - 0.05
-                xyz_max = visual_hull_pts["visual_hull"][:, :3].max(axis=0).values + 0.05
-                print(xyz_min, xyz_max)
-                # aabb_scale = (xyz_max - xyz_min).max() / 2 + 0.05
-                scene_box = SceneBox(
-                    aabb=torch.tensor(
-                        [
-                            [xyz_min[0], xyz_min[1], xyz_min[2]],
-                            [xyz_max[0], xyz_max[1], xyz_max[2]],
-                        ],
-                        dtype=torch.float32,
-                    )
-                )
+            # if meta["mesh_aabb"]:
+            #     xyz_min = visual_hull_pts["visual_hull"][:, :3].min(axis=0).values - 0.05
+            #     xyz_max = visual_hull_pts["visual_hull"][:, :3].max(axis=0).values + 0.05
+            #     print(xyz_min, xyz_max)
+            #     # aabb_scale = (xyz_max - xyz_min).max() / 2 + 0.05
+            #     scene_box = SceneBox(
+            #         aabb=torch.tensor(
+            #             [
+            #                 [xyz_min[0], xyz_min[1], xyz_min[2]],
+            #                 [xyz_max[0], xyz_max[1], xyz_max[2]],
+            #             ],
+            #             dtype=torch.float32,
+            #         )
+            #     )
 
 
         if self.config.load_pcd_normals:
@@ -523,6 +537,9 @@ class NormalNerfstudio(Nerfstudio):
             metadata["normal_filenames"] = normal_filenames
             metadata["load_normals"] = True
             metadata["normal_format"] = self.config.normal_format
+
+        scale_factor_dict = {"scale_factor": scale_factor}
+        metadata.update(scale_factor_dict)
 
         dataparser_outputs = DataparserOutputs(
             image_filenames=image_filenames,
