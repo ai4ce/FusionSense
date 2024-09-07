@@ -111,7 +111,7 @@ class DNSplatterModelConfig(SplatfactoModelConfig):
     """Number of sdf samples to take"""
 
     ### Splatfacto configs ###
-    warmup_length: int = 100
+    warmup_length: int = 500
     """period of steps where refinement is turned off"""
     num_downscales: int = 0
     """at the beginning, resolution is 1/2^d, where d is this number"""
@@ -131,7 +131,7 @@ class DNSplatterModelConfig(SplatfactoModelConfig):
     """If True, output depth during training. Otherwise, only output depth during evaluation."""
 
     ### touch configs, better do this after densification? ###
-    add_touch_at: int = 101
+    add_touch_at: int = 15000
 
 class DNSplatterModel(SplatfactoModel):
     """Depth + Normal splatter"""
@@ -195,7 +195,6 @@ class DNSplatterModel(SplatfactoModel):
         distances = torch.from_numpy(distances)
         # find the average of the three nearest neighbors for each point and use that as the scale
         avg_dist = distances.mean(dim=-1, keepdim=True)
-        CONSOLE.log(avg_dist)
 
         # init normals if present
         with torch.no_grad():
@@ -1035,6 +1034,43 @@ class DNSplatterModel(SplatfactoModel):
         return metrics_dict, images_dict
 
     """
+    Custom method to add new Guassian points to the optimizer
+    """
+    def add_in_optim(self, optimizer, new_params, add_num, n=1):
+        """adds the parameters to the optimizer"""
+        param = optimizer.param_groups[0]["params"][0]
+        param_state = optimizer.state[param]
+        if "exp_avg" in param_state:
+            repeat_dims = (n,) + tuple(1 for _ in range(param_state["exp_avg"].dim() - 1))
+            CONSOLE.log(param_state["exp_avg"].shape)
+            param_state["exp_avg"] = torch.cat(
+                [
+                    param_state["exp_avg"],
+                    torch.zeros((add_num,)+param_state["exp_avg"].shape[1:], 
+                                device=param_state["exp_avg"].device).repeat(*repeat_dims),
+                ],
+                dim=0,
+            )
+            param_state["exp_avg_sq"] = torch.cat(
+                [
+                    param_state["exp_avg_sq"],
+                    torch.zeros((add_num,)+param_state["exp_avg_sq"].shape[1:], 
+                                device=param_state["exp_avg"].device).repeat(*repeat_dims),
+                ],
+                dim=0,
+            )
+        del optimizer.state[param]
+        optimizer.state[new_params[0]] = param_state
+        optimizer.param_groups[0]["params"] = new_params
+        del param
+    """
+    Custom method to add all Guassian params to the optimizer
+    """    
+    def add_in_all_optim(self, optimizers, add_num, n):
+        param_groups = self.get_gaussian_param_groups()
+        for group, param in param_groups.items():
+            self.add_in_optim(optimizers.optimizers[group], param, add_num, n)
+    """
     Train Callback function to add point clouds to the model
     """
     def add_touch_patch(self, optimizers: Optimizers, step):
@@ -1062,11 +1098,11 @@ class DNSplatterModel(SplatfactoModel):
                     # apply homogenous rotation
                     patch_pts = (torch.cat([
                         patch_pts, 
-                        torch.ones((patch_pts.shape[0], 1), dtype=patch_pts.dtype).to(self.device)
+                        torch.ones((patch_pts.shape[0], 1), dtype=patch_pts.dtype, device=self.device)
                         ], dim=1) @ patch_transformation_matrix.T)
                     patch_pts_normals = (torch.cat([
                         patch_pts_normals, 
-                        torch.ones((patch_pts_normals.shape[0], 1), dtype=patch_pts_normals.dtype).to(self.device)
+                        torch.ones((patch_pts_normals.shape[0], 1), dtype=patch_pts_normals.dtype, device=self.device)
                         ], dim=1) @ patch_transformation_matrix.T)
                     
                     touch_patches_points = torch.cat((touch_patches_points, patch_pts[:, 0:3]), dim=0)
@@ -1096,7 +1132,7 @@ class DNSplatterModel(SplatfactoModel):
                 new_features_dc = torch.nn.Parameter(new_shs[:, 0, :])
                 new_features_rest = torch.nn.Parameter(new_shs[:, 1:, :])
                 # opacity of touch GS should be 1
-                new_opacities = torch.ones((num_new_points, 1)).to(self.device)
+                new_opacities = torch.ones((num_new_points, 1), device=self.device, dtype=torch.float)
                 # The scale of the new gaussians are supposed to be small  
                 gel_scale_dist = torch.tensor(6.34e-5) # real world scale between should pass this in as a param
                 new_scales = torch.log(gel_scale_dist.repeat(num_new_points, 3))
@@ -1104,7 +1140,9 @@ class DNSplatterModel(SplatfactoModel):
                 new_scales = torch.nn.Parameter(new_scales.detach()).to(self.device)
                 new_quats = torch.zeros(len(touch_patches_normals), 4)
                 mat = rotate_vector_to_vector(
-                    torch.tensor([0, 0, 1], dtype=torch.float, device=touch_patches_normals.device).repeat(touch_patches_normals.shape[0], 1),
+                    torch.tensor([0, 0, 1], 
+                                 dtype=torch.float, 
+                                 device=touch_patches_normals.device).repeat(touch_patches_normals.shape[0], 1),
                     touch_patches_normals,
                 )
                 new_quats = matrix_to_quaternion(mat)
@@ -1118,6 +1156,7 @@ class DNSplatterModel(SplatfactoModel):
                     "quats": new_quats,
                     "normals": touch_patches_normals
                 }
+                # append to the end
                 for name, param in self.gauss_params.items():
                     CONSOLE.print(name, param.shape, outs[name].shape)
                     self.gauss_params[name] = torch.nn.Parameter(
@@ -1126,7 +1165,15 @@ class DNSplatterModel(SplatfactoModel):
                             dim=0,
                         )
                     )
-                # self.remove_from_all_optim(optimizers, )
+                # add_mask = torch.cat([
+                #     torch.zeros((pts.shape[0], 1), dtype=bool), 
+                #     torch.ones((touch_patches_points.shape[0], 1), dtype=bool)
+                # ])
+                self.add_in_all_optim(optimizers, touch_patches_points.shape[0], 1)
+                # reset these in refine_after manner
+                self.xys_grad_norm = None
+                self.vis_counts = None
+                self.max_2Dsize = None
         else:
             CONSOLE.print(f"[bold green] Skip adding touch patch at step {step}")
 
