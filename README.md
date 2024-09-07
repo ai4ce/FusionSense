@@ -29,6 +29,9 @@ Integrates the vision, touch, and common-sense information of foundational model
     ```
     
     You will get a point cloud file `foreground_pcd.ply`, and a screenshot `voxels.png` of checking whether the generated VisualHull is correct.    
+
+    Also, you can run this scirpt setting the voxel grid resolution to 0.002 to get a more detailed point cloud as `object.ply` for hull pruning.
+
     <img src="assets/voxels.png" width="300">
 
 4. **RealSense depth & [Metric3Dv2](https://github.com/YvanYin/Metric3D) depth**:  
@@ -39,7 +42,7 @@ Integrates the vision, touch, and common-sense information of foundational model
     ```bash
     python run_metric3d_depth.py --root_dir your-path
     ```
-    **Remember to set your camera intrinsics and image size in that file**   
+    <u>**Remember to set your camera intrinsics and image size in that file**</u>   
 
 5. **Generate initial GS model sparse points**:  
 
@@ -95,9 +98,29 @@ Integrates the vision, touch, and common-sense information of foundational model
                         --load-pcd-normals True --load-3D-points True  --normal-format opencv
     ```
 
+    **If you want to load checkpoints**:
+    ```bash
+        ns-train dn-splatter 
+                        --load-dir PATH_TO_CONFIG\
+                        --pipeline.model.use-depth-loss True\
+                        --pipeline.model.normal-lambda 0.4\
+                        --pipeline.model.sensor-depth-lambda 0.2\
+                        --pipeline.model.use-depth-smooth-loss True \
+                        --pipeline.model.use-normal-loss True\
+                        --pipeline.model.normal-supervision mono\
+                        --pipeline.model.random_init False normal-nerfstudio\
+                        --data your-path\
+                        --load-pcd-normals True --load-3D-points True  --normal-format opencv
+    ```
+
 9. **Mesh Extraction**:
     ```python
     gs-mesh {dn, tsdf, sugar-coarse, gaussians, marching} --load-config [PATH] --output-dir [PATH]
+    ```
+
+10. **Export GSplat**:
+    ```bash
+    ns-export gaussian-splat --load-config outputs/unnamed/dn-splatter/2024-09-02_203650/config.yml --output-dir exports/splat/ 
     ```
 
 ## Dataset Format
