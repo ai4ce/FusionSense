@@ -171,6 +171,6 @@ cython_debug/
 #.idea/
 nerfstudio
 .vscode
-dn_splatter/__pycache__
+dn_splatter/__pycache__/
 # pixi environments
 .pixi
