@@ -43,6 +43,7 @@ from nerfstudio.pipelines.base_pipeline import (
 )
 from nerfstudio.utils import profiler
 from nerfstudio.utils.rich_utils import CONSOLE
+from nerfstudio.data.scene_box import SceneBox
 
 
 @dataclass
@@ -74,6 +75,7 @@ class DNSplatterPipeline(VanillaPipeline):
         local_rank: int = 0,
         grad_scaler: Optional[GradScaler] = None,
     ):
+        CONSOLE.print(f"[bold green] Init pipeline...")
         super(VanillaPipeline, self).__init__()
         self.config = config
         self.test_mode = test_mode
@@ -88,54 +90,60 @@ class DNSplatterPipeline(VanillaPipeline):
         seed_pts = None
         if (
             hasattr(self.datamanager, "train_dataparser_outputs")
-            and "points3D_xyz"
-            in self.datamanager.train_dataparser_outputs.metadata  # type: ignore
-        ):
-            pts = self.datamanager.train_dataparser_outputs.metadata[
-                "points3D_xyz"
-            ]  # type: ignore
-            pts_rgb = self.datamanager.train_dataparser_outputs.metadata[
-                "points3D_rgb"
-            ]  # type: ignore
-            if "points3D_normals" in self.datamanager.train_dataparser_outputs.metadata:
-                normals = self.datamanager.train_dataparser_outputs.metadata[
-                    "points3D_normals"
-                ]  # type: ignore
+            and "points3D_xyz" in self.datamanager.train_dataparser_outputs.metadata  # type: ignore
+        ): # this will run only when load_3D_points=True
+            pts = self.datamanager.train_dataparser_outputs.metadata["points3D_xyz"]  # type: ignore
+            pts_rgb = self.datamanager.train_dataparser_outputs.metadata["points3D_rgb"]  # type: ignore
 
-                # initialize patch points 
-                if "touch_patches" in self.datamanager.train_dataparser_outputs.metadata:
-                    touch_patches = self.datamanager.train_dataparser_outputs.metadata[
-                        "touch_patches"    
-                    ] # type: ignore
-                    # next 
-                    current_touch_index = 0
-                    touch_patch = touch_patches[current_touch_index]
-                    touch_pts = torch.cat((pts, touch_patch["points_xyz"])).detach() # disable position gradient
-                    touch_pts_rgb = torch.cat((pts_rgb, touch_patch["points_rgb"]))
-                    touch_pts_normals = torch.cat((normals, touch_patch["normals"]))
+            # if "points3D_normals" in self.datamanager.train_dataparser_outputs.metadata:
+            #     pts_normals = self.datamanager.train_dataparser_outputs.metadata["points3D_normals"]  # type: ignore
 
-                    max_xyz = torch.max(touch_pts, axis=0).values
-                    min_xyz = torch.min(touch_pts, axis=0).values
-                    diag_xyz = (max_xyz - min_xyz) * 0.1
-                    min_aabb = min_xyz-diag_xyz
-                    max_aabb = max_xyz+diag_xyz
-                    mask_x = (pts[:, 0] >= min_aabb[0]) & (pts[:, 0] <= max_aabb[0])
-                    mask_y = (pts[:, 1] >= min_aabb[1]) & (pts[:, 1] <= max_aabb[1])
-                    mask_z = (pts[:, 2] >= min_aabb[2]) & (pts[:, 2] <= max_aabb[2])
-                    aabb_mask = mask_x & mask_y & mask_z
-                    # only train points in aabb, so detach other points in the background
-                    bg_pts = pts[~aabb_mask].detach()
-                    bg_pts_rgb = pts_rgb[~aabb_mask].detach()
-                    bg_pts_normal = normals[~aabb_mask].detach()
+            #     # initialize patch points, assuming we have points3D_xyz and points3D_normal
+            #     if ("touch_patches" in self.datamanager.train_dataparser_outputs.metadata):
+            #         touch_patches = self.datamanager.train_dataparser_outputs.metadata["touch_patches"] # type: ignore
+            #         CONSOLE.print(f"[bold green] loading {touch_patches.shape[0]} touch patches")
 
-                    fused_pts = torch.cat((pts[aabb_mask], bg_pts, touch_pts))
-                    fused_pts_rgb = torch.cat((pts_rgb[aabb_mask], bg_pts_rgb, touch_pts_rgb))
-                    fused_pts_normals = torch.cat((normals[aabb_mask], bg_pts_normal, touch_pts_normals))
-                    seed_pts = (fused_pts, fused_pts_rgb, fused_pts_normals)
-                else:
-                    seed_pts = (pts, pts_rgb, normals)
-            else:
-                seed_pts = (pts, pts_rgb)
+            #         aabb_mask = torch.ones_like(pts, dtype=torch.bool)
+            #         touch_patches_points = torch.empty((0,3))
+            #         touch_patches_rgb = torch.empty((0,3))
+            #         touch_patches_normals = torch.empty((0,3))
+            #         for ind in range(touch_patches.shape[0]):
+            #             touch_patch = touch_patches[ind]
+            #             patch_transformation_matrix = touch_patch["transformation_matrix"]
+            #             patch_pts = touch_patch["points_xyz"] @ patch_transformation_matrix.T
+            #             patch_pts_rgb = touch_patch["points_rgb"]
+            #             patch_pts_normals = touch_patch["normals"] @ patch_transformation_matrix.T
+                        
+            #             touch_patches_points = torch.cat((touch_patches_points, patch_pts))
+            #             touch_patches_rgb = torch.cat((touch_patches_rgb, patch_pts_rgb))
+            #             touch_patches_normals = torch.cat((touch_patches_normals, patch_pts_normals))
+
+            #             max_xyz = torch.max(patch_pts, axis=0).values
+            #             min_xyz = torch.min(patch_pts, axis=0).values
+            #             diag_xyz = (max_xyz - min_xyz) * 0.1
+            #             min_aabb = min_xyz-diag_xyz
+            #             max_aabb = max_xyz+diag_xyz
+            #             mask_x = (pts[:, 0] >= min_aabb[0]) & (pts[:, 0] <= max_aabb[0])
+            #             mask_y = (pts[:, 1] >= min_aabb[1]) & (pts[:, 1] <= max_aabb[1])
+            #             mask_z = (pts[:, 2] >= min_aabb[2]) & (pts[:, 2] <= max_aabb[2])
+            #             aabb_mask &= mask_x & mask_y & mask_z
+
+            #         # only train points in aabb mask, so detach other points in the background
+            #         bg_pts = pts[~aabb_mask]
+            #         bg_pts_rgb = pts_rgb[~aabb_mask]
+            #         bg_pts_normal = pts_normals[~aabb_mask]
+
+            #         fused_pts = torch.cat((pts[aabb_mask], bg_pts, touch_patches_points))
+            #         fused_pts_rgb = torch.cat((pts_rgb[aabb_mask], bg_pts_rgb, touch_patches_rgb))
+            #         fused_pts_normals = torch.cat((pts_normals[aabb_mask], bg_pts_normal, touch_patches_normals))
+            #         seed_pts = (fused_pts, fused_pts_rgb, fused_pts_normals)
+            #     else:
+            #         seed_pts = (pts, pts_rgb, pts_normals)
+            # else:
+            seed_pts = (pts, pts_rgb)
+        else:
+            CONSOLE.print(f"[bold yellow] Not loading points3D_xyz")
+            CONSOLE.print(self.datamanager.train_dataparser_outputs.metadata)
 
         self.datamanager.to(device)
         assert self.datamanager.train_dataset is not None, "Missing input dataset"
@@ -587,10 +595,7 @@ class DNSplatterPipeline(VanillaPipeline):
                     metrics_dict[key] = float(
                         torch.mean(
                             torch.tensor(
-                                [
-                                    metrics_dict[key]
-                                    for metrics_dict in metrics_dict_list
-                                ]
+                                [metrics_dict[key] for metrics_dict in metrics_dict_list]
                             )
                         )
                     )

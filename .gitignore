@@ -6,6 +6,8 @@ dn_splatter.egg-info/
 omnidata_ckpt/
 pretrained_models/
 mesh_exports/
+log_images/
+*.pyc
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -172,6 +174,3 @@ nerfstudio
 dn_splatter/__pycache__
 # pixi environments
 .pixi
-
-log_images/*
-*.pyc
