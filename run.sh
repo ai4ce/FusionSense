@@ -10,3 +10,6 @@ python dn_splatter/scripts/normals_from_pretrain.py --data-dir datasets/tr-rabbi
 
 
 ns-train dn-splatter --pipeline.model.use-depth-loss True --steps-per-save 10000 --pipeline.model.normal-lambda 0.4  --pipeline.model.sensor-depth-lambda 0.2 --pipeline.model.use-depth-smooth-loss True  --pipeline.model.use-normal-loss True  --pipeline.model.normal-supervision mono  --pipeline.model.random_init False normal-nerfstudio --data datasets/tr-rabbit3 --load-pcd-normals False --load-3D-points False --load-touches False
+
+# no touches
+ CUDA_VISIBLE_DEVICES=0 ns-train dn-splatter --steps-per-save 10000  --pipeline.model.use-depth-loss True       --pipeline.model.normal-lambda 0.4 --pipeline.model.sensor-depth-lambda 0.2 --pipeline.model.use-depth-smooth-loss True  --pipeline.model.use-binary-opacities True  --pipeline.model.use-normal-loss True  --pipeline.model.normal-supervision mono  --pipeline.model.random_init False normal-nerfstudio  --data BlackBunny  --load-pcd-normals True --load-3D-points True  --normal-format opencv

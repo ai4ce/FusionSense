@@ -48,7 +48,7 @@ class NormalNerfstudioConfig(NerfstudioDataParserConfig):
     load_pcd_normals: bool = True
     """Whether to load pcd normals for normal initialisation"""
 
-    load_touches: bool = True
+    load_touches: bool = False
     """Set to true to load normal maps"""
 
     orientation_method: Literal['pca', 'up', 'vertical', 'none'] = 'none'
