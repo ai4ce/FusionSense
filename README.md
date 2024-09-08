@@ -133,13 +133,19 @@ tr-rabbit/
 │   ├── rgb_1.png
 │   └── rgb_2.png
 │
-├── normals_from_pretrain/
+├── normals_from_pretrain/ # normal 
 │   ├── rgb_1.png
 │   └── rgb_2.png
 │
 ├── realsense_depth/
 │   ├── depth_1.png
 │   └── depth_2.png
+│
+│── tactile/
+│   ├── image
+│   ├── mask
+│   ├── normal
+│   └── patch
 │
 ├── object.ply
 └── merged_pcd.ply
