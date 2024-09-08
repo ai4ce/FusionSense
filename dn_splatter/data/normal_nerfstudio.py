@@ -32,7 +32,20 @@ from nerfstudio.utils.rich_utils import CONSOLE
 
 MAX_AUTO_RESOLUTION = 1600
 
-
+def mut_and_scale(points3D, transform_matrix, scale_factor):
+    points3D = (
+        torch.cat(
+            (
+                points3D,
+                torch.ones_like(points3D[..., :1]),
+            ),
+            -1,
+        )
+        @ transform_matrix.T
+    )
+    points3D *= scale_factor
+    return points3D
+    
 @dataclass
 class NormalNerfstudioConfig(NerfstudioDataParserConfig):
     """Nerfstudio dataset config"""
@@ -529,8 +542,8 @@ class NormalNerfstudio(Nerfstudio):
         if "object_pc_path" in meta:
             object_pc_path = data_dir / meta["object_pc_path"]
             visual_hull = self._load_3D_points(
-                    object_pc_path, transform_matrix, scale_factor
-                )
+                object_pc_path, transform_matrix, scale_factor
+            )
             visual_hull_pts = {"visual_hull": visual_hull["points3D_xyz"]}
             if visual_hull is not None:
                 metadata.update(visual_hull_pts)
@@ -566,30 +579,19 @@ class NormalNerfstudio(Nerfstudio):
 
         if self.config.load_touches:
             metadata["load_touches"] = True
-            print("load touches...")
+            CONSOLE.log("[bold green] Load touches...")
             self.touch_data_dir = self.config.data / "tactile"
             touch_meta = load_from_json(self.config.data / "gelsight_transform.json")
             touchframes = touch_meta["frames"]
             metadata["touch_filenames"] = self.get_touch_filepaths()
-            # touch_patches = torch.nn.ParameterDict(
-            #     {
-            #     "points_xyz": torch.empty((0,3)),
-            #     "points_rgb": torch.empty((0,3)),
-            #     "normals": torch.empty((0,3)),
-            #     "transformation_matrix": torch.empty((0))
-            # })
             touch_patches = []
             for _, touchframe in zip(range(len(touchframes)), touchframes):
                 pcd = torch.from_numpy(np.asarray(o3d.io.read_point_cloud(str(self.config.data / touchframe["patch_path"])).points)).to(dtype=torch.float)
                 gel_scale_factor = 6.34e-5 # distance between gel pixels
                 tr = torch.tensor(touchframe["transformation_matrix"], dtype=pcd.dtype) # 4x4 homogenous
-                scale = torch.tensor([
-                    [gel_scale_factor, 0, 0, 0],
-                    [0, gel_scale_factor, 0, 0],
-                    [0, 0, gel_scale_factor, 0],
-                    [0, 0, 0, 1]
-                ], dtype=pcd.dtype)
-                mat = scale @ tr.T
+                pcd *= gel_scale_factor
+                pcd = mut_and_scale(pcd, tr[:3, :], 1.0)
+                pcd = mut_and_scale(pcd, transform_matrix, scale_factor)
                 # apply touch patch mask
                 mask = np.asarray(o3d.io.read_point_cloud(str(self.config.data / touchframe["mask_path"])).points)[:, 2] == 1
                 np_pts = pcd[mask]
@@ -598,18 +600,18 @@ class NormalNerfstudio(Nerfstudio):
                 x = pcd_normals[..., 0]
                 y = pcd_normals[..., 1]
                 z = np.sqrt(np.maximum(1.0 - x**2 - y**2, 0.0))
-                pcd_normal3D = torch.stack((x, y, z)).to(dtype=torch.float).T # (MxN)x2
-                assert pcd_normal3D.dtype == np_pts.dtype == mat.dtype
+                pcd_normal3D = torch.stack((x, y, z)).to(dtype=torch.float).T # (MxN)x2 
+                pcd_normal3D = mut_and_scale(pcd_normal3D, tr[:3, :], 1.0)
+                assert pcd_normal3D.dtype == np_pts.dtype == tr.dtype
                 touch_patch = {
                     "points_xyz": np_pts,
                     "points_rgb": torch.ones_like(np_pts, dtype=pcd.dtype) * 255., # init touch points to be white
                     "normals": pcd_normal3D,
-                    "transformation_matrix": mat
+                    "transformation_matrix": tr,
+                    "gel_scale_factor": gel_scale_factor
                 }
                 touch_patches.append(touch_patch)
                 ## add to array of patches
-                # for name, param in touch_patches.items():
-                #     touch_patches[name] = torch.cat((param.detach(), touch_patch[name]),dim=0)
             metadata.update({"touch_patches": touch_patches})
             # CONSOLE.log("[bold red] Warning: no touch patches were loaded, check your touch file path and params")
 
