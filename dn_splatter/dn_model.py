@@ -111,7 +111,7 @@ class DNSplatterModelConfig(SplatfactoModelConfig):
     """Number of sdf samples to take"""
 
     ### Splatfacto configs ###
-    warmup_length: int = 500
+    warmup_length: int = 100
     """period of steps where refinement is turned off"""
     num_downscales: int = 0
     """at the beginning, resolution is 1/2^d, where d is this number"""
