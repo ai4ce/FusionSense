@@ -80,7 +80,7 @@ For `Grounded-SAM2-for-masking`, see [Installation](https://github.com/IDEA-Rese
 
     To use initial pts, set `"ply_file_path": "merged_pcd.ply"`     
 
-    To use Visual Hull prune supervised method, set `"object_pc_path": "object.ply"`    
+    To use Visual Hull prune supervised method, set `"object_pc_path": "foreground_pcd.ply"`    
 
 8. **Train**:
 
