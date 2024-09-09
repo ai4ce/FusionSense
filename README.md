@@ -1,6 +1,23 @@
 # FusionSense
 Integrates the vision, touch, and common-sense information of foundational models, customized to the agent's perceptual needs.
 
+## Installation
+For `dn-splatter`, see [Installation](https://github.com/maturk/dn-splatter?tab=readme-ov-file#installation)
+
+For `Grounded-SAM2-for-masking`, see [Installation](https://github.com/IDEA-Research/Grounded-SAM-2#installation)
+
+```bash
+pip install Grounded-SAM2-for-masking
+cd Grounded-SAM2-for-masking
+
+cd checkpoints
+bash download_ckpts.sh
+cd gdino_checkpoints
+bash download_ckpts.sh
+pip install -e .
+pip install --no-build-isolation -e grounding_dino
+```
+
 ## Usage
 
 1. **Select frames**:  
@@ -19,8 +36,8 @@ Integrates the vision, touch, and common-sense information of foundational model
     set your scene path and prompt text with the end of '.'   
     `eg. 'transparent white statue.'`   
 
-    ```python   
-    python grounded_sam2_hf_model_imgs_MaskExtract.py   
+    ```bash   
+    python Grounded-SAM2-for-masking/grounded_sam2_hf_model_imgs_MaskExtract.py  --path {PATH}
     ```   
     run the script to extract masks.   
 
