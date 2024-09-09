@@ -121,7 +121,7 @@ class DNSplatterModelConfig(SplatfactoModelConfig):
     """threshold of ratio of gaussian max to min scale before applying regularization
     loss from the PhysGaussian paper
     """
-    stop_split_at: int = 1000
+    stop_split_at: int = 2000
     """stop splitting at this step"""
     camera_optimizer: CameraOptimizerConfig = field(
         default_factory=lambda: CameraOptimizerConfig(mode="off")
@@ -150,6 +150,7 @@ class DNSplatterModel(SplatfactoModel):
                 torch.zeros((~deleted_mask).sum()-self.added_count, device=self.add_mask.device, dtype=bool),
                 torch.ones(self.added_count, device=self.add_mask.device, dtype=bool)
             ], dim=0).squeeze()
+            # CONSOLE.input(f"Removing {deleted_mask.sum()} GS points: {deleted_mask}")
     
     def dup_in_all_optim(self, optimizers, dup_mask, n):
         param_groups = self.get_gaussian_param_groups()
@@ -406,25 +407,25 @@ class DNSplatterModel(SplatfactoModel):
             if deleted_mask is not None:
                 self.remove_from_all_optim(optimizers, deleted_mask)
 
-            # cull_gs_points that far to the object model
-            if 'visual_hull' in self.kwargs["metadata"] and do_densification:
-                visual_hull = self.kwargs["metadata"]['visual_hull'].to(self.device)
-                center = visual_hull.mean(dim=0)
-                distances_to_center = torch.norm(self.means - center, dim=1)
-                r_threshold = 0.2 * self.kwargs["metadata"]['scale_factor']
-                close_mask = distances_to_center <= r_threshold
-                filtered_means = self.means[close_mask]
-                distances = torch.cdist(filtered_means, visual_hull)
-                min_distances = distances.min(dim=-1).values
-                filtered_hull_mask  = (min_distances > 0.005 * self.kwargs["metadata"]['scale_factor']) & (min_distances <= 0.05 * self.kwargs["metadata"]['scale_factor'])
-                # hull_mask = (min_distances > 0.02) & (min_distances <= 0.1)
+            ## cull_gs_points that far to the object model
+            # if 'visual_hull' in self.kwargs["metadata"] and do_densification:
+            #     visual_hull = self.kwargs["metadata"]['visual_hull'].to(self.device)
+            #     center = visual_hull.mean(dim=0)
+            #     distances_to_center = torch.norm(self.means - center, dim=1)
+            #     r_threshold = 0.2 * self.kwargs["metadata"]['scale_factor']
+            #     close_mask = distances_to_center <= r_threshold
+            #     filtered_means = self.means[close_mask]
+            #     distances = torch.cdist(filtered_means, visual_hull)
+            #     min_distances = distances.min(dim=-1).values
+            #     filtered_hull_mask  = (min_distances > 0.005 * self.kwargs["metadata"]['scale_factor']) & (min_distances <= 0.05 * self.kwargs["metadata"]['scale_factor'])
+            #     # hull_mask = (min_distances > 0.02) & (min_distances <= 0.1)
 
-                hull_mask = torch.zeros(self.means.shape[0], dtype=torch.bool, device=self.device)
-                hull_mask[close_mask] = filtered_hull_mask
-                self.max_2Dsize = None
-                deleted_mask = self.cull_gaussians(hull_mask)
-                self.remove_from_all_optim(optimizers, deleted_mask)
-                del distances, min_distances, hull_mask, visual_hull
+            #     hull_mask = torch.zeros(self.means.shape[0], dtype=torch.bool, device=self.device)
+            #     hull_mask[close_mask] = filtered_hull_mask
+            #     self.max_2Dsize = None
+            #     deleted_mask = self.cull_gaussians(hull_mask)
+            #     self.remove_from_all_optim(optimizers, deleted_mask)
+            #     del distances, min_distances, hull_mask, visual_hull
 
             if (
                 self.step < self.config.stop_split_at
@@ -646,6 +647,10 @@ class DNSplatterModel(SplatfactoModel):
 
             xys = self.xys[0, ...].detach()
 
+            normal_touch = None
+            if self.add_mask is not None:
+                normal_touch = normals[self.add_mask]
+            
             normals_im: Tensor = rasterize_gaussians(  # type: ignore
                 xys,
                 self.depths[0, ...],
@@ -661,6 +666,8 @@ class DNSplatterModel(SplatfactoModel):
             # convert normals from [-1,1] to [0,1]
             normals_im = normals_im / normals_im.norm(dim=-1, keepdim=True)
             normals_im = (normals_im + 1) / 2
+        
+            # CONSOLE.input(f"Normal: {normals.shape}, {torch.max(normals)}, {torch.min(normals)}\n")
 
         if hasattr(camera, "metadata"):
             if camera.metadata is not None and "cam_idx" in camera.metadata:
@@ -673,6 +680,7 @@ class DNSplatterModel(SplatfactoModel):
             "normal": normals_im,
             "accumulation": alpha.squeeze(0),
             "background": background,
+            "normal_touch": normal_touch
         }
 
     def get_loss_dict(
@@ -818,6 +826,18 @@ class DNSplatterModel(SplatfactoModel):
                     ).mean()
             if self.config.use_normal_tv_loss:
                 normal_loss += self.tv_loss(pred_normal)
+        
+        # per-gaussian normal error
+        if self.add_mask is not None:
+            normal_touch = outputs["normal_touch"]
+            touch_patches_normals = torch.empty((0,3)).to(self.device)
+            for touch_patch in self.kwargs["metadata"]['touch_patches']:
+                touch_patches_normals = torch.cat((touch_patches_normals, touch_patch["normals"].to(self.device)), dim=0)
+            assert normal_touch.shape == touch_patches_normals.shape
+            L2_touch = (normal_touch - touch_patches_normals) ** 2
+            CONSOLE.input(f"{L2_touch.shape}")
+            MSE_touch_loss = torch.mean(L2_touch)
+            CONSOLE.input(f"{MSE_touch_loss}")
 
         if self.config.two_d_gaussians:
             # loss to minimise gaussian scale corresponding to normal direction
@@ -1188,7 +1208,7 @@ class DNSplatterModel(SplatfactoModel):
                 # opacity of touch GS should be 1
                 new_opacities = torch.ones((num_new_points, 1), device=self.device, dtype=torch.float)
                 # The scale of the new gaussians are supposed to be small  
-                gel_scale_dist = torch.tensor(6.34e-4) # real world scale between should pass this in as a param
+                gel_scale_dist = torch.tensor(6.34e-5) # real world scale between should pass this in as a param
                 new_scales = torch.log(gel_scale_dist.repeat(num_new_points, 3))
                 new_scales[:, 2] = torch.log((gel_scale_dist / 3)) # 
                 new_scales = torch.nn.Parameter(new_scales.detach()).to(self.device)
