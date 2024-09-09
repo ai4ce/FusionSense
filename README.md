@@ -7,6 +7,11 @@ Integrates the vision, touch, and common-sense information of foundational model
 
     Run `delete.py` to select frames you want, or manually select, and you will get a folder of selected frames and transforms.json.  
 
+    ```bash
+    python select_imgs.py --path datasets/{PATH}
+    ```
+    Select frames you want, set your selected images in **train.txt**.
+
     **Remember to set `transforms.json` in right format.**
 
 2. **Generate Mask_imgs by [Grounded_SAM_2](https://github.com/IDEA-Research/Grounded-SAM-2)**:   
