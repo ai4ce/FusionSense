@@ -1,0 +1,3 @@
+[submodule "Grounded-SAM2-for-masking"]
+	path = Grounded-SAM2-for-masking
+	url = https://github.com/Kairui-SHI/Grounded-SAM2-for-masking
