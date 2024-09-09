@@ -20,7 +20,8 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'touch = fusion_sense.touch:main'
+            'touch = fusion_sense.touch:main',
+            'lmq = fusion_sense.lmq:main',
         ],
     },
 )
