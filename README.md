@@ -28,7 +28,8 @@ For `Grounded-SAM2-for-masking`, see [Installation](https://github.com/IDEA-Rese
     `eg. 'transparent white statue.'`   
 
     ```bash   
-    python Grounded-SAM2-for-masking/grounded_sam2_hf_model_imgs_MaskExtract.py  --path {PATH}
+    cd Grounded-SAM2-for-masking
+    python grounded_sam2_hf_model_imgs_MaskExtract.py  --path {ABSOLUTE_PATH}
     ```   
     run the script to extract masks.   
 
