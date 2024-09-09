@@ -121,7 +121,7 @@ class DNSplatterModelConfig(SplatfactoModelConfig):
     """threshold of ratio of gaussian max to min scale before applying regularization
     loss from the PhysGaussian paper
     """
-    stop_split_at: int = 8000
+    stop_split_at: int = 2000
     """stop splitting at this step"""
     camera_optimizer: CameraOptimizerConfig = field(
         default_factory=lambda: CameraOptimizerConfig(mode="off")
@@ -137,7 +137,34 @@ class DNSplatterModel(SplatfactoModel):
     """Depth + Normal splatter"""
 
     config: DNSplatterModelConfig
+    
+    def remove_from_all_optim(self, optimizers, deleted_mask):
+        param_groups = self.get_gaussian_param_groups()
+        for group, param in param_groups.items():
+            self.remove_from_optim(optimizers.optimizers[group], deleted_mask, param)
+        torch.cuda.empty_cache()
+        # remove_from_all_optim should never remove from add_mask=True positions, 
+        # so deleted_mask will only trim off False locations
+        if self.add_mask is not None:
+            self.add_mask = torch.cat([
+                torch.zeros((~deleted_mask).sum()-self.added_count, device=self.add_mask.device, dtype=bool),
+                torch.ones(self.added_count, device=self.add_mask.device, dtype=bool)
+            ], dim=0).squeeze()
+            # CONSOLE.input(f"Removing {deleted_mask.sum()} GS points: {deleted_mask}")
+    
+    def dup_in_all_optim(self, optimizers, dup_mask, n):
+        param_groups = self.get_gaussian_param_groups()
+        for group, param in param_groups.items():
+            self.dup_in_optim(optimizers.optimizers[group], dup_mask, param, n)
+        # dup_in_optim should always add new gaussians to the end, 
+        # so touch patches will be in the same position in the array
+        if self.add_mask is not None:
+            self.add_mask = torch.cat([
+                self.add_mask, 
+                torch.zeros((dup_mask.sum()), device=self.add_mask.device, dtype=bool)
+            ], dim=0).squeeze()
 
+            
     def populate_modules(self):
         """Instantiate the model"""
         if self.seed_points is not None and not self.config.random_init:
@@ -232,7 +259,8 @@ class DNSplatterModel(SplatfactoModel):
                 normals = F.normalize(normals, dim=1)
                 normals = torch.nn.Parameter(normals.detach())
 
-        fixmask = []
+        # mask for added gaussian points
+        self.add_mask = None
         self.gauss_params = torch.nn.ParameterDict(
             {
                 "means": means,
@@ -244,7 +272,6 @@ class DNSplatterModel(SplatfactoModel):
                 "normals": normals,
             }
         )
-
         if self.config.use_sdf_loss:
             self._knn = knn_sk(
                 x=self.means.data.to("cuda"),
@@ -271,9 +298,6 @@ class DNSplatterModel(SplatfactoModel):
         if self.step <= self.config.warmup_length:
             return
         CONSOLE.log(f"[bold green]Refining at step {step}")
-        # if step % 100 == 0:
-        #     print(self.means.shape)
-        #     input("...")
         with torch.no_grad():
             # Offset all the opacity reset logic by refine_every so that we don't
             # save checkpoints right when the opacity is reset (saves every 2k)
@@ -383,25 +407,25 @@ class DNSplatterModel(SplatfactoModel):
             if deleted_mask is not None:
                 self.remove_from_all_optim(optimizers, deleted_mask)
 
-            # cull_gs_points that far to the object model
-            if 'visual_hull' in self.kwargs["metadata"] and do_densification:
-                visual_hull = self.kwargs["metadata"]['visual_hull'].to(self.device)
-                center = visual_hull.mean(dim=0)
-                distances_to_center = torch.norm(self.means - center, dim=1)
-                r_threshold = 0.2 * self.kwargs["metadata"]['scale_factor']
-                close_mask = distances_to_center <= r_threshold
-                filtered_means = self.means[close_mask]
-                distances = torch.cdist(filtered_means, visual_hull)
-                min_distances = distances.min(dim=-1).values
-                filtered_hull_mask  = (min_distances > 0.005 * self.kwargs["metadata"]['scale_factor']) & (min_distances <= 0.05 * self.kwargs["metadata"]['scale_factor'])
-                # hull_mask = (min_distances > 0.02) & (min_distances <= 0.1)
+            ## cull_gs_points that far to the object model
+            # if 'visual_hull' in self.kwargs["metadata"] and do_densification:
+            #     visual_hull = self.kwargs["metadata"]['visual_hull'].to(self.device)
+            #     center = visual_hull.mean(dim=0)
+            #     distances_to_center = torch.norm(self.means - center, dim=1)
+            #     r_threshold = 0.2 * self.kwargs["metadata"]['scale_factor']
+            #     close_mask = distances_to_center <= r_threshold
+            #     filtered_means = self.means[close_mask]
+            #     distances = torch.cdist(filtered_means, visual_hull)
+            #     min_distances = distances.min(dim=-1).values
+            #     filtered_hull_mask  = (min_distances > 0.005 * self.kwargs["metadata"]['scale_factor']) & (min_distances <= 0.05 * self.kwargs["metadata"]['scale_factor'])
+            #     # hull_mask = (min_distances > 0.02) & (min_distances <= 0.1)
 
-                hull_mask = torch.zeros(self.means.shape[0], dtype=torch.bool, device=self.device)
-                hull_mask[close_mask] = filtered_hull_mask
-                self.max_2Dsize = None
-                deleted_mask = self.cull_gaussians(hull_mask)
-                self.remove_from_all_optim(optimizers, deleted_mask)
-                del distances, min_distances, hull_mask, visual_hull
+            #     hull_mask = torch.zeros(self.means.shape[0], dtype=torch.bool, device=self.device)
+            #     hull_mask[close_mask] = filtered_hull_mask
+            #     self.max_2Dsize = None
+            #     deleted_mask = self.cull_gaussians(hull_mask)
+            #     self.remove_from_all_optim(optimizers, deleted_mask)
+            #     del distances, min_distances, hull_mask, visual_hull
 
             if (
                 self.step < self.config.stop_split_at
@@ -500,9 +524,11 @@ class DNSplatterModel(SplatfactoModel):
                     int(camera.height.item()),
                     self.background_color,
                 )
+            CONSOLE.log(self.crop_box)
+            input("...")
         else:
             crop_ids = None
-
+            
         if crop_ids is not None:
             opacities_crop = self.opacities[crop_ids]
             means_crop = self.means[crop_ids]
@@ -518,9 +544,13 @@ class DNSplatterModel(SplatfactoModel):
             scales_crop = self.scales
             quats_crop = self.quats
 
-        colors_crop = torch.cat(
-            (features_dc_crop[:, None, :], features_rest_crop), dim=1
-        )
+        if self.add_mask is not None:
+            opacities_crop = opacities_crop.clone()
+            opacities_crop[self.add_mask] = opacities_crop[self.add_mask].detach()
+            means_crop = means_crop.clone()
+            means_crop[self.add_mask] = means_crop[self.add_mask].detach()
+                        
+        colors_crop = torch.cat((features_dc_crop[:, None, :], features_rest_crop), dim=1)
 
         BLOCK_WIDTH = (
             16  # this controls the tile size of rasterization, 16 is a good default
@@ -577,6 +607,7 @@ class DNSplatterModel(SplatfactoModel):
         if self.training and info["means2d"].requires_grad:
             info["means2d"].retain_grad()
         self.xys = info["means2d"]  # [1, N, 2]
+        # self.xys.absgrad = torch.zeros_like(self.xys.absgrad)
         self.radii = info["radii"][0]  # [N]
         alpha = alpha[:, ...]
         self.depths = info["depths"]
@@ -621,6 +652,10 @@ class DNSplatterModel(SplatfactoModel):
 
             xys = self.xys[0, ...].detach()
 
+            normal_touch = None
+            if self.add_mask is not None:
+                normal_touch = normals[self.add_mask]
+            
             normals_im: Tensor = rasterize_gaussians(  # type: ignore
                 xys,
                 self.depths[0, ...],
@@ -636,6 +671,8 @@ class DNSplatterModel(SplatfactoModel):
             # convert normals from [-1,1] to [0,1]
             normals_im = normals_im / normals_im.norm(dim=-1, keepdim=True)
             normals_im = (normals_im + 1) / 2
+        
+            # CONSOLE.input(f"Normal: {normals.shape}, {torch.max(normals)}, {torch.min(normals)}\n")
 
         if hasattr(camera, "metadata"):
             if camera.metadata is not None and "cam_idx" in camera.metadata:
@@ -648,6 +685,7 @@ class DNSplatterModel(SplatfactoModel):
             "normal": normals_im,
             "accumulation": alpha.squeeze(0),
             "background": background,
+            "normal_touch": normal_touch
         }
 
     def get_loss_dict(
@@ -793,6 +831,18 @@ class DNSplatterModel(SplatfactoModel):
                     ).mean()
             if self.config.use_normal_tv_loss:
                 normal_loss += self.tv_loss(pred_normal)
+        
+        # per-gaussian normal error
+        if self.add_mask is not None:
+            normal_touch = outputs["normal_touch"]
+            touch_patches_normals = torch.empty((0,3)).to(self.device)
+            for touch_patch in self.kwargs["metadata"]['touch_patches']:
+                touch_patches_normals = torch.cat((touch_patches_normals, touch_patch["normals"].to(self.device)), dim=0)
+            assert normal_touch.shape == touch_patches_normals.shape
+            L2_touch = (normal_touch - touch_patches_normals) ** 2
+            CONSOLE.input(f"{L2_touch.shape}")
+            MSE_touch_loss = torch.mean(L2_touch)
+            CONSOLE.input(f"{MSE_touch_loss}")
 
         if self.config.two_d_gaussians:
             # loss to minimise gaussian scale corresponding to normal direction
@@ -1089,7 +1139,7 @@ class DNSplatterModel(SplatfactoModel):
                                 device=param_state["exp_avg"].device).repeat(*repeat_dims),
                 ],
                 dim=0,
-            )
+            )            
             param_state["exp_avg_sq"] = torch.cat(
                 [
                     param_state["exp_avg_sq"],
@@ -1146,11 +1196,11 @@ class DNSplatterModel(SplatfactoModel):
                     mask_x = (pts[:, 0] >= min_aabb[0]) & (pts[:, 0] <= max_aabb[0])
                     mask_y = (pts[:, 1] >= min_aabb[1]) & (pts[:, 1] <= max_aabb[1])
                     mask_z = (pts[:, 2] >= min_aabb[2]) & (pts[:, 2] <= max_aabb[2])
-                    mask = (mask_x & mask_y & mask_z).reshape((-1, 1)).to(self.device)
-                    aabb_mask &= mask
+                    aabb_mask &= (mask_x & mask_y & mask_z).reshape((-1, 1)).to(self.device)
                     
                     num_new_points += patch_pts.shape[0]
 
+                CONSOLE.log(f"There are {aabb_mask.sum()}/{pts.shape[0]} previous GS points within the aabb box of the touch patch")
                 # generate ideal gaussians point cloud at touch_patches_points
                 new_shs = torch.zeros((num_new_points, num_sh_bases(self.config.sh_degree), 3)).float().cuda()
                 if self.config.sh_degree > 0:
@@ -1177,29 +1227,30 @@ class DNSplatterModel(SplatfactoModel):
                 new_quats = matrix_to_quaternion(mat)
                 new_quats = torch.nn.Parameter(new_quats.detach()).to(self.device)
                 
-                # touch_patches_points = touch_patches_points.requires_grad_(False)
-                # new_opacities = new_opacities.requires_grad_(False)
-                # touch_patches_normals = touch_patches_normals.requires_grad_(False)
                 outs = {
                     "means": touch_patches_points,
+                    "opacities": new_opacities,
                     "features_dc": new_features_dc,
                     "features_rest": new_features_rest,
-                    "opacities": new_opacities,
+                    "normals": touch_patches_normals,
                     "scales": new_scales,
                     "quats": new_quats,
-                    "normals": touch_patches_normals
                 }
                 # append to the end
                 for name, param in self.gauss_params.items():
-                    CONSOLE.print(name, param.shape, outs[name].shape)
-                    self.gauss_params[name] = torch.nn.Parameter(
-                        torch.cat([param, outs[name].detach()], dim=0)
-                    )
-                # add_mask = torch.cat([
-                #     torch.zeros((pts.shape[0], 1), dtype=bool), 
-                #     torch.ones((touch_patches_points.shape[0], 1), dtype=bool)
-                # ])
-                self.add_in_all_optim(optimizers, touch_patches_points.shape[0], 1)
+                    if name in outs:
+                        CONSOLE.print(name, param.shape, outs[name].shape)
+                        self.gauss_params[name] = torch.nn.Parameter(
+                            torch.cat([param, outs[name]], dim=0)
+                        )
+                      
+                self.added_count = touch_patches_points.shape[0]  
+                self.add_mask = torch.cat([
+                    torch.zeros(pts.shape[0], dtype=bool), 
+                    torch.ones(self.added_count, dtype=bool)
+                ]).squeeze().to(device=pts.device)
+                
+                self.add_in_all_optim(optimizers, self.added_count, 1)
                 # reset these in refine_after manner
                 self.xys_grad_norm = None
                 self.vis_counts = None
@@ -1216,6 +1267,15 @@ class DNSplatterModel(SplatfactoModel):
                 [TrainingCallbackLocation.BEFORE_TRAIN_ITERATION], self.step_cb
             )
         )
+        # Training to add touch patch points to the model
+        cbs.append(
+            TrainingCallback(
+                [TrainingCallbackLocation.BEFORE_TRAIN_ITERATION],
+                self.add_touch_patch,
+                update_every_num_iters=self.config.add_touch_at,
+                args=[training_callback_attributes.optimizers],
+            )
+        )
         # The order of these matters
         cbs.append(
             TrainingCallback(
@@ -1227,15 +1287,6 @@ class DNSplatterModel(SplatfactoModel):
                 [TrainingCallbackLocation.AFTER_TRAIN_ITERATION],
                 self.refinement_after,
                 update_every_num_iters=self.config.refine_every,
-                args=[training_callback_attributes.optimizers],
-            )
-        )
-        # Training to add touch patch points to the model
-        cbs.append(
-            TrainingCallback(
-                [TrainingCallbackLocation.AFTER_TRAIN_ITERATION],
-                self.add_touch_patch,
-                update_every_num_iters=self.config.add_touch_at,
                 args=[training_callback_attributes.optimizers],
             )
         )
