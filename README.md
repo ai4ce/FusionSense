@@ -2,21 +2,10 @@
 Integrates the vision, touch, and common-sense information of foundational models, customized to the agent's perceptual needs.
 
 ## Installation
-For `dn-splatter`, see [Installation](https://github.com/maturk/dn-splatter?tab=readme-ov-file#installation)
+For `dn-splatter`, see [Installation](https://github.com/maturk/dn-splatter?tab=readme-ov-file#installation)   
 
-For `Grounded-SAM2-for-masking`, see [Installation](https://github.com/IDEA-Research/Grounded-SAM-2#installation)
-
-```bash
-pip install Grounded-SAM2-for-masking
-cd Grounded-SAM2-for-masking
-
-cd checkpoints
-bash download_ckpts.sh
-cd gdino_checkpoints
-bash download_ckpts.sh
-pip install -e .
-pip install --no-build-isolation -e grounding_dino
-```
+For `Grounded-SAM2-for-masking`, see [Installation](https://github.com/IDEA-Research/Grounded-SAM-2#installation)   
+**Suggest to set a new conda env**   
 
 ## Usage
 
@@ -32,6 +21,8 @@ pip install --no-build-isolation -e grounding_dino
     **Remember to set `transforms.json` in right format.**
 
 2. **Generate Mask_imgs by [Grounded_SAM_2](https://github.com/IDEA-Research/Grounded-SAM-2)**:   
+
+    **Switch your conda env first**  
 
     set your scene path and prompt text with the end of '.'   
     `eg. 'transparent white statue.'`   
