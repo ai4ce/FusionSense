@@ -111,7 +111,7 @@ class DNSplatterModelConfig(SplatfactoModelConfig):
     """Number of sdf samples to take"""
 
     ### Splatfacto configs ###
-    warmup_length: int = 100
+    warmup_length: int = 500
     """period of steps where refinement is turned off"""
     num_downscales: int = 0
     """at the beginning, resolution is 1/2^d, where d is this number"""
@@ -121,7 +121,7 @@ class DNSplatterModelConfig(SplatfactoModelConfig):
     """threshold of ratio of gaussian max to min scale before applying regularization
     loss from the PhysGaussian paper
     """
-    stop_split_at: int = 800
+    stop_split_at: int = 8000
     """stop splitting at this step"""
     camera_optimizer: CameraOptimizerConfig = field(
         default_factory=lambda: CameraOptimizerConfig(mode="off")
@@ -271,9 +271,9 @@ class DNSplatterModel(SplatfactoModel):
         if self.step <= self.config.warmup_length:
             return
         CONSOLE.log(f"[bold green]Refining at step {step}")
-        if step % 100 == 0:
-            print(self.means.shape)
-            input("...")
+        # if step % 100 == 0:
+        #     print(self.means.shape)
+        #     input("...")
         with torch.no_grad():
             # Offset all the opacity reset logic by refine_every so that we don't
             # save checkpoints right when the opacity is reset (saves every 2k)
@@ -547,6 +547,11 @@ class DNSplatterModel(SplatfactoModel):
             colors_crop = torch.sigmoid(colors_crop)
             sh_degree_to_use = None
 
+        # means_crop = means_crop.clone()
+        # means_crop[0:10] = means_crop[0:10].detach()
+        # # means_crop[0:10] = means_crop[0:10].detach()
+        # print(means_crop.shape)
+        # # input("Press Enter to continue...")
         render, alpha, info = rasterization(
             means=means_crop,
             quats=quats_crop / quats_crop.norm(dim=-1, keepdim=True),
