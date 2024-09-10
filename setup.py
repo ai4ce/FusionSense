@@ -12,7 +12,7 @@ setup(
         ('share/ament_index/resource_index/packages',
             ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
-        (os.path.join('share', package_name, 'fusion_sense_resources'), glob(os.path.join('fusion_sense_resources', '*'))),
+        (os.path.join('share', package_name, 'fusion_sense_resources'), glob(os.path.join('fusion_sense_resources', '**'))),
     ],
     install_requires=['setuptools'],
     zip_safe=True,
