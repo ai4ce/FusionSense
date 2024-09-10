@@ -79,23 +79,54 @@ def main():
 
     visual_publisher.publish(pose_array)
 
-    print(planning_client.camera_link)
+    print('Welcome to FusionSense!')
 
-    for waypoint in waypoints:
-        traj = planning_client.plan_to_pose(waypoint)
-        if traj is not None:
-            judge = input()
-            if judge == '':
-                planning_client.execute_plan(traj)
-                for i in range(10):
-                    TwistStamped_msg.header.stamp = visualization_node.get_clock().now().to_msg()
-                    touch_publisher.publish(TwistStamped_msg)
-            else:
-                print("Skip this waypoint")
-        else:
-            print("Failed to plan to waypoint")
-        # only proceed the for loop if I press enter. Use input() to wait for user input
-        a = input()
+    ######################################## Image Capturing ########################################
+    print('Do you want to start the automatic image capturing? [y/n]')
+    automatic_capture_flag = input()
+    if automatic_capture_flag.lower() == 'y':
+        print('You have selected automatic image capturing. The program will guide the robot to capture images automatically.')
+        pass
+    elif automatic_capture_flag.lower() == 'n':
+        print('You have selected manual image capturing. Please input the path to the image folder')
+        image_folder_path = input()
+    else:
+        print('Invalid input. Please start the program again.')
+        return
+    
+    ######################################## Initial GS Reconstruction ###############################
+    print('Performing initial Gaussian Splatting reconstruction...')
+
+    ######################################## Next-Best Touch Prediction ##############################
+    print('Do you want to use the model generated from the previous step for touch prediction? [y/n]')
+    touch_prediction_flag = input()
+    if touch_prediction_flag.lower() == 'y':
+        print('You have selected to use the model generated from the previous step for touch prediction.')   
+        pass
+    elif touch_prediction_flag.lower() == 'n':
+        print('You have selected to use a different model. Please input the path to the model')
+        model_path = input()
+    else:
+        print('Invalid input. Please start the program again.')
+        return
+
+    
+
+    # for waypoint in waypoints:
+    #     traj = planning_client.plan_to_pose(waypoint)
+    #     if traj is not None:
+    #         judge = input()
+    #         if judge == '':
+    #             planning_client.execute_plan(traj)
+    #             for i in range(10):
+    #                 TwistStamped_msg.header.stamp = visualization_node.get_clock().now().to_msg()
+    #                 touch_publisher.publish(TwistStamped_msg)
+    #         else:
+    #             print("Skip this waypoint")
+    #     else:
+    #         print("Failed to plan to waypoint")
+    #     # only proceed the for loop if I press enter. Use input() to wait for user input
+    #     a = input()
 
         
 

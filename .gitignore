@@ -1,0 +1,7 @@
+# Ignore txt files containing "api"
+*.txt
+!/*api*.txt
+
+# Ignore all saved models
+*.pth
+*.pt

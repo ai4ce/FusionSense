@@ -1,3 +1,5 @@
+import os
+from glob import glob
 from setuptools import find_packages, setup
 
 package_name = 'fusion_sense'
@@ -10,6 +12,7 @@ setup(
         ('share/ament_index/resource_index/packages',
             ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
+        (os.path.join('share', package_name, 'fusion_sense_resources'), glob(os.path.join('fusion_sense_resources', '*'))),
     ],
     install_requires=['setuptools'],
     zip_safe=True,
@@ -20,8 +23,8 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'touch = fusion_sense.touch:main',
-            'lmq = fusion_sense.lmq:main',
+            'pipeline = fusion_sense.pipeline:main',
+            'next_best_touch = fusion_sense.next_best_touch:main',
         ],
     },
 )
