@@ -121,7 +121,7 @@ class DNSplatterModelConfig(SplatfactoModelConfig):
     """threshold of ratio of gaussian max to min scale before applying regularization
     loss from the PhysGaussian paper
     """
-    stop_split_at: int = 2000
+    stop_split_at: int = 15000
     """stop splitting at this step"""
     camera_optimizer: CameraOptimizerConfig = field(
         default_factory=lambda: CameraOptimizerConfig(mode="off")
@@ -407,26 +407,6 @@ class DNSplatterModel(SplatfactoModel):
             if deleted_mask is not None:
                 self.remove_from_all_optim(optimizers, deleted_mask)
 
-            ## cull_gs_points that far to the object model
-            # if 'visual_hull' in self.kwargs["metadata"] and do_densification:
-            #     visual_hull = self.kwargs["metadata"]['visual_hull'].to(self.device)
-            #     center = visual_hull.mean(dim=0)
-            #     distances_to_center = torch.norm(self.means - center, dim=1)
-            #     r_threshold = 0.2 * self.kwargs["metadata"]['scale_factor']
-            #     close_mask = distances_to_center <= r_threshold
-            #     filtered_means = self.means[close_mask]
-            #     distances = torch.cdist(filtered_means, visual_hull)
-            #     min_distances = distances.min(dim=-1).values
-            #     filtered_hull_mask  = (min_distances > 0.005 * self.kwargs["metadata"]['scale_factor']) & (min_distances <= 0.05 * self.kwargs["metadata"]['scale_factor'])
-            #     # hull_mask = (min_distances > 0.02) & (min_distances <= 0.1)
-
-            #     hull_mask = torch.zeros(self.means.shape[0], dtype=torch.bool, device=self.device)
-            #     hull_mask[close_mask] = filtered_hull_mask
-            #     self.max_2Dsize = None
-            #     deleted_mask = self.cull_gaussians(hull_mask)
-            #     self.remove_from_all_optim(optimizers, deleted_mask)
-            #     del distances, min_distances, hull_mask, visual_hull
-
             if (
                 self.step < self.config.stop_split_at
                 and self.step % reset_interval == self.config.refine_every
@@ -577,11 +557,6 @@ class DNSplatterModel(SplatfactoModel):
             colors_crop = torch.sigmoid(colors_crop)
             sh_degree_to_use = None
 
-        # means_crop = means_crop.clone()
-        # means_crop[0:10] = means_crop[0:10].detach()
-        # # means_crop[0:10] = means_crop[0:10].detach()
-        # print(means_crop.shape)
-        # # input("Press Enter to continue...")
         render, alpha, info = rasterization(
             means=means_crop,
             quats=quats_crop / quats_crop.norm(dim=-1, keepdim=True),
@@ -1258,6 +1233,28 @@ class DNSplatterModel(SplatfactoModel):
         else:
             CONSOLE.print(f"[bold green] Skip adding touch patch at step {step}")
 
+    def hull_pruning(self, optimizers: Optimizers, step):
+        # use visual hull to pruning outlier gs points
+        if 'visual_hull' in self.kwargs["metadata"] and self.add_mask is None:
+            visual_hull = self.kwargs["metadata"]['visual_hull'].to(self.device)
+            center = visual_hull.mean(dim=0)
+            distances_to_center = torch.norm(self.means - center, dim=1)
+            r_threshold = 0.2 * self.kwargs["metadata"]['scale_factor']
+            close_mask = distances_to_center <= r_threshold
+            filtered_means = self.means[close_mask]
+            distances = torch.cdist(filtered_means, visual_hull)
+            min_distances = distances.min(dim=-1).values
+            filtered_hull_mask  = (min_distances > 0.005 * self.kwargs["metadata"]['scale_factor']) & (min_distances <= 0.05 * self.kwargs["metadata"]['scale_factor'])
+            # hull_mask = (min_distances > 0.02) & (min_distances <= 0.1)
+
+            hull_mask = torch.zeros(self.means.shape[0], dtype=torch.bool, device=self.device)
+            hull_mask[close_mask] = filtered_hull_mask
+            self.max_2Dsize = None
+            deleted_mask = self.cull_gaussians(hull_mask)
+            self.remove_from_all_optim(optimizers, deleted_mask)
+            del distances, min_distances, hull_mask, visual_hull
+
+
     def get_training_callbacks(
         self, training_callback_attributes: TrainingCallbackAttributes
     ) -> List[TrainingCallback]:
@@ -1286,6 +1283,15 @@ class DNSplatterModel(SplatfactoModel):
             TrainingCallback(
                 [TrainingCallbackLocation.AFTER_TRAIN_ITERATION],
                 self.refinement_after,
+                update_every_num_iters=self.config.refine_every,
+                args=[training_callback_attributes.optimizers],
+            )
+        )
+        # Hull pruning
+        cbs.append(
+            TrainingCallback(
+                [TrainingCallbackLocation.AFTER_TRAIN_ITERATION],
+                self.hull_pruning,
                 update_every_num_iters=self.config.refine_every,
                 args=[training_callback_attributes.optimizers],
             )
