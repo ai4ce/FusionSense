@@ -1234,6 +1234,9 @@ class DNSplatterModel(SplatfactoModel):
             CONSOLE.print(f"[bold green] Skip adding touch patch at step {step}")
 
     def hull_pruning(self, optimizers: Optimizers, step):
+        assert step == self.step
+        if self.step <= self.config.warmup_length:
+            return
         # use visual hull to pruning outlier gs points
         if 'visual_hull' in self.kwargs["metadata"] and self.add_mask is None:
             visual_hull = self.kwargs["metadata"]['visual_hull'].to(self.device)
