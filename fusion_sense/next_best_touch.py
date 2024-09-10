@@ -12,11 +12,11 @@ from pydantic import BaseModel
 
 from typing import Union
 
-from partslip.partslip_src.utils import normalize_pc
-from partslip.partslip_src.render_pc import render_pc
-from partslip.partslip_src.glip_inference import glip_inference, load_model
-from partslip.partslip_src.gen_superpoint import gen_superpoint
-from partslip.partslip_src.bbox2seg import bbox2seg
+from partslip.utils import normalize_pc
+from partslip.render_pc import render_pc
+from partslip.glip_inference import glip_inference, load_model
+from partslip.gen_superpoint import gen_superpoint
+from partslip.bbox2seg import bbox2seg
 
 from ament_index_python.packages import get_package_share_directory
 
@@ -49,7 +49,7 @@ class NextBestTouch:
         image_folder_path = os.path.join(self.folder_path, "images")
         images = glob.glob(os.path.join(image_folder_path, "*.png"))
 
-        mesh_path = os.path.join(self.partslip_folder, "meshes")
+        mesh_path = os.path.join(self.folder_path, "meshes")
         mesh = glob.glob(os.path.join(mesh_path, "*.obj"))[0]
         point_cloud_path = self.pointcloud_extraction(mesh)
 
@@ -104,9 +104,6 @@ class NextBestTouch:
 
         print('[2. Querying VLM model for part names...]')
 
-        # Path to your image
-        image_path = "/home/irving/Desktop/tactile_ws/src/PartSLIP/unnamed.png"
-
         # Getting the base64 string
         base64_image = self._encode_image(image_path)
 
@@ -140,8 +137,8 @@ class NextBestTouch:
         return response.classification, response.parts
 
     def partslip_infer(self, input_pc_file, part_names, save_dir="tmp"):
-        config ="GLIP/configs/glip_Swin_L.yaml"
-        weight_path = "models/glip_large_model.pth"
+        config = os.path.join(self.partslip_folder, "glip_Swin_L.yaml")
+        weight_path = os.path.join(self.partslip_folder, "glip_large_model.pth")
         
         print("[2. Loading GLIP model...]")
         glip_demo = load_model(config, weight_path)
