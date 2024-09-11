@@ -5,3 +5,6 @@
 # Ignore all saved models
 *.pth
 *.pt
+
+# Ignore all .so files
+*.so

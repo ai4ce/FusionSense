@@ -7,13 +7,14 @@
 import sys
 import numpy as np
 import os
+import ctypes
 from ament_index_python.packages import get_package_share_directory
 
 resource_folder = os.path.join(get_package_share_directory('fusion_sense'), 'fusion_sense_resources')
 partslip_folder = os.path.join(resource_folder, 'partslip')
 sys.path.append(partslip_folder)
 
-cur_dir = os.path.dirname(os.path.abspath(__file__))
+# cur_dir = os.path.dirname(os.path.abspath(__file__))
 # sys.path.append(cur_dir)
 # sys.path.append("%s/partition/cut-pursuit/build/src" % cur_dir.replace('src', ''))
 # #sys.path.append("%s/partition/ply_c" % cur_dir.replace('src', ''))
@@ -24,7 +25,7 @@ import libcp
 #import libply_c
 from graphs import *
 import open3d as o3d
-from utils import save_colored_pc
+from .utils import save_colored_pc
 from sklearn.neighbors import NearestNeighbors
 
 def merge_small_components(components, xyz, min_component_size=10):

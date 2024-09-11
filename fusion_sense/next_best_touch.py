@@ -12,11 +12,11 @@ from pydantic import BaseModel
 
 from typing import Union
 
-from partslip.utils import normalize_pc
-from partslip.render_pc import render_pc
-from partslip.glip_inference import glip_inference, load_model
-from partslip.gen_superpoint import gen_superpoint
-from partslip.bbox2seg import bbox2seg
+from .partslip.utils import normalize_pc
+from .partslip.render_pc import render_pc
+from .partslip.glip_inference import glip_inference, load_model
+from .partslip.gen_superpoint import gen_superpoint
+from .partslip.bbox2seg import bbox2seg
 
 from ament_index_python.packages import get_package_share_directory
 
@@ -31,26 +31,26 @@ class NextBestTouch:
     '''
     This class is responsible for the next best touch prediction
     '''
-    def __init__(self, folder_path):
+    def __init__(self, resource_folder):
         '''
         Args:
-            folder_path: str
+            resource_folder: str
                 Path to the fusion_sense_resource folder
         '''
-        self.folder_path = folder_path
-        self.partslip_folder = os.path.join(self.folder_path, "partslip")
-        api_path = os.path.join(self.folder_path, 'api_key.txt')
+        self.resource_folder = resource_folder
+        self.partslip_folder = os.path.join(self.resource_folder, "partslip")
+        api_path = os.path.join(self.resource_folder, 'api_key.txt')
         with open(api_path, 'r') as file:
             api_key = file.read()
 
         self.client = OpenAI(api_key=api_key)
 
     def next_best_touch_prediction(self):
-        image_folder_path = os.path.join(self.folder_path, "images")
-        images = glob.glob(os.path.join(image_folder_path, "*.png"))
+        image_resource_folder = os.path.join(self.resource_folder, "images")
+        images = glob.glob(os.path.join(image_resource_folder, "*.png"))
 
-        mesh_path = os.path.join(self.folder_path, "meshes")
-        mesh = glob.glob(os.path.join(mesh_path, "*.obj"))[0]
+        mesh_path = os.path.join(self.resource_folder, "meshes")
+        mesh = glob.glob(os.path.join(mesh_path, "*"))[0]
         point_cloud_path = self.pointcloud_extraction(mesh)
 
         for image in images:
@@ -93,7 +93,9 @@ class NextBestTouch:
             sampled_colors = np.ones_like(points) * [0, 0, 0]
 
         # Save the denser point cloud to a .ply file
-        output_ply_file = os.path.join(self.partslip_folder, 'pointcloud', Path(f'{self.object_name}.ply'))
+        self.pointcloud_folder = os.path.join(self.partslip_folder, 'pointcloud')
+        os.makedirs(self.pointcloud_folder, exist_ok=True)
+        output_ply_file = os.path.join(self.pointcloud_folder, Path(f'{self.object_name}.ply'))
         point_cloud = trimesh.points.PointCloud(points, sampled_colors)
         point_cloud.export(output_ply_file)
 
