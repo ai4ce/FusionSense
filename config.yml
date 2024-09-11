@@ -1,4 +1,4 @@
-name: nerfstudio
+name: fusionsense
 channels:
   - pytorch
   - nvidia
