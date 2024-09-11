@@ -867,7 +867,7 @@ class DNSplatterModel(SplatfactoModel):
 
         main_loss = (
             rgb_loss
-            + depth_loss
+            + depth_loss*0
             + self.config.normal_lambda * normal_loss
             + sparse_loss
             + self.config.sdf_loss_lambda * sdf_loss

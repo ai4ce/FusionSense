@@ -238,27 +238,34 @@ class NormalNerfstudio(Nerfstudio):
         You should check that depth_file_path is specified for every frame (or zero frames) in transforms.json.
         """
 
-        normal_filenames = self.get_normal_filepaths()
+        # set files in natsorted order
+        normal_filenames = self.get_normal_filepaths() 
+        sorted_filenames = natsorted(image_filenames)
+        indices = [image_filenames.index(path) for path in sorted_filenames]
+        image_filenames = [image_filenames[i] for i in indices]
+        depth_filenames = [depth_filenames[i] for i in indices]
+        poses = [poses[i] for i in indices]
+        mask_filenames = [mask_filenames[i] for i in indices] if mask_filenames else []
 
-        # has_split_files_spec = any(
-        #     f"{split}_filenames" in meta for split in ("train", "val", "test")
-        # )
-        # if f"{split}_filenames" in meta:
-        #     # Validate split first
-        #     split_filenames = set(
-        #         self._get_fname(Path(x), data_dir) for x in meta[f"{split}_filenames"]
-        #     )
-        #     unmatched_filenames = split_filenames.difference(image_filenames)
-        #     if unmatched_filenames:
-        #         raise RuntimeError(
-        #             f"Some filenames for split {split} were not found: {unmatched_filenames}."
-        #         )
+        has_split_files_spec = any(
+            f"{split}_filenames" in meta for split in ("train", "val", "test")
+        )
+        if f"{split}_filenames" in meta:
+            # Validate split first
+            split_filenames = set(
+                self._get_fname(Path(x), data_dir) for x in meta[f"{split}_filenames"]
+            )
+            unmatched_filenames = split_filenames.difference(image_filenames)
+            if unmatched_filenames:
+                raise RuntimeError(
+                    f"Some filenames for split {split} were not found: {unmatched_filenames}."
+                )
 
-        #     indices = [
-        #         i for i, path in enumerate(image_filenames) if path in split_filenames
-        #     ]
-        #     CONSOLE.log(f"[yellow] Dataset is overriding {split}_indices to {indices}")
-        #     indices = np.array(indices, dtype=np.int32)
+            indices = [
+                i for i, path in enumerate(image_filenames) if path in split_filenames
+            ]
+            CONSOLE.log(f"[yellow] Dataset is overriding {split}_indices to {indices}")
+            indices = np.array(indices, dtype=np.int32)
         # elif has_split_files_spec:
         #     raise RuntimeError(
         #         f"The dataset's list of filenames for split {split} is missing."
@@ -289,10 +296,6 @@ class NormalNerfstudio(Nerfstudio):
         #         indices = i_eval
         #     else:
         #         raise ValueError(f"Unknown dataparser split {split}")
-            
-        sorted_filenames = natsorted(image_filenames)
-        indices = [image_filenames.index(path) for path in sorted_filenames]        
-        indices = np.array(indices, dtype=np.int32)
 
         if "orientation_override" in meta:
             orientation_method = meta["orientation_override"]
@@ -327,14 +330,11 @@ class NormalNerfstudio(Nerfstudio):
         depth_filenames = (
             [depth_filenames[i] for i in indices] if len(depth_filenames) > 0 else []
         )
-
-        # normal_filenames = (
-        #     [Path(normal_filenames[i]) for i in indices]
-        #     if len(normal_filenames) > 0
-        #     else []
-        # )
-        normal_filenames = [Path(filename) for filename in normal_filenames] if normal_filenames else []
-
+        normal_filenames = (
+            [Path(normal_filenames[i]) for i in indices]
+            if len(normal_filenames) > 0
+            else []
+        )
 
         stems = [name.stem for name in image_filenames]
         for name in normal_filenames:
