@@ -32,16 +32,18 @@ def npy_to_ply(npy_file, ply_file):
 
 if __name__ == "__main__":
     # Example usage
-    npy_file = "datasets/BlackBunny/tactile/normal/0.npy"  # Replace with your .npy file path
-    normal_data = np.load(npy_file)
-    print(normal_data)
-    print(normal_data.shape)
-    print(np.max(normal_data))
-    # png_file = "datasets/BlackBunny/tactile/image/0.png"
-    # pic = cv2.imread(png_file, cv2.IMREAD_UNCHANGED)
-    # print(pic/255.)
-    # print(np.max(pic)/255.)
-    
-    # ply_file = "datasets/touch-rabbit/tr_0.ply" # Replace with your desired .ply file path
-    
-    # npy_to_ply(npy_file, ply_file)
+    for i in range(30):
+        npy_file = f"datasets/touchgs/tactile/train/tr_{i}.npy"  # Replace with your .npy file path
+        
+        # normal_data = np.load(npy_file)
+        # print(normal_data)
+        # print(normal_data.shape)
+        # print(np.max(normal_data))
+        
+        # png_file = "datasets/BlackBunny/tactile/image/0.png"
+        # pic = cv2.imread(png_file, cv2.IMREAD_UNCHANGED)
+        # print(pic/255.)
+        # print(np.max(pic)/255.)
+        
+        ply_file = f"datasets/touchgs/tactile/patch/tr_{i}.ply" # Replace with your desired .ply file path
+        npy_to_ply(npy_file, ply_file)
