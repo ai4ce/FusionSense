@@ -827,24 +827,24 @@ class TSDFFusion(GSMeshExporter):
 
             visual_hull = np.array(visual_hull, dtype=np.float32)
 
-            from scipy.spatial.distance import cdist
-            distances = cdist(vertices, visual_hull)
-            min_distances = np.min(distances, axis=1)
-            hull_mask = min_distances < 0.01 * scale_factor
-            height_mask = vertices[:, 2] > np.min(visual_hull[:, 2]) + 0.01
-            hull_mask = hull_mask & height_mask
-            filtered_vertices = vertices[hull_mask]
+            # from scipy.spatial.distance import cdist
+            # distances = cdist(vertices, visual_hull)
+            # min_distances = np.min(distances, axis=1)
+            # hull_mask = min_distances < 0.01 * scale_factor
+            # height_mask = vertices[:, 2] > np.min(visual_hull[:, 2]) + 0.01
+            # hull_mask = hull_mask & height_mask
+            # filtered_vertices = vertices[hull_mask]
 
-            original_to_new_indices = -np.ones(vertices.shape[0], dtype=int)
-            original_to_new_indices[hull_mask] = np.arange(filtered_vertices.shape[0])
-            filtered_faces = original_to_new_indices[faces]
-            valid_faces_mask = np.all(filtered_faces != -1, axis=1)
+            # original_to_new_indices = -np.ones(vertices.shape[0], dtype=int)
+            # original_to_new_indices[hull_mask] = np.arange(filtered_vertices.shape[0])
+            # filtered_faces = original_to_new_indices[faces]
+            # valid_faces_mask = np.all(filtered_faces != -1, axis=1)
             
-            vertices = filtered_vertices
-            faces = filtered_faces[valid_faces_mask]
+            # vertices = filtered_vertices
+            # faces = filtered_faces[valid_faces_mask]
 
-            # transform vertices back to original scale
-            vertices = (vertices/scale_factor - transform_matrix[:3, 3].T) @ transform_matrix[:3, :3]
+            # # transform vertices back to original scale
+            # vertices = (vertices/scale_factor - transform_matrix[:3, 3].T) @ transform_matrix[:3, :3]
 
 
             mesh = o3d.geometry.TriangleMesh()
