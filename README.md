@@ -1,21 +1,35 @@
 # FusionSense
 Integrates the vision, touch, and common-sense information of foundational models, customized to the agent's perceptual needs.
 
+## Installation
+For `dn-splatter`, see [Installation](https://github.com/maturk/dn-splatter?tab=readme-ov-file#installation)   
+
+For `Grounded-SAM2-for-masking`, see [Installation](https://github.com/IDEA-Research/Grounded-SAM-2#installation)   
+**Suggest to set a new conda env**   
+
 ## Usage
 
 1. **Select frames**:  
 
     Run `delete.py` to select frames you want, or manually select, and you will get a folder of selected frames and transforms.json.  
 
+    ```bash
+    python select_imgs.py --path datasets/{PATH}
+    ```
+    Select frames you want, set your selected images in **train.txt**.
+
     **Remember to set `transforms.json` in right format.**
 
 2. **Generate Mask_imgs by [Grounded_SAM_2](https://github.com/IDEA-Research/Grounded-SAM-2)**:   
 
+    **Switch your conda env first**  
+
     set your scene path and prompt text with the end of '.'   
     `eg. 'transparent white statue.'`   
 
-    ```python   
-    python grounded_sam2_hf_model_imgs_MaskExtract.py   
+    ```bash   
+    cd Grounded-SAM2-for-masking
+    python grounded_sam2_hf_model_imgs_MaskExtract.py  --path {ABSOLUTE_PATH}
     ```   
     run the script to extract masks.   
 
@@ -66,7 +80,7 @@ Integrates the vision, touch, and common-sense information of foundational model
 
     To use initial pts, set `"ply_file_path": "merged_pcd.ply"`     
 
-    To use Visual Hull prune supervised method, set `"object_pc_path": "object.ply"`    
+    To use Visual Hull prune supervised method, set `"object_pc_path": "foreground_pcd.ply"`    
 
 8. **Train**:
 
