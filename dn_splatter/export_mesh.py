@@ -121,12 +121,14 @@ class GaussiansToPoisson(GSMeshExporter):
     """Threshold based on STD of the average distances across the point cloud to remove outliers."""
     poisson_depth: int = 9
     """Poisson Octree max depth, higher values increase mesh detail"""
+    
+    use_visual_hull: Optional[int] = None
+    """Use visual hull mask to cull GS points for """
 
     def main(self):
         if not self.output_dir.exists():
             self.output_dir.mkdir(parents=True)
-
-        _, pipeline, _, _ = eval_setup(self.load_config)
+        config, pipeline, checkpoint_path, step = eval_setup(self.load_config)
 
         assert isinstance(pipeline.model, SplatfactoModel)
 
@@ -142,6 +144,7 @@ class GaussiansToPoisson(GSMeshExporter):
 
             assert positions.shape[0] == normals.shape[0]  # type: ignore
 
+            """crop our datasets using mask"""
             if self.use_masks:
                 outs = pipeline.datamanager.dataparser.get_dataparser_outputs(  # type: ignore
                     split="train"
@@ -236,6 +239,9 @@ class GaussiansToPoisson(GSMeshExporter):
                 )
                 colors = torch.cat([colors, extra_colors.cpu()], dim=0)
 
+            if self.use_visual_hull is not None:
+                pass
+            
             positions = positions.cpu().numpy()
             normals = normals.cpu().numpy()
             colors = colors.cpu().numpy()
@@ -886,8 +892,9 @@ def entrypoint():
 
 
 if __name__ == "__main__":
+    # config, pipeline, checkpoint_path, step = eval_setup(Path("outputs/unnamed/dn-splatter/2024-09-10_172140/config.yml"))
     # tyro.cli(GaussiansToPoisson).main()
-    tyro.cli(DepthAndNormalMapsPoisson).main()
-    # tyro.cli(LevelSetExtractor).main()
+    # tyro.cli(DepthAndNormalMapsPoisson).main()
+    tyro.cli(LevelSetExtractor).main()
     # tyro.cli(MarchingCubesMesh).main()
     # tyro.cli(TSDFFusion).main()

@@ -132,6 +132,7 @@ class DNSplatterModelConfig(SplatfactoModelConfig):
 
     ### touch configs, better do this after densification? ###
     add_touch_at: int = 1000
+    touch_normal_loss_lambda = 1.
 
 class DNSplatterModel(SplatfactoModel):
     """Depth + Normal splatter"""
@@ -639,14 +640,11 @@ class DNSplatterModel(SplatfactoModel):
                 self.num_tiles_hit[0, ...],
                 normals,
                 torch.sigmoid(opacities_crop),
-                H,
-                W,
-                BLOCK_WIDTH,
+                H,W,BLOCK_WIDTH,
             )
             # convert normals from [-1,1] to [0,1]
             normals_im = normals_im / normals_im.norm(dim=-1, keepdim=True)
             normals_im = (normals_im + 1) / 2
-        
             # CONSOLE.input(f"Normal: {normals.shape}, {torch.max(normals)}, {torch.min(normals)}\n")
 
         if hasattr(camera, "metadata"):
@@ -806,9 +804,9 @@ class DNSplatterModel(SplatfactoModel):
                     ).mean()
             if self.config.use_normal_tv_loss:
                 normal_loss += self.tv_loss(pred_normal)
-
+        
+        # Loss to minimize gaussian scale corresponding to normal direction
         if self.config.two_d_gaussians:
-            # loss to minimise gaussian scale corresponding to normal direction
             normal_loss += torch.min(torch.exp(self.scales), dim=1, keepdim=True)[0].mean()
 
         sparse_loss = 0
@@ -875,7 +873,7 @@ class DNSplatterModel(SplatfactoModel):
             + self.config.sdf_loss_lambda * sdf_loss
         )
         
-        # MSE_touch_normal_loss: per-gaussian normal error 
+        # Add MSE_touch_normal_loss: per-gaussian normal error 
         if self.add_mask is not None:
             normal_touch = outputs["normal_touch"]
             touch_patches_normals = torch.empty((0,3)).to(self.device)
@@ -885,8 +883,7 @@ class DNSplatterModel(SplatfactoModel):
             L2_touch_normal_loss = (normal_touch - touch_patches_normals) ** 2
             # CONSOLE.input(f"{L2_touch.shape}")
             MSE_touch_normal_loss = torch.mean(L2_touch_normal_loss)
-            touch_normal_loss_lambda = 1.
-            main_loss += MSE_touch_normal_loss * touch_normal_loss_lambda
+            main_loss += MSE_touch_normal_loss * self.config.touch_normal_loss_lambda
 
         # save rgb per 100 step
         if self.step % 100 == 0:
@@ -1256,8 +1253,8 @@ class DNSplatterModel(SplatfactoModel):
             self.max_2Dsize = None
             deleted_mask = self.cull_gaussians(hull_mask)
             self.remove_from_all_optim(optimizers, deleted_mask)
+            self.hull_mask = hull_mask
             del distances, min_distances, hull_mask, visual_hull
-
 
     def get_training_callbacks(
         self, training_callback_attributes: TrainingCallbackAttributes
@@ -1845,6 +1842,37 @@ class DNSplatterModel(SplatfactoModel):
         density_grad = -torch.nn.functional.normalize(density_grad, dim=-1)
         return density_grad
 
+    @torch.no_grad()
+    def export_poisson_mesh(self):
+        positions = self.means
+        normals = self.normals
+        colors = torch.cat((self.features_dc[:, None, :], self.features_rest), dim=1)
+        
+        if (self.hull_mask):
+            positions = positions[self.hull_mask]
+            normals = normals[self.hull_mask]
+            colors = colors[self.hull_mask]
+        
+        return {
+            "positions": positions,
+            "normals": normals, 
+            "colors": colors
+        }
+        
+        # CONSOLE.print("Computing Mesh... this may take a while.")
+        # mesh, densities = o3d.geometry.TriangleMesh.create_from_point_cloud_poisson(
+        #     pcd, depth=9
+        # )
+        # CONSOLE.print("Saving Mesh...")
+        # o3d.io.write_triangle_mesh(
+        #     str(self.output_dir / "GaussiansToPoisson_poisson_mesh_culled.ply"), mesh
+        # )
+        # o3d.io.write_point_cloud(
+        #     str(self.output_dir / "GaussiansToPoisson_pcd_culled.ply"), pcd
+        # )
+        # CONSOLE.print(
+        #     f"[bold green]:white_check_mark: Saving Mesh to {self.output_dir / 'GaussiansToPoisson_poisson_mesh.ply'}"
+        # )
 
 def random_quat_tensor(N, **kwargs):
     u = torch.rand(N, **kwargs)

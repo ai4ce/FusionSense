@@ -235,9 +235,7 @@ class GDataset(InputDataset):
 
             if self.transform is not None:
                 h, w, _ = normal_map.shape
-                normal_map = self.transform[:3, :3] @ normal_map.reshape(-1, 3).permute(
-                    1, 0
-                )
+                normal_map = self.transform[:3, :3] @ normal_map.reshape(-1, 3).permute(1, 0)
                 normal_map = normal_map.permute(1, 0).reshape(h, w, 3)
 
         if self._dataparser_outputs.mask_filenames is not None:
