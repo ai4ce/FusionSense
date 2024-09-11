@@ -127,6 +127,10 @@ For `Grounded-SAM2-for-masking`, see [Installation](https://github.com/IDEA-Rese
                         --load-pcd-normals True --load-3D-points True  --normal-format opencv
     ```
 
+    To prepare touch-gs dataset:
+    ```bash
+        cd datasets/touchgs; python gs_to_ours_script.py; cd ../..
+    ```
 9. **Mesh Extraction**:
     ```python
     gs-mesh {dn, tsdf, sugar-coarse, gaussians, marching} --load-config [PATH] --output-dir [PATH]
