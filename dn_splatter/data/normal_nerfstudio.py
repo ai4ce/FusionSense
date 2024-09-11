@@ -32,6 +32,7 @@ from nerfstudio.utils.rich_utils import CONSOLE
 
 MAX_AUTO_RESOLUTION = 1600
 
+# apply a homogenous transformation, then scale
 def mut_and_scale(points3D, transform_matrix, scale_factor):
     points3D = (
         torch.cat(
@@ -63,6 +64,8 @@ class NormalNerfstudioConfig(NerfstudioDataParserConfig):
 
     load_touches: bool = False
     """Set to true to load normal maps"""
+    # gel_scale_factor = 6.34e-5 # distance between gel pixels
+    gel_scale_factor = 1e-3 # approximate distance between gel pixels
 
     orientation_method: Literal['pca', 'up', 'vertical', 'none'] = 'none'
     center_method: Literal['poses', 'focus', 'none'] = 'none'
@@ -80,9 +83,7 @@ class NormalNerfstudio(Nerfstudio):
         # return glob.glob(f"{self.normal_save_dir}/*.png")
         return natsorted(glob.glob(f"{self.normal_save_dir}/*.png"))
     
-    """
-    touch filepath, which are stored in a 3d pcd
-    """
+    """touch filepath, stored in a 3d pcd"""
     def get_touch_filepaths(self):
         return natsorted(glob.glob(f"{self.touch_data_dir}/patch/*.pcd"))
 
@@ -301,7 +302,7 @@ class NormalNerfstudio(Nerfstudio):
             orientation_method = self.config.orientation_method
 
         poses = torch.from_numpy(np.array(poses).astype(np.float32))
-        # poses[:, :3, 1:3] *= -1     # FusionSense to nerfstudio formata
+        # poses[:, :3, 1:3] *= -1     # FusionSense to nerfstudio format, quote this out for Touch-GS
         poses, transform_matrix = camera_utils.auto_orient_and_center_poses(
             poses,
             method=orientation_method,
@@ -333,7 +334,7 @@ class NormalNerfstudio(Nerfstudio):
 
         stems = [name.stem for name in image_filenames]
         for name in normal_filenames:
-            assert name.stem in stems
+            assert name.stem in stems, name
 
         idx_tensor = torch.tensor(indices, dtype=torch.long)
         poses = poses[idx_tensor]
@@ -586,21 +587,37 @@ class NormalNerfstudio(Nerfstudio):
             metadata["touch_filenames"] = self.get_touch_filepaths()
             touch_patches = []
             for _, touchframe in zip(range(len(touchframes)), touchframes):
-                pcd = torch.from_numpy(np.asarray(o3d.io.read_point_cloud(str(self.config.data / touchframe["patch_path"])).points)).to(dtype=torch.float)
-                gel_scale_factor = 6.34e-5 # distance between gel pixels
-                tr = torch.tensor(touchframe["transformation_matrix"], dtype=pcd.dtype) # 4x4 homogenous
-                pcd *= gel_scale_factor
+                pts = o3d.io.read_point_cloud(str(self.config.data / touchframe["patch_path"])).points
+                pcd = torch.from_numpy(np.asarray(pts)).to(dtype=torch.float)
+                touch_center = torch.mean(pcd[:,0]), torch.mean(pcd[:,0])
+                tr = torch.tensor(touchframe["transform_matrix"], dtype=pcd.dtype) # 4x4 homogenous transform matrix
+                # pcd *= self.config.gel_scale_factor # our pcd data is index so need to multiply by the factor
                 pcd = mut_and_scale(pcd, tr[:3, :], 1.0)
                 pcd = mut_and_scale(pcd, transform_matrix, scale_factor)
                 # apply touch patch mask
-                mask = np.asarray(o3d.io.read_point_cloud(str(self.config.data / touchframe["mask_path"])).points)[:, 2] == 1
+                if (touchframe["mask_path"].endswith(".pcd")):
+                    mask = np.asarray(o3d.io.read_point_cloud(str(self.config.data / touchframe["mask_path"])).points)[:, 2] == 1
+                elif (touchframe["mask_path"].endswith(".npy")):
+                    mask = np.load(str(self.config.data / touchframe["mask_path"]))
+                else:
+                    raise KeyError("Unsupported extension for mask")
                 np_pts = pcd[mask]
                 # load normals as 3D normal vectors
-                pcd_normals = torch.from_numpy(np.load(self.config.data / Path(touchframe["normal_path"]))).reshape(-1, 2)[mask] # mask MxNx2 file
-                x = pcd_normals[..., 0]
-                y = pcd_normals[..., 1]
-                z = np.sqrt(np.maximum(1.0 - x**2 - y**2, 0.0))
-                pcd_normal3D = torch.stack((x, y, z)).to(dtype=torch.float).T # (MxN)x2 
+                pcd_normals = torch.from_numpy(np.load(self.config.data / Path(touchframe["normal_path"])))
+                if (pcd_normals.shape[-1]==2):
+                    pcd_normals = pcd_normals.reshape(-1, 2)[mask] # MxNx2 file --> (MxN)x3
+                    x = pcd_normals[..., 0]
+                    y = pcd_normals[..., 1]
+                    z = -np.sqrt(np.maximum(1.0 - x**2 - y**2, 0.0))
+                elif (pcd_normals.shape[-1]==3):
+                    pcd_normals = pcd_normals.reshape(-1, 3)[mask] # MxNx2 file --> (MxN)x3
+                    x = pcd_normals[..., 0]
+                    y = pcd_normals[..., 1]
+                    z = pcd_normals[..., 2]
+                else:
+                    raise KeyError()
+                pcd_normal3D = torch.stack((x, y, z)).to(dtype=torch.float32).T
+                # apply transformation
                 pcd_normal3D = mut_and_scale(pcd_normal3D, tr[:3, :], 1.0)
                 assert pcd_normal3D.dtype == np_pts.dtype == tr.dtype
                 touch_patch = {
@@ -608,11 +625,11 @@ class NormalNerfstudio(Nerfstudio):
                     "points_rgb": torch.ones_like(np_pts, dtype=pcd.dtype) * 255., # init touch points to be white
                     "normals": pcd_normal3D,
                     "transformation_matrix": tr,
-                    "gel_scale_factor": gel_scale_factor
                 }
                 touch_patches.append(touch_patch)
                 ## add to array of patches
             metadata.update({"touch_patches": touch_patches})
+            metadata.update({"gel_scale_factor": self.config.gel_scale_factor})
             # CONSOLE.log("[bold red] Warning: no touch patches were loaded, check your touch file path and params")
 
         scale_factor_dict = {"scale_factor": scale_factor}

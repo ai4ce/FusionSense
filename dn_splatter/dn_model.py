@@ -504,8 +504,8 @@ class DNSplatterModel(SplatfactoModel):
                     int(camera.height.item()),
                     self.background_color,
                 )
-            CONSOLE.log(self.crop_box)
-            input("...")
+            # CONSOLE.log(self.crop_box)
+            # input("...")
         else:
             crop_ids = None
             
@@ -806,24 +806,10 @@ class DNSplatterModel(SplatfactoModel):
                     ).mean()
             if self.config.use_normal_tv_loss:
                 normal_loss += self.tv_loss(pred_normal)
-        
-        # per-gaussian normal error
-        if self.add_mask is not None:
-            normal_touch = outputs["normal_touch"]
-            touch_patches_normals = torch.empty((0,3)).to(self.device)
-            for touch_patch in self.kwargs["metadata"]['touch_patches']:
-                touch_patches_normals = torch.cat((touch_patches_normals, touch_patch["normals"].to(self.device)), dim=0)
-            assert normal_touch.shape == touch_patches_normals.shape
-            L2_touch = (normal_touch - touch_patches_normals) ** 2
-            CONSOLE.input(f"{L2_touch.shape}")
-            MSE_touch_loss = torch.mean(L2_touch)
-            CONSOLE.input(f"{MSE_touch_loss}")
 
         if self.config.two_d_gaussians:
             # loss to minimise gaussian scale corresponding to normal direction
-            normal_loss += torch.min(torch.exp(self.scales), dim=1, keepdim=True)[
-                0
-            ].mean()
+            normal_loss += torch.min(torch.exp(self.scales), dim=1, keepdim=True)[0].mean()
 
         sparse_loss = 0
         if (
@@ -888,7 +874,21 @@ class DNSplatterModel(SplatfactoModel):
             + sparse_loss
             + self.config.sdf_loss_lambda * sdf_loss
         )
+        
+        # MSE_touch_normal_loss: per-gaussian normal error 
+        if self.add_mask is not None:
+            normal_touch = outputs["normal_touch"]
+            touch_patches_normals = torch.empty((0,3)).to(self.device)
+            for touch_patch in self.kwargs["metadata"]['touch_patches']:
+                touch_patches_normals = torch.cat((touch_patches_normals, touch_patch["normals"].to(self.device)), dim=0)
+            assert normal_touch.shape == touch_patches_normals.shape
+            L2_touch_normal_loss = (normal_touch - touch_patches_normals) ** 2
+            # CONSOLE.input(f"{L2_touch.shape}")
+            MSE_touch_normal_loss = torch.mean(L2_touch_normal_loss)
+            touch_normal_loss_lambda = 1.
+            main_loss += MSE_touch_normal_loss * touch_normal_loss_lambda
 
+        # save rgb per 100 step
         if self.step % 100 == 0:
             sensor_depth_gt_color, depth_out_color = depth_to_colormap(sensor_depth_gt, depth_out)
             # depth_out_color = depth_to_colormap(depth_out)
@@ -1188,9 +1188,9 @@ class DNSplatterModel(SplatfactoModel):
                 # opacity of touch GS should be 1
                 new_opacities = torch.ones((num_new_points, 1), device=self.device, dtype=torch.float)
                 # The scale of the new gaussians are supposed to be small  
-                gel_scale_dist = torch.tensor(6.34e-5) # real world scale between should pass this in as a param
-                new_scales = torch.log(gel_scale_dist.repeat(num_new_points, 3))
-                new_scales[:, 2] = torch.log((gel_scale_dist / 3)) # 
+                gel_scale_factor = torch.tensor(self.kwargs["metadata"]["gel_scale_factor"]) # real world scale between should pass this in as a param
+                new_scales = torch.log(gel_scale_factor.repeat(num_new_points, 3))
+                new_scales[:, 2] = torch.log((gel_scale_factor / 3)) # 
                 new_scales = torch.nn.Parameter(new_scales.detach()).to(self.device)
                 new_quats = torch.zeros(len(touch_patches_normals), 4)
                 mat = rotate_vector_to_vector(
@@ -1230,6 +1230,7 @@ class DNSplatterModel(SplatfactoModel):
                 self.xys_grad_norm = None
                 self.vis_counts = None
                 self.max_2Dsize = None
+                CONSOLE.print(f"Added total {self.added_count} touch points to {self.means.shape[0]} GS points")
         else:
             CONSOLE.print(f"[bold green] Skip adding touch patch at step {step}")
 
