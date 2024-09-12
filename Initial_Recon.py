@@ -1,6 +1,7 @@
 import os
 import json
 import subprocess
+from pathlib import Path
 from dataclasses import dataclass
 from utils.imgs_selection import select_imgs, filter_transform_json
 from utils.VisualHull import VisualHull
@@ -10,12 +11,13 @@ from nerfstudio.utils.rich_utils import CONSOLE
 
 @dataclass
 class GSReconstructionConfig:
-    steps_per_save: int = 15000
-    iterations: int = 15001
+    output_dir: Path = Path("outputs")
+    steps_per_save: int = 1000
+    iterations: int = 1000
 
     use_depth_loss: bool = True
     normal_lambda: float = 0.5
-    sensor_depth_lambda: float = 0.0
+    sensor_depth_lambda: float = 0.0    
     use_depth_smooth_loss: bool = True
     use_binary_opacities: bool = True
     use_normal_loss: bool = True
@@ -31,12 +33,13 @@ class GSReconstructionConfig:
     model_type: str = "normal-nerfstudio"
     warmup_length: int = 500
     add_touch_at: int = 15000
-    stop_split_at: int = 15000
+    stop_split_at: int = 5000
 
 class Initial_Reconstruction:
-    def __init__(self, base_path):
+    def __init__(self, base_path, prompt_text):
         # 初始化通用路径
         self.base_path = base_path
+        self.prompt_text = prompt_text
         self.grounded_sam_path = "Grounded-SAM2-for-masking"
         with open(os.path.join(base_path, 'transforms.json'), 'r') as f:
             self.transforms = json.load(f)
@@ -45,10 +48,16 @@ class Initial_Reconstruction:
         select_imgs(self.base_path)
         filter_transform_json(self.base_path)
     
-    def generate_mask_images(self, absolute_path, prompt_text):
-        os.chdir(self.grounded_sam_path)  # 切换到 Grounded-SAM 目录
-        command = f"python grounded_sam2_hf_model_imgs_MaskExtract.py --path {absolute_path} --prompt '{prompt_text}'"
+    def generate_mask_images(self):
+        os.chdir(self.grounded_sam_path)
+        command = (
+            "source activate G-SAM-2 && "
+            f"python grounded_sam2_hf_model_imgs_MaskExtract.py --path {os.path.abspath(self.base_path)} --prompt {self.prompt_text} && "
+            "conda deactivate &&" 
+            "source activate fusionsense"
+        )
         subprocess.run(command, shell=True, check=True)
+        os.chdir('..')
         print("Mask images generated.")
     
     def generate_visual_hull(self, error):
@@ -85,13 +94,13 @@ class Initial_Reconstruction:
         with open(os.path.join(self.base_path, 'transforms.json'), 'w') as f:
             json.dump(transforms, f, indent=4)
     
-    def train_model(self):
-        configs = GSReconstructionConfig(data_path=self.base_path)
+    def train_model(self, configs: GSReconstructionConfig):
         if configs.data_path == None:
             assert False, "Please set data_path in GSReconstructionConfig"
         command = [
             "ns-train",
             "dn-splatter",
+            "--output-dir", str(configs.output_dir),
             "--steps-per-save", str(configs.steps_per_save),
             "--max_num_iterations", str(configs.iterations),
             "--pipeline.model.use-depth-loss", str(configs.use_depth_loss),
@@ -119,12 +128,20 @@ class Initial_Reconstruction:
         subprocess.run(command)
         print("Training complete.")
     
-    def extract_mesh(self, config_path, output_dir):
-        """Step 9: Extract mesh"""
+    def extract_mesh(self, config_path):
+        save_dir = os.path.join(self.base_path, "MESH")
+        command = [
+            "gs-mesh",
+            "tsdf",
+            "--load-config", str(config_path),
+            "--output-dir", str(save_dir),
+        ]
+        # gs-mesh tsdf --load-config outputs/blackbunny/001/config.yml --output-dir MESH/blackbunny
+
+        print(command)
         print("Extracting mesh...")
-        command = f"gs-mesh dn --load-config {config_path} --output-dir {output_dir}"
-        subprocess.run(command, shell=True, check=True)
-        print("Mesh extracted.")
+        subprocess.run(command)
+        print("Mesh extracted")
     
     def export_gsplats(self, config_path, output_dir):
         """Step 10: Export GSplat"""
@@ -135,25 +152,27 @@ class Initial_Reconstruction:
 
 # 示例用法
 if __name__ == "__main__":
-    init_recon = Initial_Reconstruction(base_path="datasets/blackbunny3")
-    CONSOLE.log("Step 1: Selecting Images for training...")
+    init_recon = Initial_Reconstruction(base_path="datasets/blackbunny3", prompt_text="black bunny statue")
+    configs = GSReconstructionConfig(output_dir=os.path.join(init_recon.base_path, "outputs"), data_path=init_recon.base_path)
+
+    # CONSOLE.log("Step 1: Selecting Images for training...")
     # init_recon.select_frames()
-    CONSOLE.log("Step 2: Generate Mask Images using Grounded SAM...")
-    # init_recon.generate_mask_images(absolute_path=f"{os.path.abspath(os.getcwd())}/datasets/blackbunny3", prompt_text="black bunny")
-    CONSOLE.log("Step 3: Generating visual hull...")
+    # CONSOLE.log("Step 2: Generate Mask Images using Grounded SAM...")
+    # init_recon.generate_mask_images()
+    # CONSOLE.log("Step 3: Generating visual hull...")
     # init_recon.generate_visual_hull(error=5)
-    CONSOLE.log("Step 4: Running metric3d depth for ")
+    # CONSOLE.log("Step 4: Running metric3d depth for ")
     # init_recon.run_metric3d_depth()
-    CONSOLE.log("Step 5: Initialize pcd")
+    # CONSOLE.log("Step 5: Initialize pcd")
     # init_recon.Init_pcd_generation()
-    CONSOLE.log("Step 6: Generate normals")
+    # CONSOLE.log("Step 6: Generate normals")
     # init_recon.generate_normals()
-    CONSOLE.log("Step 7: Setting transforms.json")
+    # CONSOLE.log("Step 7: Setting transforms.json")
     # init_recon.set_transforms_and_configs()
 
-    CONSOLE.log("Step 8: Initialize training")
-    configs = GSReconstructionConfig(data_path=init_recon.base_path)
-    init_recon.train_model(configs)
-
-    # init_recon.extract_mesh(config_path="outputs/unnamed/dn-splatter/2024-09-12_004037/nerfstudio_models", output_dir="exports/mesh/")
+    # CONSOLE.log("Step 8: Initialize training")
+    # init_recon.train_model(configs=configs)
+    CONSOLE.log("Step 9: Extracting mesh")
+    init_recon.extract_mesh(config_path=os.path.join(configs.output_dir, "config.yml"))
+    
     # init_recon.export_gsplats(config_path="outputs/unnamed/dn-splatter/2024-09-02_203650/config.yml", output_dir="exports/splat/")

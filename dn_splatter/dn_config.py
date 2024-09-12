@@ -10,8 +10,15 @@ from nerfstudio.engine.schedulers import ExponentialDecaySchedulerConfig
 from nerfstudio.engine.trainer import TrainerConfig
 from nerfstudio.plugins.types import MethodSpecification
 
+from pathlib import Path
+class FSTrainerConfig(TrainerConfig):
+    output_dir: Path = Path("outputs")
+    def get_base_dir(self):
+        return self.output_dir
+
 dn_splatter = MethodSpecification(
-    config=TrainerConfig(
+    config=FSTrainerConfig(
+        output_dir=Path("outputs"),
         method_name="dn-splatter",
         steps_per_eval_image=500,
         steps_per_eval_batch=500,
