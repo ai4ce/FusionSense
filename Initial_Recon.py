@@ -13,8 +13,8 @@ class GSReconstructionConfig:
     iterations: int = 15001
 
     use_depth_loss: bool = True
-    normal_lambda: float = 0.4
-    sensor_depth_lambda: float = 0.2
+    normal_lambda: float = 0.5
+    sensor_depth_lambda: float = 0.0
     use_depth_smooth_loss: bool = True
     use_binary_opacities: bool = True
     use_normal_loss: bool = True
@@ -138,7 +138,7 @@ if __name__ == "__main__":
     init_recon.Init_pcd_generation()
     init_recon.generate_normals()
     init_recon.set_transforms_and_configs()
-    
+
     # train the model
     init_recon.train_model()
 
