@@ -64,12 +64,15 @@ class NormalNerfstudioConfig(NerfstudioDataParserConfig):
 
     load_touches: bool = False
     """Set to true to load normal maps"""
+    grad_visualization: bool = False
+    """Set to true to enable gradient visualization"""
+
     # gel_scale_factor = 6.34e-5 # distance between gel pixels
     gel_scale_factor = 1e-3 # approximate distance between gel pixels
 
     orientation_method: Literal['pca', 'up', 'vertical', 'none'] = 'none'
     center_method: Literal['poses', 'focus', 'none'] = 'none'
-    auto_scale_poses: bool = False
+    auto_scale_poses: bool = True
     scene_scale = 5.0
 
 @dataclass
@@ -302,7 +305,7 @@ class NormalNerfstudio(Nerfstudio):
             orientation_method = self.config.orientation_method
 
         poses = torch.from_numpy(np.array(poses).astype(np.float32))
-        # poses[:, :3, 1:3] *= -1     # FusionSense to nerfstudio format, quote this out for Touch-GS
+        poses[:, :3, 1:3] *= -1     # FusionSense to nerfstudio format, quote this out for Touch-GS
         poses, transform_matrix = camera_utils.auto_orient_and_center_poses(
             poses,
             method=orientation_method,
@@ -634,6 +637,9 @@ class NormalNerfstudio(Nerfstudio):
 
         scale_factor_dict = {"scale_factor": scale_factor}
         metadata.update(scale_factor_dict)
+
+        grad_visualization_dict = {'grad_visualization': self.config.grad_visualization}
+        metadata.update(grad_visualization_dict)
 
         dataparser_outputs = DataparserOutputs(
             image_filenames=image_filenames,

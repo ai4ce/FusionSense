@@ -9,8 +9,8 @@ from utils.generate_pcd import Init_pcd_generate
 
 @dataclass
 class GSReconstructionConfig:
-    steps_per_save: int = 30000
-    iterations: int = 30001
+    steps_per_save: int = 15000
+    iterations: int = 15001
 
     use_depth_loss: bool = True
     normal_lambda: float = 0.4
@@ -82,7 +82,8 @@ class Initial_Reconstruction:
         with open(os.path.join(self.base_path, 'transforms.json'), 'w') as f:
             json.dump(transforms, f, indent=4)
     
-    def train_model(self, configs):
+    def train_model(self):
+        configs = GSReconstructionConfig(data_path=self.base_path)
         if configs.data_path == None:
             assert False, "Please set data_path in GSReconstructionConfig"
         command = [
@@ -137,9 +138,9 @@ if __name__ == "__main__":
     init_recon.Init_pcd_generation()
     init_recon.generate_normals()
     init_recon.set_transforms_and_configs()
-
-    configs = GSReconstructionConfig(data_path=init_recon.base_path)
-    init_recon.train_model(configs)
+    
+    # train the model
+    init_recon.train_model()
 
     # init_recon.extract_mesh(config_path="path/to/config.yml", output_dir="path/to/output")
     # init_recon.export_gsplats(config_path="outputs/unnamed/dn-splatter/2024-09-02_203650/config.yml", output_dir="exports/splat/")
