@@ -2,10 +2,68 @@
 Integrates the vision, touch, and common-sense information of foundational models, customized to the agent's perceptual needs.
 
 ## Installation
-For `dn-splatter`, see [Installation](https://github.com/maturk/dn-splatter?tab=readme-ov-file#installation)   
 
-For `Grounded-SAM2-for-masking`, see [Installation](https://github.com/IDEA-Research/Grounded-SAM-2#installation)   
-**Suggest to set a new conda env**   
+### Step 1: Install dependencies and Nerfstudio
+
+```sh
+git clone --recursive https://github.com/ai4ce/FusionSense.git
+cd FusionSense
+conda env create -f config.yml
+conda activate fusionsense
+```
+
+Install compatible **pytorch** and **cuda-toolkit** version:
+
+```sh
+pip install torch==2.1.2+cu118 torchvision==0.16.2+cu118 --extra-index-url https://download.pytorch.org/whl/cu118
+conda install -c "nvidia/label/cuda-11.8.0" cuda-toolkit
+```
+
+Install **tinycudann**:
+
+```sh
+pip install ninja git+https://github.com/NVlabs/tiny-cuda-nn/#subdirectory=bindings/torch
+```
+
+### Step 2: Build Fusionsense
+
+```sh
+pip install -e .
+```
+
+### Step 3: Install and Run Grounded SAM (Need to switch virtual env)
+
+We use Grounded-SAM2 for segmenting the foreground and background. For each 
+
+```sh
+cd Grounded-SAM2-for-masking
+cd checkpoints
+bash download_ckpts.sh
+cd ../gdino_checkpoints
+bash download_ckpts.sh
+```
+
+We recommend starting a separate Conda environment for Grounded-SAM2, since Grounded-SAM2 requires cuda=12.1
+
+```sh
+conda create -n G-SAM-2
+conda activate G-SAM-2
+conda install pip 
+conda install opencv supervision transformers
+pip install torch torchvision torchaudio
+# select cuda version 12.1
+export CUDA_HOME=/path/to/cuda-12.1/
+# install Segment Anything 2
+pip install -e . 
+# install Grounding DINO
+pip install --no-build-isolation -e grounding_dino
+```
+
+For further installation problems:
+
+- For `dn-splatter`, see [Installation](https://github.com/maturk/dn-splatter?tab=readme-ov-file#installation)   
+
+- For `Grounded-SAM2-for-masking`, see [Installation](https://github.com/IDEA-Research/Grounded-SAM-2#installation)
 
 ## Usage
 
@@ -29,7 +87,7 @@ For `Grounded-SAM2-for-masking`, see [Installation](https://github.com/IDEA-Rese
 
     ```bash   
     cd Grounded-SAM2-for-masking
-    python grounded_sam2_hf_model_imgs_MaskExtract.py  --path {ABSOLUTE_PATH}
+    python grounded_sam2_hf_model_imgs_MaskExtract.py  --path {ABSOLUTE_PATH} --text {TEXT_PROMPT_FOR_TARGET_OBJ}
     ```   
     run the script to extract masks.   
 
@@ -132,12 +190,12 @@ For `Grounded-SAM2-for-masking`, see [Installation](https://github.com/IDEA-Rese
         cd datasets/touchgs; python gs_to_ours_script.py; cd ../..
     ```
 9. **Mesh Extraction**:
-    ```python
+    ```sh
     gs-mesh {dn, tsdf, sugar-coarse, gaussians, marching} --load-config [PATH] --output-dir [PATH]
     ```
 
 10. **Export GSplat**:
-    ```bash
+    ```sh
     ns-export gaussian-splat --load-config outputs/unnamed/dn-splatter/2024-09-02_203650/config.yml --output-dir exports/splat/ 
     ```
 
@@ -168,4 +226,3 @@ tr-rabbit/
 ├── object.ply
 └── merged_pcd.ply
 ```
-

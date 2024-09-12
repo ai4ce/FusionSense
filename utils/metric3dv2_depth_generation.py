@@ -117,7 +117,7 @@ class VisualPipeline:
                 img_np = cv2.cvtColor(img_np, cv2.COLOR_BGRA2BGR)
             self.images[i] = Image.fromarray(img_np)
 
-            #### ajust input size to fit pretrained model
+            #### adjust input size to fit pretrained model
             # keep ratio resize
             intrinsic = self.intrinsics
             rgb_origin = img_np
