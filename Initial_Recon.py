@@ -13,12 +13,13 @@ from nerfstudio.utils.rich_utils import CONSOLE
 @dataclass
 class GSReconstructionConfig:
     output_dir: Path = Path("outputs")
-    steps_per_save: int = 5000
-    iterations: int = 5000
+    steps_per_save: int = 15000
+    iterations: int = 30000
+    stop_split_at: int = 15000
 
     use_depth_loss: bool = True
-    normal_lambda: float = 0.5
-    sensor_depth_lambda: float = 0.1    
+    normal_lambda: float = 0.4
+    sensor_depth_lambda: float = 0.2
     use_depth_smooth_loss: bool = True
     use_binary_opacities: bool = True
     use_normal_loss: bool = True
@@ -34,7 +35,6 @@ class GSReconstructionConfig:
     model_type: str = "normal-nerfstudio"
     warmup_length: int = 500
     add_touch_at: int = 15000
-    stop_split_at: int = 4000
 
 class Initial_Reconstruction:
     def __init__(self, data_name, prompt_text='Near Object'):
@@ -193,7 +193,15 @@ class Initial_Reconstruction:
         print("Rendering evaluated.")
 
 if __name__ == "__main__":
-    init_recon = Initial_Reconstruction(data_name="blackbunny3", prompt_text="black bunny statue")
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--data_name", type=str, default="blackbunny3")
+    parser.add_argument("--prompt_text", type=str, default="black bunny statue")
+    args = parser.parse_args()
+
+    data_name = args.data_name
+    prompt_text = args.prompt_text
+    init_recon = Initial_Reconstruction(data_name, prompt_text)
     configs = GSReconstructionConfig(output_dir=init_recon.output_dir, data_path=init_recon.base_path)
 
     CONSOLE.log("Step 1: Selecting Images for training...")
