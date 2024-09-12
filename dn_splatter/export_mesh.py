@@ -13,6 +13,7 @@ import tyro
 from tqdm import tqdm
 from typing_extensions import Annotated
 
+from dn_splatter.utils.cluster_high_grad_gs import dbscan_cluster_centers
 from dn_splatter.utils.camera_utils import (
     get_colored_points_from_depth,
     get_means3d_backproj,
@@ -785,9 +786,9 @@ class TSDFFusion(GSMeshExporter):
     Backproject depths and run TSDF fusion
     """
 
-    voxel_size: float = 0.02
+    voxel_size: float = 0.004
     """tsdf voxel size"""
-    sdf_truc: float = 0.08
+    sdf_truc: float = 0.02
     """TSDF truncation"""
     total_points: int = 2_000_000
     """Total target surface samples"""
@@ -855,16 +856,17 @@ class TSDFFusion(GSMeshExporter):
                     mask=indices,
                 )
                 # xyzs = xyzs[mask.view(-1,1)[...,0]]
-                # xyzs = xyzs.cpu()
-                # rgbs = rgbs.cpu()
-                # visual_hull = np.array(visual_hull, dtype=np.float32)
-                # distances = cdist(xyzs, visual_hull)
-                # min_distances = np.min(distances, axis=1)
-                # hull_mask = min_distances < 0.01 * scale_factor
-                # filtered_xyzs = xyzs[hull_mask]
-                # filtered_rgbs = rgbs[hull_mask]                
-                # xyzs = filtered_xyzs
-                # rgbs = filtered_rgbs
+                xyzs = xyzs.cpu()
+                rgbs = rgbs.cpu()
+                visual_hull = np.array(visual_hull, dtype=np.float32)
+                distances = cdist(xyzs, visual_hull)
+                min_distances = np.min(distances, axis=1)
+                hull_mask = min_distances < 0.01 * scale_factor
+                print(scale_factor)
+                filtered_xyzs = xyzs[hull_mask]
+                filtered_rgbs = rgbs[hull_mask]                
+                xyzs = filtered_xyzs
+                rgbs = filtered_rgbs
                 points.append(xyzs)
                 colors.append(rgbs)
                 TSDFvolume.integrate(
@@ -874,10 +876,10 @@ class TSDFFusion(GSMeshExporter):
 
             vertices, faces = TSDFvolume.extract_triangle_mesh(min_weight=5)
 
-            visual_hull = np.array(visual_hull, dtype=np.float32)
+            # visual_hull = np.array(visual_hull, dtype=np.float32)
             # distances = cdist(vertices, visual_hull)
             # min_distances = np.min(distances, axis=1)
-            # hull_mask = min_distances < 0.01 * scale_factor
+            # hull_mask = min_distances < 0.05 * scale_factor
             # height_mask = vertices[:, 2] > np.min(visual_hull[:, 2]) + 0.01
             # hull_mask = hull_mask & height_mask
             # filtered_vertices = vertices[hull_mask]
@@ -890,8 +892,8 @@ class TSDFFusion(GSMeshExporter):
             # vertices = filtered_vertices
             # faces = filtered_faces[valid_faces_mask]
 
-            # # transform vertices back to original scale
-            # vertices = (vertices/scale_factor - transform_matrix[:3, 3].T) @ transform_matrix[:3, :3]
+            # transform vertices back to original scale
+            vertices = (vertices/scale_factor - transform_matrix[:3, 3].T) @ transform_matrix[:3, :3]
 
 
             mesh = o3d.geometry.TriangleMesh()
@@ -912,6 +914,12 @@ class TSDFFusion(GSMeshExporter):
             )
             CONSOLE.print(
                 f"Finished computing mesh: {str(self.output_dir / 'TSDFfusion.ply')}"
+            )
+
+            # high grad gs
+            dbscan_cluster_centers(model.high_grads_gs, self.output_dir)
+            CONSOLE.print(
+                f"Finished computing high gradient points: {str(self.output_dir / 'high_grad_points.ply')}"
             )
 
 
