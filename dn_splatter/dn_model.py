@@ -867,7 +867,7 @@ class DNSplatterModel(SplatfactoModel):
 
         main_loss = (
             rgb_loss
-            + depth_loss*0
+            + depth_loss
             + self.config.normal_lambda * normal_loss
             + sparse_loss
             + self.config.sdf_loss_lambda * sdf_loss
@@ -1245,7 +1245,7 @@ class DNSplatterModel(SplatfactoModel):
             filtered_means = self.means[close_mask]
             distances = torch.cdist(filtered_means, visual_hull)
             min_distances = distances.min(dim=-1).values
-            filtered_hull_mask  = (min_distances > 0.005 * self.kwargs["metadata"]['scale_factor']) & (min_distances <= 0.05 * self.kwargs["metadata"]['scale_factor'])
+            filtered_hull_mask  = (min_distances > 0.005 * self.kwargs["metadata"]['scale_factor']) & (min_distances <= 0.02 * self.kwargs["metadata"]['scale_factor'])
             # hull_mask = (min_distances > 0.02) & (min_distances <= 0.1)
 
             hull_mask = torch.zeros(self.means.shape[0], dtype=torch.bool, device=self.device)
