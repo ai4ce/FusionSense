@@ -308,25 +308,7 @@ class DNSplatterModel(SplatfactoModel):
                 self.step < self.config.stop_split_at
                 and self.step % reset_interval
                 > self.num_train_data + self.config.refine_every
-            )
-            
-            # if self.step == self.config.max_num_iterations - 1:
-            if self.step == False:
-                do_densification = False
-                assert (
-                    self.xys_grad_norm is not None
-                    and self.vis_counts is not None
-                    and self.max_2Dsize is not None
-                )
-                avg_grad_norm = (
-                    (self.xys_grad_norm / self.vis_counts)
-                    * 0.5
-                    * max(self.last_size[0], self.last_size[1])
-                )
-                high_grads = (avg_grad_norm > self.config.densify_grad_thresh).squeeze()
-                self.gauss_params["features_dc"][high_grads] = torch.tensor([[1.0, 0.0, 0.0]], device=self.gauss_params["features_dc"].device)
-                fc_rest = torch.zeros(self.gauss_params["features_rest"].shape[1], 3, device=self.gauss_params["features_rest"].device)
-                self.gauss_params["features_rest"][high_grads] = fc_rest
+            )   
 
             if do_densification:
                 # then we densify
@@ -869,7 +851,7 @@ class DNSplatterModel(SplatfactoModel):
 
         main_loss = (
             rgb_loss
-            + depth_loss*0
+            + depth_loss
             + self.config.normal_lambda * normal_loss
             + sparse_loss
             + self.config.sdf_loss_lambda * sdf_loss
@@ -1258,6 +1240,34 @@ class DNSplatterModel(SplatfactoModel):
             self.remove_from_all_optim(optimizers, deleted_mask)
             del distances, min_distances, hull_mask, visual_hull
 
+    def high_grad_saving(self, optimizers: Optimizers, step):
+        assert step == self.step
+        if self.step == (self.config.stop_split_at - 1):
+            assert (
+                self.xys_grad_norm is not None
+                and self.vis_counts is not None
+                and self.max_2Dsize is not None
+            )
+            avg_grad_norm = (
+                (self.xys_grad_norm / self.vis_counts)
+                * 0.5
+                * max(self.last_size[0], self.last_size[1])
+            )
+            high_grads = (avg_grad_norm > self.config.densify_grad_thresh).squeeze()
+            # visualize the high gradients gaussians
+            if self.kwargs["metadata"]['grad_visualization']:
+                self.gauss_params["features_dc"][high_grads] = torch.tensor([[1.0, 0.0, 0.0]], device=self.gauss_params["features_dc"].device)
+                fc_rest = torch.zeros(self.gauss_params["features_rest"].shape[1], 3, device=self.gauss_params["features_rest"].device)
+                self.gauss_params["features_rest"][high_grads] = fc_rest
+            # save the high gradients gaussians
+            self.high_grads_gs = self.gauss_params["means"][high_grads]
+            # high_grads_gs = self.gauss_params["means"][high_grads]
+            # high_grads_gs.cpu().numpy()
+            # import numpy as np
+            # np.save(
+            #     f"{self.config.experiment_output_dir}/high_grads_gs_{self.step}.npy",
+            #     high_grads_gs.cpu().numpy(),
+            # )
 
     def get_training_callbacks(
         self, training_callback_attributes: TrainingCallbackAttributes
@@ -1297,6 +1307,14 @@ class DNSplatterModel(SplatfactoModel):
                 [TrainingCallbackLocation.AFTER_TRAIN_ITERATION],
                 self.hull_pruning,
                 update_every_num_iters=self.config.refine_every,
+                args=[training_callback_attributes.optimizers],
+            )
+        )
+        # High grad saving
+        cbs.append(
+            TrainingCallback(
+                [TrainingCallbackLocation.AFTER_TRAIN_ITERATION],
+                self.high_grad_saving,
                 args=[training_callback_attributes.optimizers],
             )
         )
