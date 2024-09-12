@@ -1241,7 +1241,7 @@ class DNSplatterModel(SplatfactoModel):
 
     def high_grad_saving(self, optimizers: Optimizers, step):
         assert step == self.step
-        if self.step == (self.config.stop_split_at - 1):
+        if self.step == (self.config.stop_split_at - 5e2):
             assert (
                 self.xys_grad_norm is not None
                 and self.vis_counts is not None
@@ -1260,6 +1260,8 @@ class DNSplatterModel(SplatfactoModel):
                 self.gauss_params["features_rest"][high_grads] = fc_rest
             # save the high gradients gaussians
             self.high_grads_gs = self.gauss_params["means"][high_grads]
+            self.output_dir
+
             # high_grads_gs = self.gauss_params["means"][high_grads]
             # high_grads_gs.cpu().numpy()
             # import numpy as np
@@ -1292,6 +1294,14 @@ class DNSplatterModel(SplatfactoModel):
                 [TrainingCallbackLocation.AFTER_TRAIN_ITERATION], self.after_train
             )
         )
+        # High grad saving
+        cbs.append(
+            TrainingCallback(
+                [TrainingCallbackLocation.AFTER_TRAIN_ITERATION],
+                self.high_grad_saving,
+                args=[training_callback_attributes.optimizers],
+            )
+        )
         cbs.append(
             TrainingCallback(
                 [TrainingCallbackLocation.AFTER_TRAIN_ITERATION],
@@ -1306,14 +1316,6 @@ class DNSplatterModel(SplatfactoModel):
                 [TrainingCallbackLocation.AFTER_TRAIN_ITERATION],
                 self.hull_pruning,
                 update_every_num_iters=self.config.refine_every,
-                args=[training_callback_attributes.optimizers],
-            )
-        )
-        # High grad saving
-        cbs.append(
-            TrainingCallback(
-                [TrainingCallbackLocation.AFTER_TRAIN_ITERATION],
-                self.high_grad_saving,
                 args=[training_callback_attributes.optimizers],
             )
         )
