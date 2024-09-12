@@ -66,6 +66,7 @@ dn_splatter/scripts/dsine/dsine_predictor.py
 dn_splatter/scripts/dsine/rotations.py
 dn_splatter/scripts/dsine/submodules.py
 dn_splatter/utils/camera_utils.py
+dn_splatter/utils/cluster_high_grad_gs.py
 dn_splatter/utils/knn.py
 dn_splatter/utils/normal_utils.py
 dn_splatter/utils/utils.py
