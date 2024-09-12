@@ -190,12 +190,12 @@ For further installation problems:
         cd datasets/touchgs; python gs_to_ours_script.py; cd ../..
     ```
 9. **Mesh Extraction**:
-    ```python
+    ```sh
     gs-mesh {dn, tsdf, sugar-coarse, gaussians, marching} --load-config [PATH] --output-dir [PATH]
     ```
 
 10. **Export GSplat**:
-    ```bash
+    ```sh
     ns-export gaussian-splat --load-config outputs/unnamed/dn-splatter/2024-09-02_203650/config.yml --output-dir exports/splat/ 
     ```
 

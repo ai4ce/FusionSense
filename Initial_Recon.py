@@ -102,15 +102,15 @@ class Initial_Reconstruction:
             "--pipeline.model.use-normal-loss", str(configs.use_normal_loss),
             "--pipeline.model.normal-supervision", configs.normal_supervision,
             "--pipeline.model.random_init", str(configs.random_init),
+            "--pipeline.model.warmup-length", str(configs.warmup_length),
+            "--pipeline.model.add-touch-at", str(configs.add_touch_at),
+            "--pipeline.model.stop-split-at", str(configs.stop_split_at),
             str(configs.model_type),
             "--data", configs.data_path,
             "--load-pcd-normals", str(configs.load_pcd_normals),
             "--load-3D-points", str(configs.load_3D_points),
             "--normal-format", configs.normal_format,
             "--load-touches", str(configs.load_touches),
-            "--pipeline.model.warmup-length", str(configs.warmup_length),
-            "--pipeline.model.add-touch-at", str(configs.add_touch_at),
-            "--pipeline.model.stop-split-at", str(configs.stop_split_at)
         ]
 
         # command = "CUDA_VISIBLE_DEVICES=0 ns-train dn-splatter --steps-per-save 30000 --max_num_iterations 30001 --pipeline.model.use-depth-loss True --pipeline.model.normal-lambda 0.4 --pipeline.model.sensor-depth-lambda 0.2 --pipeline.model.use-depth-smooth-loss True  --pipeline.model.use-binary-opacities True  --pipeline.model.use-normal-loss True  --pipeline.model.normal-supervision mono  --pipeline.model.random_init False normal-nerfstudio  --data datasets/touchgs  --load-pcd-normals True --load-3D-points True  --normal-format opencv"
@@ -155,5 +155,5 @@ if __name__ == "__main__":
     configs = GSReconstructionConfig(data_path=init_recon.base_path)
     init_recon.train_model(configs)
 
-    # init_recon.extract_mesh(config_path="path/to/config.yml", output_dir="exports/mesh/")
+    # init_recon.extract_mesh(config_path="outputs/unnamed/dn-splatter/2024-09-12_004037/nerfstudio_models", output_dir="exports/mesh/")
     # init_recon.export_gsplats(config_path="outputs/unnamed/dn-splatter/2024-09-02_203650/config.yml", output_dir="exports/splat/")
