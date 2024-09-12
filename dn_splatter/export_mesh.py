@@ -132,6 +132,11 @@ class GaussiansToPoisson(GSMeshExporter):
 
         model: SplatfactoModel = pipeline.model
 
+        visual_hull = pipeline.datamanager.train_dataset.metadata['visual_hull']
+        transform_matrix = pipeline.datamanager.train_dataset._dataparser_outputs.dataparser_transform
+        transform_matrix = transform_matrix.numpy()
+        scale_factor = pipeline.datamanager.train_dataset._dataparser_outputs.dataparser_scale
+
         with torch.no_grad():
             positions = model.means.cpu()
             normals = model.normals.cpu()
@@ -244,6 +249,19 @@ class GaussiansToPoisson(GSMeshExporter):
             pcd.points = o3d.utility.Vector3dVector(positions)
             pcd.normals = o3d.utility.Vector3dVector(normals)
             pcd.colors = o3d.utility.Vector3dVector(colors)
+
+            # prune vertices based on visual hull
+            from scipy.spatial.distance import cdist
+            vertices = np.asarray(pcd.points)
+            distances = cdist(vertices, visual_hull)
+            min_distances = np.min(distances, axis=1)
+            hull_mask = min_distances < 0.01 * scale_factor
+            height_mask = vertices[:, 2] > np.min(visual_hull[:, 2]) + 0.01 * scale_factor
+            hull_mask = hull_mask & height_mask
+            filtered_vertices = vertices[hull_mask]
+            pcd.points = o3d.utility.Vector3dVector(filtered_vertices)
+            pcd.normals = o3d.utility.Vector3dVector(np.asarray(pcd.normals)[hull_mask])
+            pcd.colors = o3d.utility.Vector3dVector(np.asarray(pcd.colors)[hull_mask])
 
             if self.down_sample_voxel is not None:
                 pcd = pcd.voxel_down_sample(voxel_size=self.down_sample_voxel)
