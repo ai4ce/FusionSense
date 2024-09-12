@@ -75,8 +75,10 @@ set `train.txt` with images id.
     `eg. 'transparent white statue.'`   
 
     ```bash   
+    conda activate G-SAM-2
     cd Grounded-SAM2-for-masking
     python grounded_sam2_hf_model_imgs_MaskExtract.py  --path {ABSOLUTE_PATH} --text {TEXT_PROMPT_FOR_TARGET_OBJ}
+    cd ..
     ```   
     run the script to extract masks.   
 
@@ -84,6 +86,7 @@ set `train.txt` with images id.
 
 ### Run pipeline
 ```sh
+conda activate fusionsense
 python Initial_Recon.py --data_name {DATASET_NAME}
 ```
 
