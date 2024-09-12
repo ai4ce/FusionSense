@@ -6,6 +6,7 @@ import os
 import math
 import random
 import time
+from pathlib import Path
 from dataclasses import dataclass, field
 from typing import Dict, List, Literal, Optional, Tuple, Type, Union
 
@@ -23,6 +24,7 @@ from dn_splatter.utils.camera_utils import get_colored_points_from_depth, projec
 from dn_splatter.utils.knn import knn_sk
 from dn_splatter.utils.normal_utils import normal_from_depth_image
 from dn_splatter.utils.utils import depth_to_colormap
+from dn_splatter.utils.cluster_high_grad_gs import dbscan_cluster_centers
 
 try:
     from gsplat.rendering import rasterization
@@ -133,6 +135,8 @@ class DNSplatterModelConfig(SplatfactoModelConfig):
     ### touch configs, better do this after densification? ###
     add_touch_at: int = 1000
     touch_normal_loss_lambda = 1.
+
+    base_dir: Path = Path("datasets")
 
 class DNSplatterModel(SplatfactoModel):
     """Depth + Normal splatter"""
@@ -634,7 +638,6 @@ class DNSplatterModel(SplatfactoModel):
             if camera.metadata is not None and "cam_idx" in camera.metadata:
                 self.camera_idx = camera.metadata["cam_idx"]  # type: ignore
         self.camera = camera
-
         return {
             "rgb": rgb.squeeze(0),
             "depth": depth_im,
@@ -1253,6 +1256,21 @@ class DNSplatterModel(SplatfactoModel):
                 * max(self.last_size[0], self.last_size[1])
             )
             high_grads = (avg_grad_norm > self.config.densify_grad_thresh).squeeze()
+
+            if 'visual_hull' in self.kwargs["metadata"]:
+                visual_hull = self.kwargs["metadata"]['visual_hull'].to(self.device)
+                center = visual_hull.mean(dim=0)
+                distances_to_center = torch.norm(self.means - center, dim=1)
+                r_threshold = 0.2 * self.kwargs["metadata"]['scale_factor']
+                close_mask = distances_to_center <= r_threshold
+                filtered_means = self.means[close_mask]
+                distances = torch.cdist(filtered_means, visual_hull)
+                min_distances = distances.min(dim=-1).values
+                filtered_hull_mask  = (min_distances < 0.01 * self.kwargs["metadata"]['scale_factor'])
+                hull_mask = torch.zeros(self.means.shape[0], dtype=torch.bool, device=self.device)
+                hull_mask[close_mask] = filtered_hull_mask
+
+            high_grads = high_grads & hull_mask
             # visualize the high gradients gaussians
             if self.kwargs["metadata"]['grad_visualization']:
                 self.gauss_params["features_dc"][high_grads] = torch.tensor([[1.0, 0.0, 0.0]], device=self.gauss_params["features_dc"].device)
@@ -1260,15 +1278,8 @@ class DNSplatterModel(SplatfactoModel):
                 self.gauss_params["features_rest"][high_grads] = fc_rest
             # save the high gradients gaussians
             self.high_grads_gs = self.gauss_params["means"][high_grads]
-            self.output_dir
-
-            # high_grads_gs = self.gauss_params["means"][high_grads]
-            # high_grads_gs.cpu().numpy()
-            # import numpy as np
-            # np.save(
-            #     f"{self.config.experiment_output_dir}/high_grads_gs_{self.step}.npy",
-            #     high_grads_gs.cpu().numpy(),
-            # )
+            CONSOLE.log("Extracting high gradients ...")
+            dbscan_cluster_centers(self.high_grads_gs, self.config.base_dir)
 
     def get_training_callbacks(
         self, training_callback_attributes: TrainingCallbackAttributes

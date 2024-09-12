@@ -13,7 +13,7 @@ import tyro
 from tqdm import tqdm
 from typing_extensions import Annotated
 
-from dn_splatter.utils.cluster_high_grad_gs import dbscan_cluster_centers
+from utils.cluster_high_grad_gs import dbscan_cluster_centers
 from dn_splatter.utils.camera_utils import (
     get_colored_points_from_depth,
     get_means3d_backproj,
