@@ -627,6 +627,7 @@ class DNSplatterModel(SplatfactoModel):
             # convert normals from [-1,1] to [0,1]
             normals_im = normals_im / normals_im.norm(dim=-1, keepdim=True)
             normals_im = (normals_im + 1) / 2
+        
             # CONSOLE.input(f"Normal: {normals.shape}, {torch.max(normals)}, {torch.min(normals)}\n")
 
         if hasattr(camera, "metadata"):
@@ -786,9 +787,9 @@ class DNSplatterModel(SplatfactoModel):
                     ).mean()
             if self.config.use_normal_tv_loss:
                 normal_loss += self.tv_loss(pred_normal)
-        
-        # Loss to minimize gaussian scale corresponding to normal direction
+
         if self.config.two_d_gaussians:
+            # loss to minimise gaussian scale corresponding to normal direction
             normal_loss += torch.min(torch.exp(self.scales), dim=1, keepdim=True)[0].mean()
 
         sparse_loss = 0
@@ -855,7 +856,7 @@ class DNSplatterModel(SplatfactoModel):
             + self.config.sdf_loss_lambda * sdf_loss
         )
         
-        # Add MSE_touch_normal_loss: per-gaussian normal error 
+        # MSE_touch_normal_loss: per-gaussian normal error 
         if self.add_mask is not None:
             normal_touch = outputs["normal_touch"]
             touch_patches_normals = torch.empty((0,3)).to(self.device)
@@ -865,7 +866,8 @@ class DNSplatterModel(SplatfactoModel):
             L2_touch_normal_loss = (normal_touch - touch_patches_normals) ** 2
             # CONSOLE.input(f"{L2_touch.shape}")
             MSE_touch_normal_loss = torch.mean(L2_touch_normal_loss)
-            main_loss += MSE_touch_normal_loss * self.config.touch_normal_loss_lambda
+            touch_normal_loss_lambda = 1.
+            main_loss += MSE_touch_normal_loss * touch_normal_loss_lambda
 
         # save rgb per 100 step
         if self.step % 100 == 0:
@@ -1227,7 +1229,7 @@ class DNSplatterModel(SplatfactoModel):
             filtered_means = self.means[close_mask]
             distances = torch.cdist(filtered_means, visual_hull)
             min_distances = distances.min(dim=-1).values
-            filtered_hull_mask  = (min_distances > 0.005 * self.kwargs["metadata"]['scale_factor']) & (min_distances <= 0.02 * self.kwargs["metadata"]['scale_factor'])
+            filtered_hull_mask  = (min_distances > 0.005 * self.kwargs["metadata"]['scale_factor']) & (min_distances <= 0.05 * self.kwargs["metadata"]['scale_factor'])
             # hull_mask = (min_distances > 0.02) & (min_distances <= 0.1)
 
             hull_mask = torch.zeros(self.means.shape[0], dtype=torch.bool, device=self.device)
@@ -1235,9 +1237,36 @@ class DNSplatterModel(SplatfactoModel):
             self.max_2Dsize = None
             deleted_mask = self.cull_gaussians(hull_mask)
             self.remove_from_all_optim(optimizers, deleted_mask)
-            self.hull_mask = hull_mask
             del distances, min_distances, hull_mask, visual_hull
 
+    def high_grad_saving(self, optimizers: Optimizers, step):
+        assert step == self.step
+        if self.step == (self.config.stop_split_at - 1):
+            assert (
+                self.xys_grad_norm is not None
+                and self.vis_counts is not None
+                and self.max_2Dsize is not None
+            )
+            avg_grad_norm = (
+                (self.xys_grad_norm / self.vis_counts)
+                * 0.5
+                * max(self.last_size[0], self.last_size[1])
+            )
+            high_grads = (avg_grad_norm > self.config.densify_grad_thresh).squeeze()
+            # visualize the high gradients gaussians
+            if self.kwargs["metadata"]['grad_visualization']:
+                self.gauss_params["features_dc"][high_grads] = torch.tensor([[1.0, 0.0, 0.0]], device=self.gauss_params["features_dc"].device)
+                fc_rest = torch.zeros(self.gauss_params["features_rest"].shape[1], 3, device=self.gauss_params["features_rest"].device)
+                self.gauss_params["features_rest"][high_grads] = fc_rest
+            # save the high gradients gaussians
+            self.high_grads_gs = self.gauss_params["means"][high_grads]
+            # high_grads_gs = self.gauss_params["means"][high_grads]
+            # high_grads_gs.cpu().numpy()
+            # import numpy as np
+            # np.save(
+            #     f"{self.config.experiment_output_dir}/high_grads_gs_{self.step}.npy",
+            #     high_grads_gs.cpu().numpy(),
+            # )
 
     def get_training_callbacks(
         self, training_callback_attributes: TrainingCallbackAttributes
