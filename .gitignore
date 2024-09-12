@@ -7,6 +7,13 @@ omnidata_ckpt/
 pretrained_models/
 mesh_exports/
 log_images/
+Evaluation/
+exports/
+MESH/
+test/
+test_colmap/
+tr-rabbit/
+tr-rabbit2/
 *.pyc
 
 # Byte-compiled / optimized / DLL files
