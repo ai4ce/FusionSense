@@ -4,7 +4,7 @@ import open3d as o3d
 import random
 import os
 
-def dbscan_cluster_centers(points, path, eps=0.5, min_samples=5):
+def dbscan_cluster_centers(points, path, eps=0.01, min_samples=15):
     """
     DBSCAN-based clustering function, takes in a set of points and outputs the coordinates of cluster centers.
     
@@ -18,8 +18,8 @@ def dbscan_cluster_centers(points, path, eps=0.5, min_samples=5):
     """
     if not isinstance(points, np.ndarray):
         points = points.detach().cpu().numpy()
-    if points.shape[0] > 100:
-        points = points[:100] 
+    # if points.shape[0] > 100:
+    #     points = points[:100] 
 
     db = DBSCAN(eps=eps, min_samples=min_samples).fit(points)
     
@@ -38,7 +38,8 @@ def dbscan_cluster_centers(points, path, eps=0.5, min_samples=5):
 
     # Save cluster centers as a npy file
     cluster_centers = np.array(cluster_centers)
-    np.save(os.path.join(path, 'high_grad_pts.npy'), cluster_centers)
+    save_path_npy = os.path.join(path, 'cluster_centers.npy')
+    np.save(save_path_npy, cluster_centers)
     print(f"Cluster centers saved as high_grad_pts.npy")
     
     # Create a PointCloud and assign colors
@@ -47,7 +48,8 @@ def dbscan_cluster_centers(points, path, eps=0.5, min_samples=5):
     pcd.colors = o3d.utility.Vector3dVector(colors)
     
     # Save as a PCD file
-    o3d.io.write_point_cloud(os.path.join(path, 'high_grad_pts.pcd'), pcd)
+    save_path_pcd = os.path.join(path, 'high_grad_pts.pcd')
+    o3d.io.write_point_cloud(save_path_pcd, pcd)
     print(f"Colored point cloud saved as high_grad_pts.pcd")
     
     return np.array(cluster_centers)

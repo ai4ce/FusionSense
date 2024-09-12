@@ -40,7 +40,7 @@ def get_pointcloud(color, depth, w2c, FX, FY, CX, CY, transform_pts=True, mask=N
 
     # # Select points based on mask
     mask1 = (depth_z > 0) & (depth_z < 0.5)
-    mask2 = (depth_z > 0) & (depth_z < 5)
+    mask2 = (depth_z > 0.5) & (depth_z < 5)
     fore_pcd = point_cld[mask1]
     back_pcd = point_cld[mask2]
     # back_pcd = point_cld
