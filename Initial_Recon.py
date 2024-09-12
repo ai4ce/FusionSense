@@ -6,9 +6,11 @@ from utils.imgs_selection import select_imgs, filter_transform_json
 from utils.VisualHull import VisualHull
 from utils.metric3dv2_depth_generation import metric3d_depth_generation
 from utils.generate_pcd import Init_pcd_generate
+from nerfstudio.utils.rich_utils import CONSOLE
 
 @dataclass
 class GSReconstructionConfig:
+    """Unified Reconstruction Configs for pipeline"""
     steps_per_save: int = 30000
     iterations: int = 30001
 
@@ -28,11 +30,15 @@ class GSReconstructionConfig:
     load_touches: bool = False
 
     model_type: str = "normal-nerfstudio"
+    warmup_length: int = 500
+    add_touch_at: int = 15000
+    stop_split_at: int = 15000
 
 class Initial_Reconstruction:
     def __init__(self, base_path):
         # 初始化通用路径
         self.base_path = base_path
+        self.grounded_sam_path = "Grounded-SAM2-for-masking"
         with open(os.path.join(base_path, 'transforms.json'), 'r') as f:
             self.transforms = json.load(f)
     
@@ -41,8 +47,6 @@ class Initial_Reconstruction:
         filter_transform_json(self.base_path)
     
     def generate_mask_images(self, absolute_path, prompt_text):
-        """Step 2: Generate Mask Images using Grounded SAM"""
-        print("Generating mask images...")
         os.chdir(self.grounded_sam_path)  # 切换到 Grounded-SAM 目录
         command = f"python grounded_sam2_hf_model_imgs_MaskExtract.py --path {absolute_path} --prompt '{prompt_text}'"
         subprocess.run(command, shell=True, check=True)
@@ -103,7 +107,10 @@ class Initial_Reconstruction:
             "--load-pcd-normals", str(configs.load_pcd_normals),
             "--load-3D-points", str(configs.load_3D_points),
             "--normal-format", configs.normal_format,
-            "--load-touches", str(configs.load_touches)
+            "--load-touches", str(configs.load_touches),
+            "--pipeline.model.warmup-length", str(configs.warmup_length),
+            "--pipeline.model.add-touch-at", str(configs.add_touch_at),
+            "--pipeline.model.stop-split-at", str(configs.stop_split_at)
         ]
 
         # command = "CUDA_VISIBLE_DEVICES=0 ns-train dn-splatter --steps-per-save 30000 --max_num_iterations 30001 --pipeline.model.use-depth-loss True --pipeline.model.normal-lambda 0.4 --pipeline.model.sensor-depth-lambda 0.2 --pipeline.model.use-depth-smooth-loss True  --pipeline.model.use-binary-opacities True  --pipeline.model.use-normal-loss True  --pipeline.model.normal-supervision mono  --pipeline.model.random_init False normal-nerfstudio  --data datasets/touchgs  --load-pcd-normals True --load-3D-points True  --normal-format opencv"
@@ -129,17 +136,24 @@ class Initial_Reconstruction:
 # 示例用法
 if __name__ == "__main__":
     init_recon = Initial_Reconstruction(base_path="datasets/blackbunny3")
-
-    init_recon.select_frames()
-    # init_recon.generate_mask_images(absolute_path="/absolute/path/to/your/data", prompt_text="transparent white statue.")
-    init_recon.generate_visual_hull(error=5)
+    CONSOLE.log("Step 1: Selecting Images for training...")
+    # init_recon.select_frames()
+    CONSOLE.log("Step 2: Generate Mask Images using Grounded SAM...")
+    # init_recon.generate_mask_images(absolute_path=f"{os.path.abspath(os.getcwd())}/datasets/blackbunny3", prompt_text="black bunny")
+    CONSOLE.log("Step 3: Generating visual hull...")
+    # init_recon.generate_visual_hull(error=5)
+    CONSOLE.log("Step 4: Running metric3d depth for ")
     # init_recon.run_metric3d_depth()
-    init_recon.Init_pcd_generation()
-    init_recon.generate_normals()
-    init_recon.set_transforms_and_configs()
+    CONSOLE.log("Step 5: Initialize pcd")
+    # init_recon.Init_pcd_generation()
+    CONSOLE.log("Step 6: Generate normals")
+    # init_recon.generate_normals()
+    CONSOLE.log("Step 7: Setting transforms.json")
+    # init_recon.set_transforms_and_configs()
 
+    CONSOLE.log("Step 8: Initialize training")
     configs = GSReconstructionConfig(data_path=init_recon.base_path)
     init_recon.train_model(configs)
 
-    # init_recon.extract_mesh(config_path="path/to/config.yml", output_dir="path/to/output")
+    # init_recon.extract_mesh(config_path="path/to/config.yml", output_dir="exports/mesh/")
     # init_recon.export_gsplats(config_path="outputs/unnamed/dn-splatter/2024-09-02_203650/config.yml", output_dir="exports/splat/")

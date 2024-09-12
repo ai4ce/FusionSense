@@ -256,7 +256,7 @@ dependencies:
       - defusedxml==0.7.1
       - descartes==1.1.0
       - dill==0.3.8
-      - dn-splatter==0.0.1
+      # - dn-splatter==0.0.1
       - docker-pycreds==0.4.0
       - docstring-parser==0.16
       - docutils==0.16
@@ -350,7 +350,6 @@ dependencies:
       - nbconvert==7.16.4
       - nbformat==5.10.4
       - nerfacc==0.5.2
-      - nerfstudio==1.1.3
       - nest-asyncio==1.6.0
       - ninja==1.11.1.1
       - nodeenv==1.9.1
@@ -473,13 +472,10 @@ dependencies:
       - tifffile==2023.7.10
       - timm==0.6.7
       - tinycss2==1.3.0
-      - tinycudann==1.7
       - tokenizers==0.19.1
       - tomli==2.0.1
-      - torch==2.1.2+cu118
       - torch-fidelity==0.3.0
       - torchmetrics==1.4.1
-      - torchvision==0.16.2+cu118
       - tornado==6.4.1
       - tqdm==4.66.5
       - traitlets==5.14.3
@@ -493,7 +489,6 @@ dependencies:
       - uri-template==1.3.0
       - urllib3==1.26.19
       - vdbfusion==0.1.6
-      - viser==0.2.3
       - wandb==0.17.7
       - wcwidth==0.2.13
       - webcolors==24.8.0
@@ -506,11 +501,10 @@ dependencies:
       - wsproto==1.2.0
       - wurlitzer==3.1.1
       - xatlas==0.0.9
-      - xformers==0.0.27.post2+cu118
       - xxhash==3.5.0
       - yapf==0.40.2
       - yarl==1.9.4
       - yourdfpy==0.0.56
       - zipp==3.20.1
       - zope-interface==7.0.3
-prefix: /home/ks8018/anaconda3/envs/nerfstudio
+      - nerfstudio==1.1.3
