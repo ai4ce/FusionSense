@@ -309,25 +309,7 @@ class DNSplatterModel(SplatfactoModel):
                 self.step < self.config.stop_split_at
                 and self.step % reset_interval
                 > self.num_train_data + self.config.refine_every
-            )
-            
-            # if self.step == self.config.max_num_iterations - 1:
-            if self.step == False:
-                do_densification = False
-                assert (
-                    self.xys_grad_norm is not None
-                    and self.vis_counts is not None
-                    and self.max_2Dsize is not None
-                )
-                avg_grad_norm = (
-                    (self.xys_grad_norm / self.vis_counts)
-                    * 0.5
-                    * max(self.last_size[0], self.last_size[1])
-                )
-                high_grads = (avg_grad_norm > self.config.densify_grad_thresh).squeeze()
-                self.gauss_params["features_dc"][high_grads] = torch.tensor([[1.0, 0.0, 0.0]], device=self.gauss_params["features_dc"].device)
-                fc_rest = torch.zeros(self.gauss_params["features_rest"].shape[1], 3, device=self.gauss_params["features_rest"].device)
-                self.gauss_params["features_rest"][high_grads] = fc_rest
+            )   
 
             if do_densification:
                 # then we densify
@@ -1256,6 +1238,7 @@ class DNSplatterModel(SplatfactoModel):
             self.hull_mask = hull_mask
             del distances, min_distances, hull_mask, visual_hull
 
+
     def get_training_callbacks(
         self, training_callback_attributes: TrainingCallbackAttributes
     ) -> List[TrainingCallback]:
@@ -1294,6 +1277,14 @@ class DNSplatterModel(SplatfactoModel):
                 [TrainingCallbackLocation.AFTER_TRAIN_ITERATION],
                 self.hull_pruning,
                 update_every_num_iters=self.config.refine_every,
+                args=[training_callback_attributes.optimizers],
+            )
+        )
+        # High grad saving
+        cbs.append(
+            TrainingCallback(
+                [TrainingCallbackLocation.AFTER_TRAIN_ITERATION],
+                self.high_grad_saving,
                 args=[training_callback_attributes.optimizers],
             )
         )

@@ -10,9 +10,8 @@ from nerfstudio.utils.rich_utils import CONSOLE
 
 @dataclass
 class GSReconstructionConfig:
-    """Unified Reconstruction Configs for pipeline"""
-    steps_per_save: int = 30000
-    iterations: int = 30001
+    steps_per_save: int = 15000
+    iterations: int = 15001
 
     use_depth_loss: bool = True
     normal_lambda: float = 0.4
@@ -86,7 +85,8 @@ class Initial_Reconstruction:
         with open(os.path.join(self.base_path, 'transforms.json'), 'w') as f:
             json.dump(transforms, f, indent=4)
     
-    def train_model(self, configs):
+    def train_model(self):
+        configs = GSReconstructionConfig(data_path=self.base_path)
         if configs.data_path == None:
             assert False, "Please set data_path in GSReconstructionConfig"
         command = [
