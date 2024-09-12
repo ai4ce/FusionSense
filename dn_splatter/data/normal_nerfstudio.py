@@ -61,15 +61,16 @@ class NormalNerfstudioConfig(NerfstudioDataParserConfig):
     """Which format the normal maps in camera frame are saved in."""
     load_pcd_normals: bool = True
     """Whether to load pcd normals for normal initialisation"""
-
+    
+    grad_visualization: bool = False
+    """Set to true to enable gradient visualization"""
     load_touches: bool = False
     """Set to true to load normal maps"""
     gel_scale_factor = 6.34e-5 # distance between gel pixels
-    # gel_scale_factor = 1e-3 # approximate distance between gel pixels
 
     orientation_method: Literal['pca', 'up', 'vertical', 'none'] = 'none'
     center_method: Literal['poses', 'focus', 'none'] = 'none'
-    auto_scale_poses: bool = False
+    auto_scale_poses: bool = True
     scene_scale = 5.0
 
 @dataclass
@@ -645,6 +646,9 @@ class NormalNerfstudio(Nerfstudio):
 
         scale_factor_dict = {"scale_factor": scale_factor}
         metadata.update(scale_factor_dict)
+
+        grad_visualization_dict = {'grad_visualization': self.config.grad_visualization}
+        metadata.update(grad_visualization_dict)
 
         dataparser_outputs = DataparserOutputs(
             image_filenames=image_filenames,
