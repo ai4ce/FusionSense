@@ -71,18 +71,18 @@ set `train.txt` with images id.
 
 ### Extract Mask
 **Switch your conda env first**  
-    set your scene path and prompt text with the end of '.'   
-    `eg. 'transparent white statue.'`   
+set your scene path and prompt text with the end of '.'   
+`eg. 'transparent white statue.'`   
 
-    ```bash   
-    conda activate G-SAM-2
-    cd Grounded-SAM2-for-masking
-    python grounded_sam2_hf_model_imgs_MaskExtract.py  --path {ABSOLUTE_PATH} --text {TEXT_PROMPT_FOR_TARGET_OBJ}
-    cd ..
-    ```   
-    run the script to extract masks.   
+```bash   
+conda activate G-SAM-2
+cd Grounded-SAM2-for-masking
+python grounded_sam2_hf_model_imgs_MaskExtract.py  --path {ABSOLUTE_PATH} --text {TEXT_PROMPT_FOR_TARGET_OBJ}
+cd ..
+```   
+run the script to extract masks.   
 
-    If the `num_no_detection` is not 0, you need to select the frame again. Then you will see mask_imgs in `/masks`, and you can check `/annotated` frames to see the results more directly.  
+If the `num_no_detection` is not 0, you need to select the frame again. Then you will see mask_imgs in `/masks`, and you can check `/annotated` frames to see the results more directly.  
 
 ### Run pipeline
 ```sh
