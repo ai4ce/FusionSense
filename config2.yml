@@ -91,4 +91,3 @@ dependencies:
       - urllib3==2.2.2
       - yapf==0.40.2
       - zipp==3.20.0
-prefix: /home/ks8018/anaconda3/envs/G-SAM-2

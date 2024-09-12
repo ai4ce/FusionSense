@@ -22,6 +22,7 @@ from nerfstudio.cameras.cameras import Cameras
 from nerfstudio.models.splatfacto import SplatfactoModel
 from nerfstudio.utils.eval_utils import eval_setup
 from nerfstudio.utils.rich_utils import CONSOLE
+from scipy.spatial.distance import cdist
 
 """
 Methods for extracting meshes from GS:
@@ -119,14 +120,16 @@ class GaussiansToPoisson(GSMeshExporter):
     """Remove outliers"""
     std_ratio: float = 2.0
     """Threshold based on STD of the average distances across the point cloud to remove outliers."""
-    poisson_depth: int = 9
+    poisson_depth: int = 6
     """Poisson Octree max depth, higher values increase mesh detail"""
+    
+    use_visual_hull: Optional[int] = None
+    """Use visual hull mask to cull GS points for """
 
     def main(self):
         if not self.output_dir.exists():
             self.output_dir.mkdir(parents=True)
-
-        _, pipeline, _, _ = eval_setup(self.load_config)
+        config, pipeline, checkpoint_path, step = eval_setup(self.load_config)
 
         assert isinstance(pipeline.model, SplatfactoModel)
 
@@ -147,6 +150,7 @@ class GaussiansToPoisson(GSMeshExporter):
 
             assert positions.shape[0] == normals.shape[0]  # type: ignore
 
+            """crop our datasets using mask"""
             if self.use_masks:
                 outs = pipeline.datamanager.dataparser.get_dataparser_outputs(  # type: ignore
                     split="train"
@@ -240,7 +244,10 @@ class GaussiansToPoisson(GSMeshExporter):
                     torch.clamp(model.colors[gs_indices], 0.0, 1.0).cpu().data.float()
                 )
                 colors = torch.cat([colors, extra_colors.cpu()], dim=0)
-
+            
+            if self.use_visual_hull is not None:
+                pass
+            
             positions = positions.cpu().numpy()
             normals = normals.cpu().numpy()
             colors = colors.cpu().numpy()
@@ -251,13 +258,12 @@ class GaussiansToPoisson(GSMeshExporter):
             pcd.colors = o3d.utility.Vector3dVector(colors)
 
             # prune vertices based on visual hull
-            from scipy.spatial.distance import cdist
             vertices = np.asarray(pcd.points)
             distances = cdist(vertices, visual_hull)
             min_distances = np.min(distances, axis=1)
-            hull_mask = min_distances < 0.01 * scale_factor
-            height_mask = vertices[:, 2] > np.min(visual_hull[:, 2]) + 0.01 * scale_factor
-            hull_mask = hull_mask & height_mask
+            hull_mask = min_distances < 0.05 * scale_factor
+            # height_mask = vertices[:, 2] > np.min(visual_hull[:, 2]) + 0.01 * scale_factor
+            # hull_mask = hull_mask & height_mask
             filtered_vertices = vertices[hull_mask]
             pcd.points = o3d.utility.Vector3dVector(filtered_vertices)
             pcd.normals = o3d.utility.Vector3dVector(np.asarray(pcd.normals)[hull_mask])
@@ -482,7 +488,7 @@ class LevelSetExtractor(GSMeshExporter):
     Inspired by SuGaR
     """
 
-    total_points: int = 2_000_000
+    total_points: int = 100000
     """Total target surface samples"""
     use_masks: bool = False
     """If dataset has masks, use these to limit surface sampling regions."""
@@ -492,7 +498,7 @@ class LevelSetExtractor(GSMeshExporter):
         "analytical", "closest_gaussian", "average"
     ] = "closest_gaussian"
     """Normal mode"""
-    poisson_depth: int = 9
+    poisson_depth: int = 6
     """Poisson Octree max depth, higher values increase mesh detail"""
 
     def main(self):
@@ -519,7 +525,6 @@ class LevelSetExtractor(GSMeshExporter):
                     "normals": torch.zeros(0, 3, device="cuda"),
                 }
 
-            # TODO: do eval dataset as well maybe
             for image_idx, data in tqdm(
                 enumerate(pipeline.datamanager.train_dataset),
                 desc="Computing surface levels for train images",
@@ -545,6 +550,7 @@ class LevelSetExtractor(GSMeshExporter):
                     img_surface_points = frame_outputs[surface_level]["points"]
                     img_surface_colors = frame_outputs[surface_level]["colors"]
                     img_surface_normals = frame_outputs[surface_level]["normals"]
+                    
 
                     surface_levels_outputs[surface_level]["points"] = torch.cat(
                         [
@@ -578,7 +584,23 @@ class LevelSetExtractor(GSMeshExporter):
                 pcd.points = o3d.utility.Vector3dVector(points)
                 pcd.colors = o3d.utility.Vector3dVector(colors)
                 pcd.normals = o3d.utility.Vector3dVector(normals)
-
+                
+                # prune vertices based on visual hull
+                visual_hull = pipeline.datamanager.train_dataset.metadata['visual_hull']
+                transform_matrix = pipeline.datamanager.train_dataset._dataparser_outputs.dataparser_transform
+                transform_matrix = transform_matrix.numpy()
+                scale_factor = pipeline.datamanager.train_dataset._dataparser_outputs.dataparser_scale
+                vertices = np.asarray(pcd.points)
+                distances = cdist(vertices, visual_hull)
+                min_distances = np.min(distances, axis=1)
+                hull_mask = min_distances < 0.02 * scale_factor
+                # height_mask = vertices[:, 2] > np.min(visual_hull[:, 2]) + 0.01 * scale_factor
+                # hull_mask = hull_mask & height_mask
+                filtered_vertices = vertices[hull_mask]
+                pcd.points = o3d.utility.Vector3dVector(filtered_vertices)
+                pcd.normals = o3d.utility.Vector3dVector(np.asarray(pcd.normals)[hull_mask])
+                pcd.colors = o3d.utility.Vector3dVector(np.asarray(pcd.colors)[hull_mask])
+                
                 CONSOLE.print(
                     "Saving unclean points to ",
                     str(
@@ -790,7 +812,6 @@ class TSDFFusion(GSMeshExporter):
 
         with torch.no_grad():
             cameras: Cameras = pipeline.datamanager.train_dataset.cameras  # type: ignore
-            # TODO: do eval dataset as well
             num_frames = len(pipeline.datamanager.train_dataset)  # type: ignore
             samples_per_frame = (self.total_points + num_frames) // (num_frames)
             print("samples per frame: ", samples_per_frame)
@@ -834,6 +855,16 @@ class TSDFFusion(GSMeshExporter):
                     mask=indices,
                 )
                 # xyzs = xyzs[mask.view(-1,1)[...,0]]
+                # xyzs = xyzs.cpu()
+                # rgbs = rgbs.cpu()
+                # visual_hull = np.array(visual_hull, dtype=np.float32)
+                # distances = cdist(xyzs, visual_hull)
+                # min_distances = np.min(distances, axis=1)
+                # hull_mask = min_distances < 0.01 * scale_factor
+                # filtered_xyzs = xyzs[hull_mask]
+                # filtered_rgbs = rgbs[hull_mask]                
+                # xyzs = filtered_xyzs
+                # rgbs = filtered_rgbs
                 points.append(xyzs)
                 colors.append(rgbs)
                 TSDFvolume.integrate(
@@ -844,8 +875,6 @@ class TSDFFusion(GSMeshExporter):
             vertices, faces = TSDFvolume.extract_triangle_mesh(min_weight=5)
 
             visual_hull = np.array(visual_hull, dtype=np.float32)
-
-            # from scipy.spatial.distance import cdist
             # distances = cdist(vertices, visual_hull)
             # min_distances = np.min(distances, axis=1)
             # hull_mask = min_distances < 0.01 * scale_factor
@@ -904,8 +933,9 @@ def entrypoint():
 
 
 if __name__ == "__main__":
+    # config, pipeline, checkpoint_path, step = eval_setup(Path("outputs/unnamed/dn-splatter/2024-09-10_172140/config.yml"))
     # tyro.cli(GaussiansToPoisson).main()
-    tyro.cli(DepthAndNormalMapsPoisson).main()
-    # tyro.cli(LevelSetExtractor).main()
+    # tyro.cli(DepthAndNormalMapsPoisson).main()
+    tyro.cli(LevelSetExtractor).main()
     # tyro.cli(MarchingCubesMesh).main()
     # tyro.cli(TSDFFusion).main()

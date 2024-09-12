@@ -9,7 +9,7 @@ import json
 # path = args.path
 
 def select_imgs(path):
-    source_folder = f'{path}/imgs'
+    source_folder = f'{path}/images'
     destination_folder = f'{path}/selected_images'
     indices_file = f'{path}/train.txt'
 
@@ -22,7 +22,7 @@ def select_imgs(path):
 
     # 遍历目标索引
     for i in target_indices:
-        file_name = f'c_{i}.png'
+        file_name = f'rgb_{i}.png'
         source_file_path = os.path.join(source_folder, file_name)
         
         # 检查文件是否存在

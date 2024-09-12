@@ -121,7 +121,7 @@ def VisualHull(path, error=5):
     imgs = []
     file_name = 'masks'
     mask_path = os.path.join(path, file_name)
-    file_list = sorted(os.listdir(mask_path), key=lambda x: x.zfill(10))
+    # file_list = sorted(os.listdir(mask_path), key=lambda x: x.zfill(10))
     for i in tqdm(range(len(cam_info))):
         # if i % 10 != 0:
         #     continue
