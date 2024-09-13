@@ -102,7 +102,7 @@ def Init_pcd_generate(path):
 
     # directly extract pcds from depth
     # back_pcds = back_pcds.voxel_down_sample(voxel_size=0.02)
-    # pcds = back_pcds + fore_pcds
+    # pcds = back_pcds
 
     fore_pcds_path = os.path.join(path, 'foreground_pcd.ply')
     if os.path.exists(fore_pcds_path):

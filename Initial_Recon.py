@@ -21,7 +21,7 @@ class GSReconstructionConfig:
     normal_lambda: float = 0.4
     sensor_depth_lambda: float = 0.2
     use_depth_smooth_loss: bool = True
-    use_binary_opacities: bool = True
+    use_binary_opacities: bool = False
     use_normal_loss: bool = True
     normal_supervision: str = "mono"
     random_init: bool = False
