@@ -1232,7 +1232,7 @@ class DNSplatterModel(SplatfactoModel):
             filtered_means = self.means[close_mask]
             distances = torch.cdist(filtered_means, visual_hull)
             min_distances = distances.min(dim=-1).values
-            filtered_hull_mask  = (min_distances > 0.005 * self.kwargs["metadata"]['scale_factor']) & (min_distances <= 0.05 * self.kwargs["metadata"]['scale_factor'])
+            filtered_hull_mask  = (min_distances > 0.005 * self.kwargs["metadata"]['scale_factor']) & (min_distances <= 0.02 * self.kwargs["metadata"]['scale_factor'])
             # hull_mask = (min_distances > 0.02) & (min_distances <= 0.1)
 
             hull_mask = torch.zeros(self.means.shape[0], dtype=torch.bool, device=self.device)
@@ -1278,6 +1278,10 @@ class DNSplatterModel(SplatfactoModel):
                 self.gauss_params["features_rest"][high_grads] = fc_rest
             # save the high gradients gaussians
             self.high_grads_gs = self.gauss_params["means"][high_grads]
+            transform_matrix = self.kwargs["metadata"]['transform_matrix'].to(self.device)
+            scale_factor = self.kwargs["metadata"]['scale_factor']
+            self.high_grads_gs = (self.high_grads_gs/scale_factor - transform_matrix[:3, 3].T) @ transform_matrix[:3, :3]
+            self.high_grads_gs = torch.cat([self.high_grads_gs, self.xys_grad_norm[high_grads].unsqueeze(-1)], dim=-1)
             CONSOLE.log("Extracting high gradients ...")
             dbscan_cluster_centers(self.high_grads_gs, self.config.base_dir)
 
