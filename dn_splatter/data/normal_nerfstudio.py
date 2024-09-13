@@ -647,6 +647,9 @@ class NormalNerfstudio(Nerfstudio):
         scale_factor_dict = {"scale_factor": scale_factor}
         metadata.update(scale_factor_dict)
 
+        transform_matrix_dict = {"transform_matrix": transform_matrix}
+        metadata.update(transform_matrix_dict)
+
         grad_visualization_dict = {'grad_visualization': self.config.grad_visualization}
         metadata.update(grad_visualization_dict)
 

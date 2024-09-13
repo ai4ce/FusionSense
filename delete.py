@@ -2,7 +2,7 @@ import os
 import glob
 
 # 指定目标文件夹路径
-folder_path = '/home/xh1131/research/FusionSense/datasets/blackbunny3/images'  # 替换为实际的文件夹路径
+folder_path = '/home/ks8018/dn-splatter/datasets/blackbunny3/depth'  # 替换为实际的文件夹路径
 
 # 删除所有 .npy 文件
 npy_files = glob.glob(os.path.join(folder_path, '*.npy'))
