@@ -1,5 +1,6 @@
 import os
 import json
+import signal
 import subprocess
 from pathlib import Path
 from dataclasses import dataclass
@@ -9,6 +10,20 @@ from utils.metric3dv2_depth_generation import metric3d_depth_generation
 from utils.generate_pcd import Init_pcd_generate
 from eval_utils.rendering_evaluation import rendering_evaluation
 from nerfstudio.utils.rich_utils import CONSOLE
+
+proc = None
+def signal_handler(sig, frame):
+    global proc  # Reference the global 'proc' variable
+    print("\nCtrl+C detected. Terminating the subprocess...")
+    if proc:
+        proc.terminate()  # Terminate the subprocess
+        proc.wait()  # Wait for the process to clean up
+        print("Subprocess terminated.")
+    else:
+        print("No subprocess to terminate.")
+
+# Register the signal handler for SIGINT
+signal.signal(signal.SIGINT, signal_handler)
 
 @dataclass
 class GSReconstructionConfig:
@@ -21,7 +36,7 @@ class GSReconstructionConfig:
     normal_lambda: float = 0.4
     sensor_depth_lambda: float = 0.2
     use_depth_smooth_loss: bool = True
-    use_binary_opacities: bool = False
+    use_binary_opacities: bool = True
     use_normal_loss: bool = True
     normal_supervision: str = "mono"
     random_init: bool = False
@@ -165,9 +180,9 @@ class Initial_Reconstruction:
         print("Training the model...")
         subprocess.run(command)
         print("Training complete.")
-    
+
     def extract_mesh(self, config_path):
-        save_dir = os.path.join(self.base_path, "MESH")
+        save_dir = os.path.join(self.output_dir, "MESH")
         command = [
             "gs-mesh",
             "tsdf",
@@ -210,8 +225,8 @@ if __name__ == "__main__":
     # init_recon.generate_mask_images()
     CONSOLE.log("Step 3: Generating visual hull...")
     init_recon.generate_visual_hull(error=5)
-    # CONSOLE.log("Step 4: Running metric3d depth for ")
-    # init_recon.run_metric3d_depth()
+    CONSOLE.log("Step 4: Running metric3d depth for ")
+    init_recon.run_metric3d_depth()
     CONSOLE.log("Step 5: Initialize pcd")
     init_recon.Init_pcd_generation()
     CONSOLE.log("Step 6: Generate normals")
