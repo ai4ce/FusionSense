@@ -1875,38 +1875,6 @@ class DNSplatterModel(SplatfactoModel):
         density_grad = -torch.nn.functional.normalize(density_grad, dim=-1)
         return density_grad
 
-    @torch.no_grad()
-    def export_poisson_mesh(self):
-        positions = self.means
-        normals = self.normals
-        colors = torch.cat((self.features_dc[:, None, :], self.features_rest), dim=1)
-        
-        if (self.hull_mask):
-            positions = positions[self.hull_mask]
-            normals = normals[self.hull_mask]
-            colors = colors[self.hull_mask]
-        
-        return {
-            "positions": positions,
-            "normals": normals, 
-            "colors": colors
-        }
-        
-        # CONSOLE.print("Computing Mesh... this may take a while.")
-        # mesh, densities = o3d.geometry.TriangleMesh.create_from_point_cloud_poisson(
-        #     pcd, depth=9
-        # )
-        # CONSOLE.print("Saving Mesh...")
-        # o3d.io.write_triangle_mesh(
-        #     str(self.output_dir / "GaussiansToPoisson_poisson_mesh_culled.ply"), mesh
-        # )
-        # o3d.io.write_point_cloud(
-        #     str(self.output_dir / "GaussiansToPoisson_pcd_culled.ply"), pcd
-        # )
-        # CONSOLE.print(
-        #     f"[bold green]:white_check_mark: Saving Mesh to {self.output_dir / 'GaussiansToPoisson_poisson_mesh.ply'}"
-        # )
-
 def random_quat_tensor(N, **kwargs):
     u = torch.rand(N, **kwargs)
     v = torch.rand(N, **kwargs)
