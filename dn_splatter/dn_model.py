@@ -91,7 +91,7 @@ class DNSplatterModelConfig(SplatfactoModelConfig):
     """Regularizer for sparse loss"""
     sparse_loss_steps: int = 10
     """Enable sparse loss at steps"""
-    use_binary_opacities: bool = False
+    use_binary_opacities: bool = True
     """Enable binary opacities"""
     binary_opacities_threshold: float = 0.9
     """Threshold for clipping opacities"""
@@ -516,6 +516,9 @@ class DNSplatterModel(SplatfactoModel):
             opacities_crop[self.add_mask] = opacities_crop[self.add_mask].detach()
             means_crop = means_crop.clone()
             means_crop[self.add_mask] = means_crop[self.add_mask].detach()
+            features_rest_crop = features_rest_crop.clone()
+            features_rest_crop[self.add_mask] = features_rest_crop[self.add_mask].detach()
+
                         
         colors_crop = torch.cat((features_dc_crop[:, None, :], features_rest_crop), dim=1)
 
@@ -1149,9 +1152,9 @@ class DNSplatterModel(SplatfactoModel):
 
                     max_xyz = torch.max(patch_pts, axis=0).values
                     min_xyz = torch.min(patch_pts, axis=0).values
-                    diag_xyz = (max_xyz - min_xyz) * 0.1
-                    min_aabb = min_xyz-diag_xyz
-                    max_aabb = max_xyz+diag_xyz
+                    diag_xyz = (max_xyz - min_xyz)
+                    min_aabb = min_xyz-torch.norm(diag_xyz)
+                    max_aabb = max_xyz+torch.norm(diag_xyz)
                     mask_x = (pts[:, 0] >= min_aabb[0]) & (pts[:, 0] <= max_aabb[0])
                     mask_y = (pts[:, 1] >= min_aabb[1]) & (pts[:, 1] <= max_aabb[1])
                     mask_z = (pts[:, 2] >= min_aabb[2]) & (pts[:, 2] <= max_aabb[2])
@@ -1160,6 +1163,9 @@ class DNSplatterModel(SplatfactoModel):
                     num_new_points += patch_pts.shape[0]
 
                 CONSOLE.log(f"There are {aabb_mask.sum()}/{pts.shape[0]} previous GS points within the aabb box of the touch patch")
+                input(min_aabb)
+                input(max_aabb)
+                input(max_aabb-min_aabb)
                 # generate ideal gaussians point cloud at touch_patches_points
                 new_shs = torch.zeros((num_new_points, num_sh_bases(self.config.sh_degree), 3)).float().cuda()
                 if self.config.sh_degree > 0:
