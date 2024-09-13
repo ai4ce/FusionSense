@@ -243,6 +243,7 @@ if __name__ == "__main__":
     init_recon.evaluate_rendering()
 
     # CONSOLE.log("Step 10: Training with touches")
+    # configs.load_touches = True
     # init_recon.add_touch_train_model(configs=configs)
 
     # CONSOLE.log("Step 11: Evaluating rendering")
