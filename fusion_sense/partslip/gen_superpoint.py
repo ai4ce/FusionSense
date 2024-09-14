@@ -11,7 +11,7 @@ import ctypes
 from ament_index_python.packages import get_package_share_directory
 
 resource_folder = os.path.join(get_package_share_directory('fusion_sense'), 'fusion_sense_resources')
-partslip_folder = os.path.join(resource_folder, 'partslip')
+partslip_folder = os.path.join(resource_folder, 'segmentation')
 sys.path.append(partslip_folder)
 
 # cur_dir = os.path.dirname(os.path.abspath(__file__))

@@ -1,10 +1,16 @@
 import os
-import torch
-from pytorch3d.io import IO
-import trimesh
-import numpy as np
+
 from pathlib import Path
 import glob
+import warnings
+
+import torch
+import numpy as np
+
+from pytorch3d.io import IO
+import trimesh
+import open3d as o3d
+import open3d.core as o3c
 
 import base64
 from openai import OpenAI
@@ -19,6 +25,8 @@ from .partslip.gen_superpoint import gen_superpoint
 from .partslip.bbox2seg import bbox2seg
 
 from ament_index_python.packages import get_package_share_directory
+
+warnings.filterwarnings("ignore")
 
 class PartResponse(BaseModel):
     '''
@@ -37,8 +45,12 @@ class NextBestTouch:
             resource_folder: str
                 Path to the fusion_sense_resource folder
         '''
-        self.resource_folder = resource_folder
-        self.partslip_folder = os.path.join(self.resource_folder, "partslip")
+        self.resource_folder = resource_folder # holds all the resources
+
+        self.gaussian_folder = os.path.join(self.resource_folder, "gaussian") # folder to hold all gaussian resource and results
+
+        self.segmentation_folder = os.path.join(self.resource_folder, "segmentation") # folder to hold all segmentation resource and results
+
         api_path = os.path.join(self.resource_folder, 'api_key.txt')
         with open(api_path, 'r') as file:
             api_key = file.read()
@@ -51,14 +63,21 @@ class NextBestTouch:
 
         mesh_path = os.path.join(self.resource_folder, "meshes")
         mesh = glob.glob(os.path.join(mesh_path, "*"))[0]
-        point_cloud_path = self.pointcloud_extraction(mesh)
+        self.point_cloud_path = self.pointcloud_extraction(mesh)
 
         for image in images:
             classification, parts = self.partname_extraction(image)
-            print(f'[2. The object is classified as: {classification}, and the parts are: {parts}]')
+
             if classification is None:
                 continue
-            self.partslip_infer(point_cloud_path, parts, save_dir=os.path.join(self.partslip_folder, 'output'))
+            print(f'[2. The object is classified as: {classification}, and the parts are: {parts}]')
+
+            self._create_rank_dict(parts) # Create a dictionary to rank the parts in terms of which one to touch first
+
+            self.seg_output_dir = os.path.join(self.segmentation_folder, 'output', classification)
+            self.segmentation_infer(self.point_cloud_path, parts, save_dir=self.seg_output_dir)
+            self.grounding_segmentation()
+            self.fuse_gaussian_and_segmentation()
             break
         
 
@@ -93,16 +112,19 @@ class NextBestTouch:
             sampled_colors = np.ones_like(points) * [0, 0, 0]
 
         # Save the denser point cloud to a .ply file
-        self.pointcloud_folder = os.path.join(self.partslip_folder, 'pointcloud')
+        self.pointcloud_folder = os.path.join(self.segmentation_folder, 'pointcloud')
         os.makedirs(self.pointcloud_folder, exist_ok=True)
         output_ply_file = os.path.join(self.pointcloud_folder, Path(f'{self.object_name}.ply'))
         point_cloud = trimesh.points.PointCloud(points, sampled_colors)
         point_cloud.export(output_ply_file)
 
-        print(f"Dense point cloud saved to {output_ply_file}")
         return output_ply_file
 
     def partname_extraction(self, image_path):
+        '''
+        Extract the part names from the image using the VLM model, and rank them in terms of which one to touch first
+        '''
+
 
         print('[2. Querying VLM model for part names...]')
 
@@ -115,7 +137,7 @@ class NextBestTouch:
             "content": [
                 {
                 "type": "text",
-                "text": "Take a deep breath. You will be given a picture with an object in the center. First, tell the classification of the object. Then, You will need to describe the major parts that make up the object. Use label-like everyday single words. When giving the label, think of parts that are difficult to have a good perception purly based on vision, but would also rely on tactile perception. For example a small button on a earphone case. Separate your answer with commas and end with a period."
+                "text": "Take a deep breath. You are a very descriptive and helpful AI assisstant. You will be given a picture with an object in the center. First, tell the classification of the object. Be as descriptive as possible. Then, You will need to describe the major parts that make up the object. Use label-like everyday single words. When giving the label, think of parts that are difficult to have a good perception purly based on vision, but would also rely on tactile perception. For example a small button on a earphone case. Also, rank the parts in terms of which one to touch first."
                 }
             ]
             },
@@ -138,9 +160,13 @@ class NextBestTouch:
         
         return response.classification, response.parts
 
-    def partslip_infer(self, input_pc_file, part_names, save_dir="tmp"):
-        config = os.path.join(self.partslip_folder, "glip_Swin_L.yaml")
-        weight_path = os.path.join(self.partslip_folder, "glip_large_model.pth")
+    def segmentation_infer(self, input_pc_file, part_names, save_dir="tmp"):
+        '''
+        Segment the point cloud into parts using the PartSlip pipeline
+        '''
+
+        config = os.path.join(self.segmentation_folder, "glip_Swin_L.yaml")
+        weight_path = os.path.join(self.segmentation_folder, "glip_large_model.pth")
         
         print("[2. Loading GLIP model...]")
         glip_demo = load_model(config, weight_path)
@@ -168,6 +194,80 @@ class NextBestTouch:
         print('[2. Generating 3D part segmentation...]')
         sem_seg, ins_seg = bbox2seg(xyz, superpoint, preds, screen_coords, pc_idx, part_names, save_dir, solve_instance_seg=True)
     
+    def grounding_segmentation(self):
+        '''
+        Ground the segmentation results to the world coordinate system
+
+        Returns: No return value, but create a self.grounded_seg_pcd
+        '''
+        print("[2. Grounding the segmentation results...]")
+        # Load the original point cloud as the base for the grounding
+        original_pcd = o3d.io.read_point_cloud(self.point_cloud_path) # note that this is not a o3d.t
+        original_points = np.asarray(original_pcd.points)
+        
+        parts_path = glob.glob(os.path.join(self.seg_output_dir, "*.ply"))
+
+        # Initialize an empty list to hold the part_rank and color for each point
+        all_part_ranks = np.zeros(shape=(original_points.shape[0], 1), dtype=np.int32)
+        all_colors = np.zeros_like(original_points)
+        
+        for part_path in parts_path:
+            # Load the point cloud
+            pcd = o3d.io.read_point_cloud(part_path)
+            
+            # get the current color coding for this specific part. Only parts are colored with white
+            colors = np.asarray(pcd.colors)
+
+            # Check for colored points ([1, 1, 1] as color)
+            colored_indices = np.all(colors == [1.0, 1.0, 1.0], axis=1)
+
+            # Assign part rank and color to the corresponding points
+            for is_colored in colored_indices:
+                if is_colored:
+                    all_part_ranks[colored_indices] = self.rank_dict[Path(part_path).stem]
+                    all_colors[colored_indices] = self.colors_code[self.rank_dict[Path(part_path).stem]]
+
+        # Create a new point cloud
+        self.grounded_seg_pcd = o3d.t.geometry.PointCloud(original_points)
+
+        self.grounded_seg_pcd.point.colors = o3c.Tensor(all_colors, dtype=o3c.Dtype.Float32)
+
+        self.grounded_seg_pcd.point.part_rank = o3c.Tensor(all_part_ranks, dtype=o3c.Dtype.Int32)
+        
+        # useful when fusing the high gaussian gradient and segmentation results
+        self.semantic_points = original_points
+        self.semantic_part_rank = all_part_ranks
+
+        o3d.t.io.write_point_cloud(os.path.join(self.pointcloud_folder, "grounded_segmentation.ply"), self.grounded_seg_pcd)
+
+    def fuse_gaussian_and_segmentation(self):
+
+        print("[2. Fusing the segmentation results with the high gaussian gradient points...]")
+
+        gaussian_pcd = o3d.t.io.read_point_cloud(os.path.join(self.gaussian_folder, "high_grad_pts.pcd"))
+        gaussian_points = gaussian_pcd.point.positions.numpy()
+
+
+        gaussian_part_rank = np.zeros((gaussian_pcd.point.ranks.shape[0],1), dtype=np.int32)
+
+        gaussian_color = np.zeros_like(gaussian_points)
+
+        for i, target_point in enumerate(gaussian_points):
+            # Compute the Euclidean distance from each point to the target_point
+            distances = np.linalg.norm(self.semantic_points - target_point, axis=1)
+
+            # Find the index of the closest point
+            closest_point_index = np.argmin(distances)
+
+            # Assign the semantic part rank of the closest point to the target point
+            gaussian_part_rank[i] = self.semantic_part_rank[closest_point_index]
+            gaussian_color[i] = self.colors_code[gaussian_part_rank[i]]
+
+        gaussian_pcd.point.part_rank = o3c.Tensor(gaussian_part_rank, dtype=o3c.Dtype.Int32)
+        gaussian_pcd.point.colors = o3c.Tensor(gaussian_color, dtype=o3c.Dtype.Float32)
+        
+        o3d.t.io.write_point_cloud(os.path.join(self.gaussian_folder, "fused_gaussian_segmentation.ply"), gaussian_pcd)
+        self.fused_pcd = gaussian_pcd
 
     def _encode_image(self, image_path):
         '''
@@ -190,6 +290,16 @@ class NextBestTouch:
         result = self.client.beta.chat.completions.parse(**params)
         return result.choices[0].message.parsed
 
+    def _create_rank_dict(self, parts):
+        '''
+        Create a dictionary to rank the parts in terms of which one to touch first.
+        Also create a list for color coding the parts
+        '''
+        self.rank_dict = {}
+        for i, part in enumerate(parts):
+            self.rank_dict[part] = i+1 # rank starts from 1. 0 is reserved for unclassified points
+        self.colors_code = np.random.rand(len(parts)+1, 3)
+        self.colors_code[0] = [0, 0, 0] # the first color is black, which is for all the unclassified points
 
 def main():
     fusion_sense_folder = os.path.join(get_package_share_directory('fusion_sense'), 'fusion_sense_resources')

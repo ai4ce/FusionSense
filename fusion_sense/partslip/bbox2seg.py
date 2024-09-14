@@ -35,7 +35,6 @@ def calc_sp_connectivity(xyz, superpoints, thr=0.02):
 
 def bbox2seg(xyz, superpoint, preds, screen_coor_all, point_idx_all, part_names, save_dir,
             num_view=10, solve_instance_seg=True, visualize=True):
-    print("semantic segmentation...")
     n_category = len(part_names)
     n_sp = len(superpoint)
     sp_visible_cnt = np.zeros(n_sp) #visible points for each superpoint
@@ -106,7 +105,6 @@ def bbox2seg(xyz, superpoint, preds, screen_coor_all, point_idx_all, part_names,
     if solve_instance_seg == False:
         return sem_seg, None
     
-    print("instance segmentation...")
     os.makedirs("%s/instance_seg" % save_dir, exist_ok=True)
     connectivity = calc_sp_connectivity(xyz, superpoint)
     ins_seg = np.ones(xyz.shape[0], dtype=np.int32) * -1
