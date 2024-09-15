@@ -9,6 +9,8 @@ from utils.VisualHull import VisualHull
 from utils.metric3dv2_depth_generation import metric3d_depth_generation
 from utils.generate_pcd import Init_pcd_generate
 from eval_utils.rendering_evaluation import rendering_evaluation
+from eval_utils.chamfer_evaluation import chamfer_eval
+from eval_utils.mask_rendering_eval import mask_rendering_evaluation
 from nerfstudio.utils.rich_utils import CONSOLE
 
 @dataclass
@@ -199,14 +201,17 @@ class Initial_Reconstruction:
         subprocess.run(command, shell=True, check=True)
         print("GSplat exported.")
 
-    def evaluate_rendering(self):
+    def evaluation(self):
         rendering_evaluation(self.output_dir, self.eval_dir, self.data_name)
-        print("Rendering evaluated.")
+        mesh_dir = os.path.join(self.output_dir, "MESH")
+        chamfer_eval(self.base_path, mesh_dir)
+        mask_rendering_evaluation(self.base_path, self.eval_dir)
+        print("Evaluation complete.")
 
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument("--data_name", type=str, default="transparent_bunny")
+    parser.add_argument("--data_name", type=str, default="blackbunny3")
     parser.add_argument("--prompt_text", type=str, default="transparent bunny statue")
     args = parser.parse_args()
 
@@ -230,19 +235,19 @@ if __name__ == "__main__":
     # CONSOLE.log("Step 7: Setting transforms.json")
     # init_recon.set_transforms_and_configs()
 
-    CONSOLE.log("Step 8: Initialize training")
-    init_recon.train_model(configs=configs)
+    # CONSOLE.log("Step 8: Initialize training")
+    # init_recon.train_model(configs=configs)
     # CONSOLE.log("Step 9: Extracting mesh")
     # init_recon.extract_mesh(config_path=os.path.join(configs.output_dir, "config.yml"))
 
     # CONSOLE.log("Step 10: Evaluating rendering")
-    # init_recon.evaluate_rendering()
+    # init_recon.evaluation()
 
     # CONSOLE.log("Step 10: Training with touches")
     # configs.load_touches = True
     # init_recon.add_touch_train_model(configs=configs)
 
-    # CONSOLE.log("Step 11: Evaluating rendering")
-    # init_recon.evaluate_rendering()
+    CONSOLE.log("Step 11: Evaluating rendering")
+    init_recon.evaluation()
 
     # init_recon.export_gsplats(config_path="outputs/unnamed/dn-splatter/2024-09-02_203650/config.yml", output_dir="exports/splat/")

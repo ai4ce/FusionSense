@@ -95,18 +95,14 @@ python Initial_Recon.py --data_name {DATASET_NAME}
 datasets/
     ds_name/
     │
-    ├── transforms.json
+    ├── transforms.json # need for training
     │
     ├── train.txt
     │
     ├── images/
     │   ├── rgb_1.png
     │   └── rgb_2.png
-    │
-    ├── normals_from_pretrain/ # normal 
-    │   ├── rgb_1.png
-    │   └── rgb_2.png
-    │
+    │ 
     ├── realsense_depth/
     │   ├── depth_1.png
     │   └── depth_2.png
@@ -117,7 +113,14 @@ datasets/
     │   ├── normal
     │   └── patch
     │
+    ├── model.stl       # need for evaluation
+    │
+    ├── normals_from_pretrain/ # generated
+    │   ├── rgb_1.png
+    │   └── rgb_2.png
+    │
     ├── foreground_pcd.ply
+    │
     └── merged_pcd.ply
 ```
 
