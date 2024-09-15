@@ -48,11 +48,11 @@ class GSReconstructionConfig:
     load_pcd_normals: bool = True
     load_3D_points: bool = True
     normal_format: str = "opencv"
-    load_touches: bool = False
+    load_touches: bool = True
 
     model_type: str = "normal-nerfstudio"
     warmup_length: int = 500
-    add_touch_at: int = 15000
+    add_touch_at: int = 1000
 
 class Initial_Reconstruction:
     def __init__(self, data_name, model_name, prompt_text='Near Object'):
@@ -197,7 +197,8 @@ class Initial_Reconstruction:
             "gs-mesh",
             "gaussians",
             "--load-config", str(config_path),
-            "--output-dir", str(save_dir+"/gaussian"),
+            # "--output-dir", str(save_dir+"/gaussian"),
+            "--output-dir", str(save_dir),
         ]
         command_sugar = [
             "gs-mesh",
@@ -242,20 +243,20 @@ if __name__ == "__main__":
     init_recon = Initial_Reconstruction(data_name, model_name, prompt_text)
     configs = GSReconstructionConfig(output_dir=init_recon.output_dir, data_path=init_recon.base_path)
 
-    CONSOLE.log("Step 1: Selecting Images for training...")
-    init_recon.select_frames()
-    # CONSOLE.log("Step 2: Generate Mask Images using Grounded SAM...")
-    # init_recon.generate_mask_images()
-    CONSOLE.log("Step 3: Generating visual hull...")
-    init_recon.generate_visual_hull(error=5)
-    CONSOLE.log("Step 4: Running metric3d depth for ")
-    init_recon.run_metric3d_depth()
-    CONSOLE.log("Step 5: Initialize pcd")
-    init_recon.Init_pcd_generation()
-    CONSOLE.log("Step 6: Generate normals")
-    init_recon.generate_normals()
-    CONSOLE.log("Step 7: Setting transforms.json")
-    init_recon.set_transforms_and_configs()
+    # CONSOLE.log("Step 1: Selecting Images for training...")
+    # init_recon.select_frames()
+    # # CONSOLE.log("Step 2: Generate Mask Images using Grounded SAM...")
+    # # init_recon.generate_mask_images()
+    # CONSOLE.log("Step 3: Generating visual hull...")
+    # init_recon.generate_visual_hull(error=5)
+    # # CONSOLE.log("Step 4: Running metric3d depth for ")
+    # # init_recon.run_metric3d_depth()
+    # CONSOLE.log("Step 5: Initialize pcd")
+    # init_recon.Init_pcd_generation()
+    # # CONSOLE.log("Step 6: Generate normals")
+    # # init_recon.generate_normals()
+    # CONSOLE.log("Step 7: Setting transforms.json")
+    # init_recon.set_transforms_and_configs()
 
     CONSOLE.log("Step 8: Initialize training")
     init_recon.train_model(configs=configs)
