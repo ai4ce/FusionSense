@@ -210,8 +210,8 @@ class Initial_Reconstruction:
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument("--data_name", type=str, default="blackbunny3")
-    parser.add_argument("--prompt_text", type=str, default="black bunny statue")
+    parser.add_argument("--data_name", type=str, default="transparent_bunny")
+    parser.add_argument("--prompt_text", type=str, default="transparent bunny statue")
     args = parser.parse_args()
 
     data_name = args.data_name
