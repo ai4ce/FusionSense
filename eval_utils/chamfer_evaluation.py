@@ -42,7 +42,7 @@ def execute_global_registration(source, target, source_fpfh,
 
 def Icp_preprocessing(mesh, pcd_real):
     # Sample points from the mesh to create a point cloud
-    pcd_cad = mesh.sample_points_poisson_disk(number_of_points=10000)
+    pcd_cad = mesh.sample_points_poisson_disk(number_of_points=500000)
     # change cad mm scale to meter
     points = np.asarray(pcd_cad.points)
     points = points / 1000.0
@@ -79,14 +79,53 @@ def Icp_preprocessing(mesh, pcd_real):
     pcd_cad.transform(icp_result.transformation)
     return pcd_cad
 
+def local_CD(center, pcd_cad, pcd_real, radius=0.01):
+    points1 = np.asarray(pcd_cad.points)
+    distances = np.linalg.norm(points1 - center, axis=1)
+    mask = distances > radius 
+    filtered_points = points1[mask]
+    local_pcd_cad = o3d.geometry.PointCloud()
+    local_pcd_cad.points = o3d.utility.Vector3dVector(filtered_points)
+
+    points2 = np.asarray(pcd_real.points)
+    distances = np.linalg.norm(points2 - center, axis=1)
+    mask = distances > radius
+    filtered_points = points2[mask]
+    local_pcd_real = o3d.geometry.PointCloud()
+    local_pcd_real.points = o3d.utility.Vector3dVector(filtered_points)
+
+    local_chamfer_dist = Chamfer_Distance(local_pcd_cad, local_pcd_real)
+    return local_chamfer_dist
+
+def touch_CD_eval(base_dir, pcd_cad, pcd_real):
+    with open(os.path.join(base_dir, "gelsight_transform.json")) as f:
+        gel_transforms = json.load(f)
+    touch_centers = []
+    for frame in gel_transforms["frames"]:
+        if "transform_matrix" in frame:
+            touch_center = np.array(frame["transform_matrix"])[:3,3]
+            touch_centers.append(touch_center)
+
+    local_chamfer_dist = []
+    for center in touch_centers:
+        local_chamfer_dist.append(local_CD(center, pcd_cad, pcd_real))
+    avg_local_chamfer_dist = np.mean(local_chamfer_dist)
+    print(f"Average Local Chamfer Distance: {avg_local_chamfer_dist}")
+    return np.array(avg_local_chamfer_dist)
+
 def chamfer_eval(base_dir, mesh_dir):
-    pcd_real = o3d.io.read_point_cloud(os.path.join(mesh_dir, "after_clean_points_surface_level_0.3_closest_gaussian.ply"))
+    pcd_real = o3d.io.read_point_cloud(os.path.join(mesh_dir, "after_clean_points_surface_level_0.3_closest_gaussian_touch.ply"))
     cad_mesh = o3d.io.read_triangle_mesh(os.path.join(base_dir, "stanford_bunny.stl"))
     pcd_cad = Icp_preprocessing(cad_mesh, pcd_real)
-    dist = Chamfer_Distance(pcd_cad, pcd_real)
-    print(f"Chamfer Distance: {dist}")
-
     o3d.io.write_point_cloud(os.path.join(mesh_dir, "pcd_cad.ply"), pcd_cad)
+
+    # # global chamfer distance
+    # dist = Chamfer_Distance(pcd_cad, pcd_real)
+    # print(f"Chamfer Distance: {dist}")
+
+    # local chamfer distance
+    dist = touch_CD_eval(base_dir, pcd_cad, pcd_real)
+
     with open(os.path.join(mesh_dir, "chamfer_distance_eval.json"), "w") as f:
         json.dump({"chamfer_distance": dist}, f, indent=4)
 
