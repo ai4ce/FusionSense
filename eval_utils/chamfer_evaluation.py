@@ -84,6 +84,7 @@ def chamfer_eval(base_dir, mesh_dir):
     cad_mesh = o3d.io.read_triangle_mesh(os.path.join(base_dir, "stanford_bunny.stl"))
     pcd_cad = Icp_preprocessing(cad_mesh, pcd_real)
     dist = Chamfer_Distance(pcd_cad, pcd_real)
+    print(f"Chamfer Distance: {dist}")
 
     o3d.io.write_point_cloud(os.path.join(mesh_dir, "pcd_cad.ply"), pcd_cad)
     with open(os.path.join(mesh_dir, "chamfer_distance_eval.json"), "w") as f:
