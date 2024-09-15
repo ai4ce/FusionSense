@@ -92,30 +92,56 @@ python Initial_Recon.py --data_name {DATASET_NAME}
 
 ## Dataset Format
 ```bash
-tr-rabbit/
-│
-├── transforms.json
-│
-├── train.txt
-│
-├── images/
-│   ├── rgb_1.png
-│   └── rgb_2.png
-│
-├── normals_from_pretrain/ # normal 
-│   ├── rgb_1.png
-│   └── rgb_2.png
-│
-├── realsense_depth/
-│   ├── depth_1.png
-│   └── depth_2.png
-│
-│── tactile/
-│   ├── image
-│   ├── mask
-│   ├── normal
-│   └── patch
-│
-├── foreground_pcd.ply
-└── merged_pcd.ply
+datasets/
+    ds_name/
+    │
+    ├── transforms.json
+    │
+    ├── train.txt
+    │
+    ├── images/
+    │   ├── rgb_1.png
+    │   └── rgb_2.png
+    │
+    ├── normals_from_pretrain/ # normal 
+    │   ├── rgb_1.png
+    │   └── rgb_2.png
+    │
+    ├── realsense_depth/
+    │   ├── depth_1.png
+    │   └── depth_2.png
+    │
+    │── tactile/
+    │   ├── image
+    │   ├── mask
+    │   ├── normal
+    │   └── patch
+    │
+    ├── foreground_pcd.ply
+    └── merged_pcd.ply
+```
+
+## Outputs Format
+```bash
+outputs/
+    ds_name/
+    │
+    ├── MESH/
+    │   └── mesh.ply
+    │
+    ├── nerfstudio_models/
+    │   └── 30000.ckpt
+    │   
+    ├── cluster_centers.npy
+    │
+    ├── config.yml
+    │
+    ├── high_grad_pts.pcd
+    │
+    ├── high_grad_pts_ascii.pcd
+    │
+    └── dataparser_transforms.json
+
+eval/
+    ds_name/ *evaluation results files*
 ```
