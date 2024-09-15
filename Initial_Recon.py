@@ -5,25 +5,11 @@ import subprocess
 from pathlib import Path
 from dataclasses import dataclass
 from utils.imgs_selection import select_imgs, filter_transform_json
-from utils.VisualHull import VisualHull
-from utils.metric3dv2_depth_generation import metric3d_depth_generation
-from utils.generate_pcd import Init_pcd_generate
+# from utils.VisualHull import VisualHull
+# from utils.metric3dv2_depth_generation import metric3d_depth_generation
+# from utils.generate_pcd import Init_pcd_generate
 from eval_utils.rendering_evaluation import rendering_evaluation
 from nerfstudio.utils.rich_utils import CONSOLE
-
-proc = None
-def signal_handler(sig, frame):
-    global proc  # Reference the global 'proc' variable
-    print("\nCtrl+C detected. Terminating the subprocess...")
-    if proc:
-        proc.terminate()  # Terminate the subprocess
-        proc.wait()  # Wait for the process to clean up
-        print("Subprocess terminated.")
-    else:
-        print("No subprocess to terminate.")
-
-# Register the signal handler for SIGINT
-signal.signal(signal.SIGINT, signal_handler)
 
 @dataclass
 class GSReconstructionConfig:
@@ -49,7 +35,7 @@ class GSReconstructionConfig:
 
     model_type: str = "normal-nerfstudio"
     warmup_length: int = 500
-    add_touch_at: int = 15000
+    add_touch_at: int = 501
 
 class Initial_Reconstruction:
     def __init__(self, data_name, prompt_text='Near Object'):
@@ -69,7 +55,7 @@ class Initial_Reconstruction:
     def generate_mask_images(self):
         os.chdir(self.grounded_sam_path)
         command = (
-            f'conda run -n G-SAM-2 python grounded_sam2_hf_model_imgs_MaskExtract.py --path {os.path.abspath(self.base_path)} --prompt {self.prompt_text}'
+            f'conda run python grounded_sam2_hf_model_imgs_MaskExtract.py --path {os.path.abspath(self.base_path)} --prompt {self.prompt_text}'
         )
         subprocess.run(command, shell=True)
         os.chdir('..')
@@ -187,13 +173,23 @@ class Initial_Reconstruction:
             "gs-mesh",
             "tsdf",
             "--load-config", str(config_path),
-            "--output-dir", str(save_dir),
+            "--output-dir", str(save_dir+"/tsdf"),
+        ]
+        command_gs = [
+            "gs-mesh",
+            "gaussians",
+            "--load-config", str(config_path),
+            "--output-dir", str(save_dir+"/gaussian"),
+        ]
+        command_sugar = [
+            "gs-mesh",
+            "sugar-coarse",
+            "--load-config", str(config_path),
+            "--output-dir", str(save_dir+"/sugar-coarse"),
         ]
         # gs-mesh tsdf --load-config outputs/blackbunny/001/config.yml --output-dir MESH/blackbunny
-
-        print(command)
         print("Extracting mesh...")
-        subprocess.run(command)
+        subprocess.run(command_sugar)
         print("Mesh extracted")
     
     def export_gsplats(self, config_path, output_dir):
@@ -219,28 +215,28 @@ if __name__ == "__main__":
     init_recon = Initial_Reconstruction(data_name, prompt_text)
     configs = GSReconstructionConfig(output_dir=init_recon.output_dir, data_path=init_recon.base_path)
 
-    CONSOLE.log("Step 1: Selecting Images for training...")
-    init_recon.select_frames()
-    CONSOLE.log("Step 2: Generate Mask Images using Grounded SAM...")
-    # init_recon.generate_mask_images()
-    CONSOLE.log("Step 3: Generating visual hull...")
-    init_recon.generate_visual_hull(error=5)
-    CONSOLE.log("Step 4: Running metric3d depth for ")
-    init_recon.run_metric3d_depth()
-    CONSOLE.log("Step 5: Initialize pcd")
-    init_recon.Init_pcd_generation()
-    CONSOLE.log("Step 6: Generate normals")
-    init_recon.generate_normals()
-    CONSOLE.log("Step 7: Setting transforms.json")
-    init_recon.set_transforms_and_configs()
+    # CONSOLE.log("Step 1: Selecting Images for training...")
+    # init_recon.select_frames()
+    # CONSOLE.log("Step 2: Generate Mask Images using Grounded SAM...")
+    init_recon.generate_mask_images()
+    # CONSOLE.log("Step 3: Generating visual hull...")
+    # init_recon.generate_visual_hull(error=5)
+    # CONSOLE.log("Step 4: Running metric3d depth for ")
+    # init_recon.run_metric3d_depth()
+    # CONSOLE.log("Step 5: Initialize pcd")
+    # init_recon.Init_pcd_generation()
+    # CONSOLE.log("Step 6: Generate normals")
+    # init_recon.generate_normals()
+    # CONSOLE.log("Step 7: Setting transforms.json")
+    # init_recon.set_transforms_and_configs()
 
-    CONSOLE.log("Step 8: Initialize training")
-    init_recon.train_model(configs=configs)
-    CONSOLE.log("Step 9: Extracting mesh")
-    init_recon.extract_mesh(config_path=os.path.join(configs.output_dir, "config.yml"))
+    # CONSOLE.log("Step 8: Initialize training")
+    # init_recon.train_model(configs=configs)
+    # CONSOLE.log("Step 9: Extracting mesh")
+    # init_recon.extract_mesh(config_path=os.path.join(configs.output_dir, "config.yml"))
 
-    CONSOLE.log("Step 10: Evaluating rendering")
-    init_recon.evaluate_rendering()
+    # CONSOLE.log("Step 10: Evaluating rendering")
+    # init_recon.evaluate_rendering()
 
     # CONSOLE.log("Step 10: Training with touches")
     # configs.load_touches = True
