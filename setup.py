@@ -30,6 +30,7 @@ setup(
             'pipeline = fusion_sense.pipeline:main',
             'next_best_touch = fusion_sense.next_best_touch:main',
             'test_touch = fusion_sense.test_touch:main',
+            'object_recognition = fusion_sense.object_recognition:main',
         ],
     },
 )

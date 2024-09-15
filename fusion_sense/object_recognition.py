@@ -5,7 +5,6 @@ import glob
 import select
 import warnings
 
-from cv2 import add
 import torch
 import numpy as np
 
@@ -52,9 +51,8 @@ class NextBestTouch:
         self.gaussian_folder = os.path.join(self.resource_folder, "gaussian") # folder to hold all gaussian resource and results
 
         self.segmentation_folder = os.path.join(self.resource_folder, "segmentation") # folder to hold all segmentation resource and results
-        
+
         self.image_resource_folder = os.path.join(self.resource_folder, "images")
-        
         api_path = os.path.join(self.resource_folder, 'api_key.txt')
         with open(api_path, 'r') as file:
             api_key = file.read()
@@ -77,7 +75,7 @@ class NextBestTouch:
 
             self._create_rank_dict(parts) # Create a dictionary to rank the parts in terms of which one to touch first
 
-            self.seg_output_dir = os.path.join(self.segmentation_folder, 'output', self.object_name)
+            self.seg_output_dir = os.path.join(self.segmentation_folder, 'output', classification)
             self.segmentation_infer(self.point_cloud_path, parts, save_dir=self.seg_output_dir)
             self.grounding_segmentation()
             self.fuse_gaussian_and_segmentation()
@@ -141,7 +139,7 @@ class NextBestTouch:
             "content": [
                 {
                 "type": "text",
-                "text": "Take a deep breath. You are a very descriptive and helpful AI assistant. You will be given a picture with an object in the center. First, tell the classification of the object. Be as descriptive as possible. Then, You will need to describe the major parts that make up the object. Use label-like everyday single words. When giving the label, think of parts that are difficult to have a good perception of purely based on vision but would also rely on tactile perception. For example, a small button on an earphone case. Also, rank the parts in terms of which one to touch first."
+                "text": "Take a deep breath. You are a very descriptive and helpful AI assisstant. Be as descriptive as possible. You will be given a picture with an object in the center. The object may be challenging to perceived, like transparent, reflective or very dark. First, tell the classification of the object. Please use as much word and be as descriptive as possible for the classification. Then, You will need to describe the major parts that make up the object. Use label-like everyday single words. When giving the label, think of parts that are difficult to have a good perception purly based on vision, but would also rely on tactile perception. For example a small button on a earphone case. Also, rank the parts in terms of which one to touch first."
                 }
             ]
             },
@@ -209,7 +207,7 @@ class NextBestTouch:
         original_pcd = o3d.io.read_point_cloud(self.point_cloud_path) # note that this is not a o3d.t
         original_points = np.asarray(original_pcd.points)
         
-        parts_path = glob.glob(os.path.join(self.seg_output_dir, "semantic_seg", "*.ply"))
+        parts_path = glob.glob(os.path.join(self.seg_output_dir, "*.ply"))
 
         # Initialize an empty list to hold the part_rank and color for each point
         all_part_ranks = np.zeros(shape=(original_points.shape[0], 1), dtype=np.int32)
@@ -223,7 +221,7 @@ class NextBestTouch:
             colors = np.asarray(pcd.colors)
 
             # Check for colored points ([1, 1, 1] as color)
-            colored_indices = np.all(colors != [0.0, 0.0, 0.0], axis=1)
+            colored_indices = np.all(colors == [1.0, 1.0, 1.0], axis=1)
 
             # Assign part rank and color to the corresponding points
             for is_colored in colored_indices:
@@ -306,11 +304,11 @@ class NextBestTouch:
 
         for rank in prioritized_rank:
             try:
-                selected_coor.append(grouped_by_part_rank[part_rank_values_sorted[rank]][1])
-                selected_coor.append(grouped_by_part_rank[part_rank_values_sorted[rank]][2])
-                selected_coor.append(grouped_by_part_rank[part_rank_values_sorted[rank]][3])
-                selected_coor.append(grouped_by_part_rank[part_rank_values_sorted[rank]][4])
-                selected_coor.append(grouped_by_part_rank[part_rank_values_sorted[rank]][5])
+                selected_coor += grouped_by_part_rank[part_rank_values_sorted[rank]][1]
+                selected_coor += grouped_by_part_rank[part_rank_values_sorted[rank]][2]
+                selected_coor += grouped_by_part_rank[part_rank_values_sorted[rank]][3]
+                selected_coor += grouped_by_part_rank[part_rank_values_sorted[rank]][4]
+                selected_coor += grouped_by_part_rank[part_rank_values_sorted[rank]][5]
             except IndexError:
                 continue
 
@@ -318,14 +316,8 @@ class NextBestTouch:
         # Step 5: Select 3 more from overall ranked list, excluding previously selected
         remaining_list = [x for x, _, _ in sorted_coor if self._is_in_list(x, selected_coor)]
 
-        need_to_fill = proposal_quota - len(selected_coor)
-
-        additional_selection = []
-        for i in range(need_to_fill):
-            try:
-                additional_selection.append(remaining_list[i])
-            except IndexError:
-                break
+        
+        additional_selection = remaining_list[:5]
 
         # Combine the selections
         final_selection = selected_coor + additional_selection
@@ -363,11 +355,13 @@ class NextBestTouch:
         self.colors_code = np.random.rand(len(parts)+1, 3)
         self.colors_code[0] = [0, 0, 0] # the first color is black, which is for all the unclassified points
     
-    def _is_in_list(self, arr, arr_list):
+    def _is_in_list(arr, arr_list):
         return any(np.array_equal(arr, x) for x in arr_list)
 def main():
     fusion_sense_folder = os.path.join(get_package_share_directory('fusion_sense'), 'fusion_sense_resources')
     nbt = NextBestTouch(fusion_sense_folder)
-    nbt.next_best_touch_prediction()
+
+    images = glob.glob(os.path.join(nbt.image_resource_folder, "*.png"))
+    print(nbt.partname_extraction(images[0]))
 if __name__ == "__main__":
     main()

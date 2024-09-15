@@ -7,7 +7,6 @@
 import sys
 import numpy as np
 import os
-import ctypes
 from ament_index_python.packages import get_package_share_directory
 
 resource_folder = os.path.join(get_package_share_directory('fusion_sense'), 'fusion_sense_resources')
