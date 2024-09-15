@@ -1,5 +1,6 @@
 import os
 import json
+import signal
 import subprocess
 from pathlib import Path
 from dataclasses import dataclass
@@ -8,7 +9,7 @@ from utils.imgs_selection import select_imgs, filter_transform_json
 # from utils.metric3dv2_depth_generation import metric3d_depth_generation
 # from utils.generate_pcd import Init_pcd_generate
 from eval_utils.rendering_evaluation import rendering_evaluation
-# from nerfstudio.utils.rich_utils import CONSOLE
+from nerfstudio.utils.rich_utils import CONSOLE
 
 @dataclass
 class GSReconstructionConfig:
@@ -21,7 +22,7 @@ class GSReconstructionConfig:
     normal_lambda: float = 0.4
     sensor_depth_lambda: float = 0.2
     use_depth_smooth_loss: bool = True
-    use_binary_opacities: bool = False
+    use_binary_opacities: bool = True
     use_normal_loss: bool = True
     normal_supervision: str = "mono"
     random_init: bool = False
@@ -165,9 +166,9 @@ class Initial_Reconstruction:
         print("Training the model...")
         subprocess.run(command)
         print("Training complete.")
-    
+
     def extract_mesh(self, config_path):
-        save_dir = os.path.join(self.base_path, "MESH")
+        save_dir = os.path.join(self.output_dir, "MESH")
         command = [
             "gs-mesh",
             "tsdf",

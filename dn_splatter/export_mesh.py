@@ -781,16 +781,16 @@ class MarchingCubesMesh(GSMeshExporter):
                     str(self.output_dir / f"marching_cubes_{self.resolution}.ply"), mesh
                 )
 
-
+resolusion = 0.4
 @dataclass
 class TSDFFusion(GSMeshExporter):
     """
     Backproject depths and run TSDF fusion
     """
 
-    voxel_size: float = 0.002
+    voxel_size: float = 0.01 * resolusion
     """tsdf voxel size"""
-    sdf_truc: float = 0.015
+    sdf_truc: float = 0.03 * resolusion
     """TSDF truncation"""
     total_points: int = 2_000_000
     """Total target surface samples"""
@@ -863,7 +863,7 @@ class TSDFFusion(GSMeshExporter):
                 visual_hull = np.array(visual_hull, dtype=np.float32)
                 distances = cdist(xyzs, visual_hull)
                 min_distances = np.min(distances, axis=1)
-                hull_mask = min_distances < 0.01 * scale_factor
+                hull_mask = min_distances < 0.008 * scale_factor
                 filtered_xyzs = xyzs[hull_mask]
                 filtered_rgbs = rgbs[hull_mask]                
                 xyzs = filtered_xyzs
