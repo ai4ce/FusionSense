@@ -87,7 +87,7 @@ If the `num_no_detection` is not 0, you need to select the frame again. Then you
 ### Run pipeline
 ```sh
 conda activate fusionsense
-python Initial_Recon.py --data_name {DATASET_NAME}
+python Initial_Recon.py --data_name {DATASET_NAME} --model_name {MODEL_NAME}
 ```
 
 ## Dataset Format

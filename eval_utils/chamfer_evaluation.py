@@ -80,13 +80,13 @@ def Icp_preprocessing(mesh, pcd_real):
     return pcd_cad
 
 def chamfer_eval(base_dir, mesh_dir):
-    pcd_real = o3d.io.read_point_cloud(os.join.path(mesh_dir, "after_clean_points_surface_level_0.3_closest_gaussian.ply"))
-    cad_mesh = o3d.io.read_triangle_mesh(os.join.path(base_dir, "stanford_bunny.stl"))
+    pcd_real = o3d.io.read_point_cloud(os.path.join(mesh_dir, "after_clean_points_surface_level_0.3_closest_gaussian.ply"))
+    cad_mesh = o3d.io.read_triangle_mesh(os.path.join(base_dir, "stanford_bunny.stl"))
     pcd_cad = Icp_preprocessing(cad_mesh, pcd_real)
     dist = Chamfer_Distance(pcd_cad, pcd_real)
 
-    o3d.io.write_point_cloud(os.join.path(mesh_dir, "pcd_cad.ply"), pcd_cad)
-    with open(os.join.path(mesh_dir, "chamfer_distance_eval.json"), "w") as f:
+    o3d.io.write_point_cloud(os.path.join(mesh_dir, "pcd_cad.ply"), pcd_cad)
+    with open(os.path.join(mesh_dir, "chamfer_distance_eval.json"), "w") as f:
         json.dump({"chamfer_distance": dist}, f, indent=4)
 
 # if __name__ == "__main__":
