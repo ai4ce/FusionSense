@@ -14,6 +14,20 @@ from eval_utils.chamfer_evaluation import chamfer_eval
 from eval_utils.mask_rendering_eval import mask_rendering_evaluation
 from nerfstudio.utils.rich_utils import CONSOLE
 
+proc = None
+def signal_handler(sig, frame):
+    global proc  # Reference the global 'proc' variable
+    print("\nCtrl+C detected. Terminating the subprocess...")
+    if proc:
+        proc.terminate()  # Terminate the subprocess
+        proc.wait()  # Wait for the process to clean up
+        print("Subprocess terminated.")
+    else:
+        print("No subprocess to terminate.")
+
+# Register the signal handler for SIGINT
+signal.signal(signal.SIGINT, signal_handler)
+
 @dataclass
 class GSReconstructionConfig:
     output_dir: Path = Path("outputs")
@@ -203,10 +217,10 @@ class Initial_Reconstruction:
         subprocess.run(command, shell=True, check=True)
         print("GSplat exported.")
 
-    def evaluation(self, rendering_eval=True, mask_rendering=True, chamfer_eval=True):
+    def evaluation(self, rendering_eval=True, mask_rendering=True, chamfer=True):
         if rendering_eval:
             rendering_evaluation(self.output_dir, self.eval_dir, self.data_name)
-        if chamfer_eval:
+        if chamfer:
             mesh_dir = os.path.join(self.output_dir, "MESH")
             chamfer_eval(self.base_path, mesh_dir)
         if mask_rendering:
@@ -216,7 +230,7 @@ class Initial_Reconstruction:
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument("--data_name", type=str, default="blackbunny3")
+    parser.add_argument("--data_name", type=str, default="transparent_bunny")
     parser.add_argument("--model_name", type=str, default="Model0")
     parser.add_argument("--prompt_text", type=str, default="transparent bunny statue")
     args = parser.parse_args()
@@ -247,14 +261,14 @@ if __name__ == "__main__":
     # CONSOLE.log("Step 9: Extracting mesh")
     # init_recon.extract_mesh(config_path=os.path.join(configs.output_dir, "config.yml"))
 
-    # CONSOLE.log("Step 10: Evaluating rendering")
-    # init_recon.evaluation()
+    CONSOLE.log("Step 10: Evaluating rendering")
+    init_recon.evaluation(rendering_eval=True, mask_rendering=True, chamfer=True)
 
     # CONSOLE.log("Step 10: Training with touches")
     # configs.load_touches = True
     # init_recon.add_touch_train_model(configs=configs)
 
-    CONSOLE.log("Step 11: Evaluating rendering")
-    init_recon.evaluation(rendering_eval=True, mask_rendering=True, chamfer_eval=False)
+    # CONSOLE.log("Step 11: Evaluating rendering")
+    # init_recon.evaluation(rendering_eval=True, mask_rendering=True, chamfer_eval=False)
 
     # init_recon.export_gsplats(config_path="outputs/unnamed/dn-splatter/2024-09-02_203650/config.yml", output_dir="exports/splat/")
