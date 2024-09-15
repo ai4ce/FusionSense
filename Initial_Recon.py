@@ -5,9 +5,9 @@ import subprocess
 from pathlib import Path
 from dataclasses import dataclass
 from utils.imgs_selection import select_imgs, filter_transform_json
-# from utils.VisualHull import VisualHull
-# from utils.metric3dv2_depth_generation import metric3d_depth_generation
-# from utils.generate_pcd import Init_pcd_generate
+from utils.VisualHull import VisualHull
+from utils.metric3dv2_depth_generation import metric3d_depth_generation
+from utils.generate_pcd import Init_pcd_generate
 from eval_utils.rendering_evaluation import rendering_evaluation
 from nerfstudio.utils.rich_utils import CONSOLE
 
@@ -35,7 +35,7 @@ class GSReconstructionConfig:
 
     model_type: str = "normal-nerfstudio"
     warmup_length: int = 500
-    add_touch_at: int = 501
+    add_touch_at: int = 15000
 
 class Initial_Reconstruction:
     def __init__(self, data_name, prompt_text='Near Object'):
@@ -218,7 +218,7 @@ if __name__ == "__main__":
     # CONSOLE.log("Step 1: Selecting Images for training...")
     # init_recon.select_frames()
     # CONSOLE.log("Step 2: Generate Mask Images using Grounded SAM...")
-    init_recon.generate_mask_images()
+    # init_recon.generate_mask_images()
     # CONSOLE.log("Step 3: Generating visual hull...")
     # init_recon.generate_visual_hull(error=5)
     # CONSOLE.log("Step 4: Running metric3d depth for ")
@@ -230,8 +230,8 @@ if __name__ == "__main__":
     # CONSOLE.log("Step 7: Setting transforms.json")
     # init_recon.set_transforms_and_configs()
 
-    # CONSOLE.log("Step 8: Initialize training")
-    # init_recon.train_model(configs=configs)
+    CONSOLE.log("Step 8: Initialize training")
+    init_recon.train_model(configs=configs)
     # CONSOLE.log("Step 9: Extracting mesh")
     # init_recon.extract_mesh(config_path=os.path.join(configs.output_dir, "config.yml"))
 

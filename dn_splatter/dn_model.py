@@ -1223,7 +1223,7 @@ class DNSplatterModel(SplatfactoModel):
         if self.step <= self.config.warmup_length:
             return
         # use visual hull to pruning outlier gs points
-        if 'visual_hull' in self.kwargs["metadata"] and self.add_mask is None:
+        if 'visual_hull' in self.kwargs["metadata"]:
             visual_hull = self.kwargs["metadata"]['visual_hull'].to(self.device)
             center = visual_hull.mean(dim=0)
             distances_to_center = torch.norm(self.means - center, dim=1)
@@ -1237,7 +1237,7 @@ class DNSplatterModel(SplatfactoModel):
 
             hull_mask = torch.zeros(self.means.shape[0], dtype=torch.bool, device=self.device)
             hull_mask[close_mask] = filtered_hull_mask
-            hull_mask[self.add_mask] = False  # added points should not be removed by visual hull
+            # hull_mask[self.add_mask] = False  # added points should not be removed by visual hull
             self.max_2Dsize = None
             deleted_mask = self.cull_gaussians(hull_mask)
             self.remove_from_all_optim(optimizers, deleted_mask)
@@ -1327,14 +1327,14 @@ class DNSplatterModel(SplatfactoModel):
             )
         )
         # Hull pruning
-        # cbs.append(
-        #     TrainingCallback(
-        #         [TrainingCallbackLocation.AFTER_TRAIN_ITERATION],
-        #         self.hull_pruning,
-        #         update_every_num_iters=self.config.refine_every,
-        #         args=[training_callback_attributes.optimizers],
-        #     )
-        # )
+        cbs.append(
+            TrainingCallback(
+                [TrainingCallbackLocation.AFTER_TRAIN_ITERATION],
+                self.hull_pruning,
+                update_every_num_iters=self.config.refine_every,
+                args=[training_callback_attributes.optimizers],
+            )
+        )
 
         return cbs
 
