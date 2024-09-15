@@ -1143,29 +1143,23 @@ class DNSplatterModel(SplatfactoModel):
                 for ind in range(len(touch_patches)): # this is a python array, considering change this
                     touch_patch = touch_patches[ind]
                     patch_pts = touch_patch["points_xyz"].to(self.device)
-                    patch_pts_rgb = touch_patch["points_rgb"].to(self.device)
+                    patch_pts_rgb = torch.zeros_like(patch_pts)
                     patch_pts_normals = touch_patch["normals"].to(self.device)
                     
+                    bbox = touch_patch["bbox"].to(self.device)
+                    patch_mask = points_in_non_aabb(pts, bbox).to(device=aabb_mask.device).unsqueeze(-1)
+                    patch_knn_idx = knn_sk(pts, patch_pts, 1)
+                    assert patch_knn_idx.shape[0] == patch_pts.shape[0]
+                    # initialize color to be the closest color in the original point cloud
+                    patch_pts_rgb = self.gauss_params["features_dc"][patch_knn_idx].squeeze(1)
+                    aabb_mask &= patch_mask
+                    num_new_points += patch_pts.shape[0]
+
                     touch_patches_points = torch.cat((touch_patches_points, patch_pts), dim=0)
                     touch_patches_rgb = torch.cat((touch_patches_rgb, patch_pts_rgb), dim=0)
                     touch_patches_normals = torch.cat((touch_patches_normals, patch_pts_normals), dim=0)
-
-                    max_xyz = torch.max(patch_pts, axis=0).values
-                    min_xyz = torch.min(patch_pts, axis=0).values
-                    diag_xyz = (max_xyz - min_xyz)
-                    min_aabb = min_xyz-torch.norm(diag_xyz)
-                    max_aabb = max_xyz+torch.norm(diag_xyz)
-                    mask_x = (pts[:, 0] >= min_aabb[0]) & (pts[:, 0] <= max_aabb[0])
-                    mask_y = (pts[:, 1] >= min_aabb[1]) & (pts[:, 1] <= max_aabb[1])
-                    mask_z = (pts[:, 2] >= min_aabb[2]) & (pts[:, 2] <= max_aabb[2])
-                    aabb_mask &= (mask_x & mask_y & mask_z).reshape((-1, 1)).to(self.device)
                     
-                    num_new_points += patch_pts.shape[0]
-
                 CONSOLE.log(f"There are {aabb_mask.sum()}/{pts.shape[0]} previous GS points within the aabb box of the touch patch")
-                input(min_aabb)
-                input(max_aabb)
-                input(max_aabb-min_aabb)
                 # generate ideal gaussians point cloud at touch_patches_points
                 new_shs = torch.zeros((num_new_points, num_sh_bases(self.config.sh_degree), 3)).float().cuda()
                 if self.config.sh_degree > 0:
@@ -1243,6 +1237,7 @@ class DNSplatterModel(SplatfactoModel):
 
             hull_mask = torch.zeros(self.means.shape[0], dtype=torch.bool, device=self.device)
             hull_mask[close_mask] = filtered_hull_mask
+            hull_mask[self.add_mask] = False  # added points should not be removed by visual hull
             self.max_2Dsize = None
             deleted_mask = self.cull_gaussians(hull_mask)
             self.remove_from_all_optim(optimizers, deleted_mask)
@@ -1332,14 +1327,14 @@ class DNSplatterModel(SplatfactoModel):
             )
         )
         # Hull pruning
-        cbs.append(
-            TrainingCallback(
-                [TrainingCallbackLocation.AFTER_TRAIN_ITERATION],
-                self.hull_pruning,
-                update_every_num_iters=self.config.refine_every,
-                args=[training_callback_attributes.optimizers],
-            )
-        )
+        # cbs.append(
+        #     TrainingCallback(
+        #         [TrainingCallbackLocation.AFTER_TRAIN_ITERATION],
+        #         self.hull_pruning,
+        #         update_every_num_iters=self.config.refine_every,
+        #         args=[training_callback_attributes.optimizers],
+        #     )
+        # )
 
         return cbs
 
@@ -1885,6 +1880,46 @@ class DNSplatterModel(SplatfactoModel):
         density_grad = -torch.nn.functional.normalize(density_grad, dim=-1)
         return density_grad
 
+def points_in_non_aabb(point_cloud, box_vertices):
+    """
+    Determine which points in the point cloud are within the non-axis-aligned bounding box.
+
+    Parameters:
+    point_cloud: Nx3 tensor of points.
+    box_vertices: 8x3 tensor of the bounding box's vertices.
+
+    Returns:
+    mask: N-element boolean tensor where True means the point is inside the box.
+    """
+    
+    # Define box center (average of all vertices)
+    box_center = torch.mean(box_vertices, dim=0)
+
+    # Create three local axes for the bounding box using its vertices
+    box_axes = torch.stack([
+        (box_vertices[1] - box_vertices[0]),
+        (box_vertices[2] - box_vertices[0]),
+        (box_vertices[4] - box_vertices[0])
+    ])
+    input(box_axes)
+    box_axes = torch.nn.functional.normalize(box_axes, dim=1)
+
+    # Translate points relative to the box 
+    relative_points = point_cloud - box_center
+    relative_corners = box_vertices - box_center
+
+    # Initialize a mask for all points being inside the box
+    mask = torch.ones(point_cloud.size(0), dtype=torch.bool, device=point_cloud.device)
+
+    # Check bounds for each of the 3 axes of the box
+    for i in range(3):
+        proj_points = torch.matmul(relative_points, box_axes[i])  # Projection for all points
+        proj_min_corner = torch.min(torch.matmul(relative_corners, box_axes[i]))
+        proj_max_corner = torch.max(torch.matmul(relative_corners, box_axes[i]))
+        # Update the mask to exclude points outside the bounds along this axis
+        mask &= (proj_points >= proj_min_corner) & (proj_points <= proj_max_corner)
+
+    return mask
 def random_quat_tensor(N, **kwargs):
     u = torch.rand(N, **kwargs)
     v = torch.rand(N, **kwargs)
