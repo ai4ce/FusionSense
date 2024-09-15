@@ -151,7 +151,7 @@ class DNSplatterModel(SplatfactoModel):
         # remove_from_all_optim should never remove from add_mask=True positions, 
         # so deleted_mask will only trim off False locations
         if self.add_mask is not None:
-            CONSOLE.input(f"We are Removing {deleted_mask.sum()}/{deleted_mask.shape[0]} GS points")
+            # CONSOLE.input(f"We are Removing {deleted_mask.sum()}/{deleted_mask.shape[0]} GS points")
             # CONSOLE.input(self.add_mask.shape)
             self.add_mask = self.add_mask[~deleted_mask]
             # CONSOLE.input(self.add_mask.shape)
