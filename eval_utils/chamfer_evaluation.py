@@ -3,8 +3,18 @@ import numpy as np
 import time
 import copy
 import torch
-from pytorch3d.loss import chamfer_distance
+from scipy.spatial import cKDTree
  
+def Chamfer_Distance(pcd_cad, pcd_real):
+    source_pcd = np.asarray(pcd_cad.points)
+    target_pcd = np.asarray(pcd_real.points)
+    tree1 = cKDTree(source_pcd)
+    tree2 = cKDTree(target_pcd)
+    dist1, _ = tree1.query(target_pcd)
+    dist2, _ = tree2.query(source_pcd)
+    chamfer_dist = np.mean(dist1**2) + np.mean(dist2**2)
+    return chamfer_dist * 1e3 
+
 def FPFH_Compute(pcd):
     radius_normal = 0.01
     pcd.estimate_normals(
@@ -65,8 +75,6 @@ def Icp_preprocessing(mesh, pcd_real):
 
     # Apply the transformation to the CAD point cloud
     pcd_cad.transform(icp_result.transformation)
-    o3d.io.write_point_cloud("/home/ks8018/dn-splatter/outputs/blackbunny3/MESH/pcd_cad.ply", pcd_cad)
-
     return pcd_cad
 
 
@@ -74,3 +82,7 @@ if __name__ == "__main__":
     pcd_real = o3d.io.read_point_cloud("outputs/blackbunny3/MESH/after_clean_points_surface_level_0.3_closest_gaussian.ply")
     cad_mesh = o3d.io.read_triangle_mesh("/home/ks8018/dn-splatter/outputs/blackbunny3/MESH/stanford_bunny.stl")
     pcd_cad = Icp_preprocessing(cad_mesh, pcd_real)
+    dist = Chamfer_Distance(pcd_cad, pcd_real)
+
+    o3d.io.write_point_cloud("/home/ks8018/dn-splatter/outputs/blackbunny3/MESH/pcd_cad.ply", pcd_cad)
+    print(f"Chamfer Distance: {dist}")
