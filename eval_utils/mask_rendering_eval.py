@@ -27,11 +27,10 @@ def psnr(img1, img2, mask_img):
     return 20 * torch.log10(1.0 / torch.sqrt(mse))
 
 @torch.no_grad()
-def rgb_eval(base_path, eval_path: Path = Path("eval"), data_name: str = "blackbunny3"):
-    save_path = eval_path / data_name
-    mask_path = base_path / data_name / Path("masks")
-    render_path = eval_path / data_name / Path("test/rgb")  # os.path.join(args.data, "/rgb")
-    gt_path = base_path / data_name /Path("images")  # os.path.join(args.data, "gt", "rgb")
+def rgb_eval(base_dir, eval_dir):
+    mask_path = base_dir / Path("masks")
+    render_path = eval_dir / Path("test/rgb")  # os.path.join(args.data, "/rgb")
+    gt_path = base_dir /Path("images")  # os.path.join(args.data, "gt", "rgb")
 
     mask_ext = os.path.splitext(os.listdir(mask_path)[0])[1]  # Assuming masks have the same extension
     render_ext = os.path.splitext(os.listdir(render_path)[0])[1]
@@ -110,8 +109,8 @@ def rgb_eval(base_path, eval_path: Path = Path("eval"), data_name: str = "blackb
     print(list(mean_scores.keys()))
     print(list(mean_scores.values()))
 
-    with open(os.path.join(save_path, "metrics.json"), "w") as outFile:
-        print(f"Saving results to {os.path.join(save_path, 'metrics.json')}")
+    with open(os.path.join(eval_dir, "metrics.json"), "w") as outFile:
+        print(f"Saving results to {os.path.join(eval_dir, 'metrics.json')}")
         json.dump(mean_scores, outFile, indent=2)
 
 
@@ -279,16 +278,16 @@ def depth_eval_faro(data: Path, path_to_faro: Path):
     print(list(mean_scores.values()))
 
 
-def main(
-    base_path: Path = Path("datasets"),
-    eval_path: Path = Path("eval"), 
+def mask_rendering_evaluation(
+    base_dir,
+    eval_dir,
     eval_rgb: bool = True,
     eval_depth: bool = False,
     eval_faro: bool = False,
     path_to_faro: Optional[Path] = None,
 ):
     if eval_rgb:
-        rgb_eval(base_path, eval_path, data_name="blackbunny3")
+        rgb_eval(base_dir, eval_dir)
     # if eval_depth:
     #     depth_eval(data)
     # if eval_faro:
@@ -296,5 +295,5 @@ def main(
     #     depth_eval_faro(data, path_to_faro=path_to_faro)
 
 
-if __name__ == "__main__":
-    tyro.cli(main)
+# if __name__ == "__main__":
+#     tyro.cli(main)
