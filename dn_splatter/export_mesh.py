@@ -587,21 +587,23 @@ class LevelSetExtractor(GSMeshExporter):
                 pcd.normals = o3d.utility.Vector3dVector(normals)
                 
                 # prune vertices based on visual hull
-                visual_hull = pipeline.datamanager.train_dataset.metadata['visual_hull']
-                transform_matrix = pipeline.datamanager.train_dataset._dataparser_outputs.dataparser_transform
-                transform_matrix = transform_matrix.numpy()
-                scale_factor = pipeline.datamanager.train_dataset._dataparser_outputs.dataparser_scale
-                vertices = np.asarray(pcd.points)
-                distances = cdist(vertices, visual_hull)
-                min_distances = np.min(distances, axis=1)
-                hull_mask = min_distances < 0.02 * scale_factor
-                # height_mask = vertices[:, 2] > np.min(visual_hull[:, 2]) + 0.01 * scale_factor
-                # hull_mask = hull_mask & height_mask
-                filtered_vertices = vertices[hull_mask]
-                pcd.points = o3d.utility.Vector3dVector(filtered_vertices)
-                pcd.normals = o3d.utility.Vector3dVector(np.asarray(pcd.normals)[hull_mask])
-                pcd.colors = o3d.utility.Vector3dVector(np.asarray(pcd.colors)[hull_mask])
-                
+                if (pipeline.datamanager.train_dataset.metadata['visual_hull']) is not None:
+                    visual_hull = pipeline.datamanager.train_dataset.metadata['visual_hull'].numpy()
+                    transform_matrix = pipeline.datamanager.train_dataset._dataparser_outputs.dataparser_transform
+                    transform_matrix = transform_matrix.numpy()
+                    scale_factor = pipeline.datamanager.train_dataset._dataparser_outputs.dataparser_scale
+                    vertices = np.asarray(pcd.points)
+                    distances = cdist(vertices, visual_hull)
+                    min_distances = np.min(distances, axis=1)
+                    hull_mask = min_distances < 0.02 * scale_factor
+                    height_mask = vertices[:, 2] > np.min(visual_hull[:, 2]) + 0.01 * scale_factor
+                    hull_mask = hull_mask & height_mask
+                    vertices = (vertices/scale_factor - transform_matrix[:3, 3].T) @ transform_matrix[:3, :3] 
+                    filtered_vertices = vertices[hull_mask]
+                    pcd.points = o3d.utility.Vector3dVector(filtered_vertices)
+                    pcd.normals = o3d.utility.Vector3dVector(np.asarray(pcd.normals)[hull_mask])
+                    pcd.colors = o3d.utility.Vector3dVector(np.asarray(pcd.colors)[hull_mask])
+                    
                 CONSOLE.print(
                     "Saving unclean points to ",
                     str(
