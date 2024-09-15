@@ -231,8 +231,9 @@ class Initial_Reconstruction:
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument("--data_name", type=str, default="blackbunny3")
+    parser.add_argument("--data_name", type=str, default="transparent_bunny")
     parser.add_argument("--prompt_text", type=str, default="transparent bunny statue")
+    parser.add_argument("--model_name", type=str, default="transparent_bunny")
     args = parser.parse_args()
 
     data_name = args.data_name
@@ -241,28 +242,28 @@ if __name__ == "__main__":
     init_recon = Initial_Reconstruction(data_name, model_name, prompt_text)
     configs = GSReconstructionConfig(output_dir=init_recon.output_dir, data_path=init_recon.base_path)
 
-    CONSOLE.log("Step 1: Selecting Images for training...")
-    init_recon.select_frames()
+    # CONSOLE.log("Step 1: Selecting Images for training...")
+    # init_recon.select_frames()
     # CONSOLE.log("Step 2: Generate Mask Images using Grounded SAM...")
     # init_recon.generate_mask_images()
-    CONSOLE.log("Step 3: Generating visual hull...")
-    init_recon.generate_visual_hull(error=5)
-    CONSOLE.log("Step 4: Running metric3d depth for ")
-    init_recon.run_metric3d_depth()
-    CONSOLE.log("Step 5: Initialize pcd")
-    init_recon.Init_pcd_generation()
-    CONSOLE.log("Step 6: Generate normals")
-    init_recon.generate_normals()
-    CONSOLE.log("Step 7: Setting transforms.json")
-    init_recon.set_transforms_and_configs()
+    # CONSOLE.log("Step 3: Generating visual hull...")
+    # init_recon.generate_visual_hull(error=5)
+    # CONSOLE.log("Step 4: Running metric3d depth for ")
+    # init_recon.run_metric3d_depth()
+    # CONSOLE.log("Step 5: Initialize pcd")
+    # init_recon.Init_pcd_generation()
+    # CONSOLE.log("Step 6: Generate normals")
+    # init_recon.generate_normals()
+    # CONSOLE.log("Step 7: Setting transforms.json")
+    # init_recon.set_transforms_and_configs()
 
     # CONSOLE.log("Step 8: Initialize training")
     # init_recon.train_model(configs=configs)
     # CONSOLE.log("Step 9: Extracting mesh")
     # init_recon.extract_mesh(config_path=os.path.join(init_recon.base_path, "outputs_with_touches", "config.yml"))
 
-    CONSOLE.log("Step 10: Evaluating rendering")
-    init_recon.evaluation(rendering_eval=True, mask_rendering=True, chamfer=True)
+    # CONSOLE.log("Step 10: Evaluating rendering")
+    # init_recon.evaluation(rendering_eval=True, mask_rendering=True, chamfer=True)
 
     CONSOLE.log("Step 10: Training with touches")
     configs.load_touches = True
