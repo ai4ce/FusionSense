@@ -907,11 +907,8 @@ class TSDFFusion(GSMeshExporter):
             if self.target_triangles is not None:
                 mesh = mesh.simplify_quadric_decimation(self.target_triangles)
 
-            o3d.io.write_triangle_mesh(
-                str(self.output_dir / "TSDFfusion_mesh.ply"),
-                mesh,
-            )
-            CONSOLE.print(
+            o3d.io.write_triangle_mesh(str(self.output_dir / "TSDFfusion_mesh.ply"), mesh, write_ascii=True)
+            CONSOLE.print(  
                 f"Finished computing mesh: {str(self.output_dir / 'TSDFfusion.ply')}"
             )
 

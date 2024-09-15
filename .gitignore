@@ -15,6 +15,7 @@ test_colmap/
 tr-rabbit/
 tr-rabbit2/
 eval/
+testtest.py
 *.pyc
 
 # Byte-compiled / optimized / DLL files
