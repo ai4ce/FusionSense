@@ -592,24 +592,31 @@ class NormalNerfstudio(Nerfstudio):
             touch_patches = []
             for ind, touchframe in zip(range(len(touchframes)), touchframes):
                 # read touch patch from pcd/ply file
-                pts = o3d.io.read_point_cloud(str(self.config.data / touchframe["patch_path"])).points
-                raw_pcd = torch.from_numpy(np.asarray(pts)).to(dtype=torch.float32)
+                pts = o3d.io.read_point_cloud(str(self.config.data / touchframe["patch_path"]))
+                raw_pcd = torch.from_numpy(np.asarray(pts.points)).to(dtype=torch.float32)
                 tr = torch.tensor(touchframe["transform_matrix"], dtype=raw_pcd.dtype)  # 4x4 homogenous transform matrix
                 # centralize
                 pcd = raw_pcd.clone()
                 pcd[:, :2] -= torch.mean(raw_pcd, dim=0)[:2]
+                # pcd[:, 0] *= -1
+                # pcd[:, 1] *= -1
                 # our pcd data has integer xy index, so need to multiply by the factor
                 pcd *= self.config.gel_scale_factor
                 pcd = mut_and_scale(pcd, tr[:3, :], 1.0)
-                pcd = mut_and_scale(pcd, transform_matrix, scale_factor)
+                # pcd = mut_and_scale(pcd, transform_matrix, scale_factor)
+                
                 # read and apply touch patch mask
                 if (touchframe["mask_path"].endswith(".pcd")):
-                    mask = np.asarray(o3d.io.read_point_cloud(str(self.config.data / touchframe["mask_path"])).points)[:, 2] == 1
+                    mask_pcd = np.asarray(o3d.io.read_point_cloud(str(self.config.data / touchframe["mask_path"])).points)
+                    mask = mask_pcd[:, 2] == 1
                 elif (touchframe["mask_path"].endswith(".npy")):
                     mask = np.load(str(self.config.data / touchframe["mask_path"]))
                 else:
                     raise KeyError("Unsupported mask type")
                 np_pts = pcd[mask]
+                the_pcd = o3d.geometry.PointCloud()
+                the_pcd.points = o3d.utility.Vector3dVector(np_pts.numpy())
+                o3d.io.write_point_cloud(f"patch_{ind}.ply", the_pcd)
                 ## save pcd
                 # the_pcd = o3d.geometry.PointCloud()
                 # the_pcd.points = o3d.utility.Vector3dVector(np_pts.numpy())
@@ -629,14 +636,34 @@ class NormalNerfstudio(Nerfstudio):
                 else:
                     raise KeyError("Unsupported Normal Type")
                 pcd_normal3D = torch.stack((x, y, z)).to(dtype=torch.float32).T
-                # apply transformation
-                pcd_normal3D = mut_and_scale(pcd_normal3D, tr[:3, :], 1.0)
+                pcd_normal3D = mut_and_scale(pcd_normal3D, tr[:3, :], 1.0) # apply transformation
+                # non-axis aligned bbox 
+                x_diff = torch.abs(torch.max(raw_pcd[:, 0]) - torch.min(raw_pcd[:, 0]))
+                y_diff = torch.abs(torch.max(raw_pcd[:, 1]) - torch.min(raw_pcd[:, 1]))
+                z_diff = torch.abs(torch.max(raw_pcd[:, 2]) - torch.min(raw_pcd[:, 2])) # raw pcd z coordinate is negative
+                min_corner = [-x_diff/2, -y_diff/2, -z_diff*2]
+                max_corner = [x_diff/2, y_diff/2, z_diff*2]
+                aabb = torch.tensor([
+                    [min_corner[0], min_corner[1], min_corner[2]],
+                    [min_corner[0], min_corner[1], max_corner[2]],
+                    [min_corner[0], max_corner[1], min_corner[2]],
+                    [min_corner[0], max_corner[1], max_corner[2]],
+                    [max_corner[0], min_corner[1], min_corner[2]],
+                    [max_corner[0], min_corner[1], max_corner[2]],
+                    [max_corner[0], max_corner[1], min_corner[2]],
+                    [max_corner[0], max_corner[1], max_corner[2]],
+                ], dtype=pcd.dtype)
+                aabb *= self.config.gel_scale_factor
+                aabb = mut_and_scale(aabb, tr[:3,:], 1.0)
+                # aabb = mut_and_scale(aabb, transform_matrix, scale_factor)
+                o3d.io.write_point_cloud(f"{ind}_aabb.ply", o3d.geometry.PointCloud(o3d.utility.Vector3dVector(aabb)))
+                
                 assert pcd_normal3D.dtype == np_pts.dtype == tr.dtype
                 touch_patch = {
                     "points_xyz": np_pts,
                     "points_rgb": torch.ones_like(np_pts, dtype=pcd.dtype) * 255., # init touch points to be white
                     "normals": pcd_normal3D,
-                    "transformation_matrix": tr,
+                    "bbox": aabb,
                 }
                 touch_patches.append(touch_patch)
                 ## add to array of patches
