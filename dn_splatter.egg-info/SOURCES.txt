@@ -9,7 +9,6 @@ dn_splatter/dn_pipeline.py
 dn_splatter/export_mesh.py
 dn_splatter/losses.py
 dn_splatter/metrics.py
-dn_splatter/run_eval.py
 dn_splatter.egg-info/PKG-INFO
 dn_splatter.egg-info/SOURCES.txt
 dn_splatter.egg-info/dependency_links.txt

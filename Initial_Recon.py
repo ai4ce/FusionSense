@@ -6,9 +6,9 @@ from pathlib import Path
 from dataclasses import dataclass
 from utils.imgs_selection import select_imgs, filter_transform_json
 from utils.VisualHull import VisualHull
-from utils.metric3dv2_depth_generation import metric3d_depth_generation
-from utils.generate_pcd import Init_pcd_generate
-from eval_utils.rendering_evaluation import rendering_evaluation
+# from utils.metric3dv2_depth_generation import metric3d_depth_generation
+# from utils.generate_pcd import Init_pcd_generate
+# from eval_utils.rendering_evaluation import rendering_evaluation
 from eval_utils.chamfer_evaluation import chamfer_eval
 from eval_utils.mask_rendering_eval import mask_rendering_evaluation
 from nerfstudio.utils.rich_utils import CONSOLE
@@ -17,8 +17,8 @@ from nerfstudio.utils.rich_utils import CONSOLE
 class GSReconstructionConfig:
     output_dir: Path = Path("outputs")
     steps_per_save: int = 15000
-    iterations: int = 30000
-    stop_split_at: int = 15000
+    iterations: int = 15000
+    stop_split_at: int = 10000
 
     use_depth_loss: bool = True
     normal_lambda: float = 0.4
@@ -33,11 +33,11 @@ class GSReconstructionConfig:
     load_pcd_normals: bool = True
     load_3D_points: bool = True
     normal_format: str = "opencv"
-    load_touches: bool = False
+    load_touches: bool = True
 
     model_type: str = "normal-nerfstudio"
     warmup_length: int = 500
-    add_touch_at: int = 15000
+    add_touch_at: int = 5000
 
 class Initial_Reconstruction:
     def __init__(self, data_name, prompt_text='Near Object'):
@@ -211,7 +211,7 @@ class Initial_Reconstruction:
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument("--data_name", type=str, default="blackbunny3")
+    parser.add_argument("--data_name", type=str, default="transparent_bunny")
     parser.add_argument("--prompt_text", type=str, default="transparent bunny statue")
     args = parser.parse_args()
 
@@ -238,16 +238,16 @@ if __name__ == "__main__":
     # CONSOLE.log("Step 8: Initialize training")
     # init_recon.train_model(configs=configs)
     # CONSOLE.log("Step 9: Extracting mesh")
-    # init_recon.extract_mesh(config_path=os.path.join(configs.output_dir, "config.yml"))
+    # init_recon.extract_mesh(config_path=os.path.join(init_recon.base_path, "outputs_with_touches", "config.yml"))
 
     # CONSOLE.log("Step 10: Evaluating rendering")
     # init_recon.evaluation()
 
-    # CONSOLE.log("Step 10: Training with touches")
-    # configs.load_touches = True
-    # init_recon.add_touch_train_model(configs=configs)
+    CONSOLE.log("Step 10: Training with touches")
+    configs.load_touches = True
+    init_recon.add_touch_train_model(configs=configs)
 
-    CONSOLE.log("Step 11: Evaluating rendering")
-    init_recon.evaluation()
+    # CONSOLE.log("Step 11: Evaluating rendering")
+    # init_recon.evaluation()
 
     # init_recon.export_gsplats(config_path="outputs/unnamed/dn-splatter/2024-09-02_203650/config.yml", output_dir="exports/splat/")

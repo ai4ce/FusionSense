@@ -151,27 +151,23 @@ class DNSplatterModel(SplatfactoModel):
         # remove_from_all_optim should never remove from add_mask=True positions, 
         # so deleted_mask will only trim off False locations
         if self.add_mask is not None:
-            CONSOLE.input(f"We are Removing {deleted_mask.sum()}/{deleted_mask.shape[0]} GS points")
-            # CONSOLE.input(self.add_mask.shape)
-            self.add_mask = self.add_mask[~deleted_mask]
-            # CONSOLE.input(self.add_mask.shape)
+            self.add_mask = torch.cat([
+                torch.zeros((~deleted_mask).sum()-self.added_count, device=self.add_mask.device, dtype=bool),
+                torch.ones(self.added_count, device=self.add_mask.device, dtype=bool)
+            ], dim=0).squeeze()
+            # CONSOLE.input(f"Removing {deleted_mask.sum()} GS points: {deleted_mask}")
     
-    def dup_in_all_optim(self, optimizers, dup_indices, n):
+    def dup_in_all_optim(self, optimizers, dup_mask, n):
         param_groups = self.get_gaussian_param_groups()
-        # CONSOLE.log(dup_indices.shape[0], "new GS points added")
         for group, param in param_groups.items():
-            self.dup_in_optim(optimizers.optimizers[group], dup_indices, param, n)
+            self.dup_in_optim(optimizers.optimizers[group], dup_mask, param, n)
         # dup_in_optim should always add new gaussians to the end, 
         # so touch patches will be in the same position in the array
         if self.add_mask is not None:
-            # CONSOLE.input(f"Adding {dup_mask.nonzero(as_tuple=False).shape[0]} new GS points")
-            # CONSOLE.input(self.add_mask.shape)
             self.add_mask = torch.cat([
                 self.add_mask, 
-                torch.zeros((dup_indices.shape[0]*n), device=self.add_mask.device, dtype=self.add_mask.dtype)
+                torch.zeros((dup_mask.sum()), device=self.add_mask.device, dtype=bool)
             ], dim=0).squeeze()
-            CONSOLE.log(self.add_mask.shape)
-            # CONSOLE.log(self.add_mask.shape, self.means.shape)
 
             
     def populate_modules(self):
@@ -341,9 +337,6 @@ class DNSplatterModel(SplatfactoModel):
                         self.max_2Dsize > self.config.split_screen_size
                     ).squeeze()
                 splits &= high_grads
-                # do not split the newly added points
-                if self.add_mask is not None: 
-                    splits &= (~self.add_mask)
                 nsamps = self.config.n_split_samples
                 split_params = self.split_gaussians(splits, nsamps)
 
@@ -352,9 +345,6 @@ class DNSplatterModel(SplatfactoModel):
                     <= self.config.densify_size_thresh
                 ).squeeze()
                 dups &= high_grads
-                # do not duplicate the newly added points
-                if self.add_mask is not None: 
-                    dups &= (~self.add_mask)
                 dup_params = self.dup_gaussians(dups)
                 for name, param in self.gauss_params.items():
                     self.gauss_params[name] = torch.nn.Parameter(
@@ -884,8 +874,6 @@ class DNSplatterModel(SplatfactoModel):
             MSE_touch_normal_loss = torch.mean(L2_touch_normal_loss)
             touch_normal_loss_lambda = 1.
             main_loss += MSE_touch_normal_loss * touch_normal_loss_lambda
-            # discourage 1D gaussian at touch
-            # main_loss += torch.var(torch.exp(self.scales[self.add_mask]), dim=1, keepdim=True)[0].mean() * touch_normal_loss_lambda
 
         # save rgb per 100 step
         if self.step % 100 == 0:
@@ -1147,7 +1135,7 @@ class DNSplatterModel(SplatfactoModel):
             with torch.no_grad():
                 touch_patches = self.kwargs["metadata"]['touch_patches']
                 pts = self.gauss_params["means"]
-                aabb_mask = torch.zeros([pts.shape[0], 1], dtype=torch.bool).to(self.device)
+                aabb_mask = torch.ones([pts.shape[0], 1], dtype=torch.bool).to(self.device)
                 touch_patches_points = torch.empty((0,3)).to(self.device)
                 touch_patches_rgb = torch.empty((0,3)).to(self.device)
                 touch_patches_normals = torch.empty((0,3)).to(self.device)
@@ -1160,28 +1148,25 @@ class DNSplatterModel(SplatfactoModel):
                     
                     bbox = touch_patch["bbox"].to(self.device)
                     patch_mask = points_in_non_aabb(pts, bbox).to(device=aabb_mask.device).unsqueeze(-1)
-                    # initialize color to be the closest color in the original point cloud
                     patch_knn_idx = knn_sk(pts, patch_pts, 1)
-                    # assert patch_knn_idx.shape[0] == patch_pts.shape[0]
-                    patch_pts_rgb = self.colors[patch_knn_idx].squeeze(1)
-                    # assert patch_pts_rgb.shape[0] == patch_pts.shape[0], f"{patch_pts_rgb.shape[0]} != {patch_pts.shape[0]}"
-                    aabb_mask |= patch_mask
+                    assert patch_knn_idx.shape[0] == patch_pts.shape[0]
+                    # initialize color to be the closest color in the original point cloud
+                    patch_pts_rgb = self.gauss_params["features_dc"][patch_knn_idx].squeeze(1)
+                    aabb_mask &= patch_mask
                     num_new_points += patch_pts.shape[0]
 
                     touch_patches_points = torch.cat((touch_patches_points, patch_pts), dim=0)
                     touch_patches_rgb = torch.cat((touch_patches_rgb, patch_pts_rgb), dim=0)
                     touch_patches_normals = torch.cat((touch_patches_normals, patch_pts_normals), dim=0)
                     
-                CONSOLE.log(f"There are {aabb_mask.sum()}/{aabb_mask.shape[0]} previous GS points within the aabb box of the touch patch")
-                # aabb_mask = torch.where(aabb_mask.squeeze(-1))[0].unique().contiguous()
-                # self.cull_gaussians(aabb_mask)
+                CONSOLE.log(f"There are {aabb_mask.sum()}/{pts.shape[0]} previous GS points within the aabb box of the touch patch")
                 # generate ideal gaussians point cloud at touch_patches_points
                 new_shs = torch.zeros((num_new_points, num_sh_bases(self.config.sh_degree), 3)).float().cuda()
                 if self.config.sh_degree > 0:
-                    new_shs[:, 0, :3] = RGB2SH(touch_patches_rgb)
+                    new_shs[:, 0, :3] = RGB2SH(touch_patches_rgb / 255)
                     new_shs[:, 1:, 3:] = 0.0
                 else:
-                    new_shs[:, 0, :3] = torch.logit(touch_patches_rgb, eps=1e-10)
+                    new_shs[:, 0, :3] = torch.logit(touch_patches_rgb / 255, eps=1e-10)
                 new_features_dc = torch.nn.Parameter(new_shs[:, 0, :])
                 new_features_rest = torch.nn.Parameter(new_shs[:, 1:, :])
                 # opacity of touch GS should be 1
@@ -1249,11 +1234,10 @@ class DNSplatterModel(SplatfactoModel):
             min_distances = distances.min(dim=-1).values
             filtered_hull_mask  = (min_distances > 0.005 * self.kwargs["metadata"]['scale_factor']) & (min_distances <= 0.02 * self.kwargs["metadata"]['scale_factor'])
             # hull_mask = (min_distances > 0.02) & (min_distances <= 0.1)
+
             hull_mask = torch.zeros(self.means.shape[0], dtype=torch.bool, device=self.device)
             hull_mask[close_mask] = filtered_hull_mask
-            # added points should not be removed by visual hull
-            if self.add_mask is not None:
-                hull_mask[self.add_mask] = False
+            # hull_mask[self.add_mask] = False  # added points should not be removed by visual hull
             self.max_2Dsize = None
             deleted_mask = self.cull_gaussians(hull_mask)
             self.remove_from_all_optim(optimizers, deleted_mask)
@@ -1917,6 +1901,7 @@ def points_in_non_aabb(point_cloud, box_vertices):
         (box_vertices[2] - box_vertices[0]),
         (box_vertices[4] - box_vertices[0])
     ])
+    input(box_axes)
     box_axes = torch.nn.functional.normalize(box_axes, dim=1)
 
     # Translate points relative to the box 
