@@ -3,6 +3,7 @@ import json
 import signal
 import subprocess
 from pathlib import Path
+from datetime import datetime
 from dataclasses import dataclass
 from utils.imgs_selection import select_imgs, filter_transform_json
 from utils.VisualHull import VisualHull
@@ -17,8 +18,8 @@ from nerfstudio.utils.rich_utils import CONSOLE
 class GSReconstructionConfig:
     output_dir: Path = Path("outputs")
     steps_per_save: int = 15000
-    iterations: int = 30000
-    stop_split_at: int = 15000
+    iterations: int = 15000
+    stop_split_at: int = 10000
 
     use_depth_loss: bool = True
     normal_lambda: float = 0.4
@@ -40,11 +41,12 @@ class GSReconstructionConfig:
     add_touch_at: int = 15000
 
 class Initial_Reconstruction:
-    def __init__(self, data_name, prompt_text='Near Object'):
+    def __init__(self, data_name, model_name, prompt_text='Near Object'):
         self.data_name = data_name
+        self.model_name = model_name
         self.base_path = os.path.join("datasets", self.data_name)
-        self.output_dir = os.path.join("outputs", self.data_name)
-        self.eval_dir = os.path.join("eval", self.data_name)
+        self.output_dir = os.path.join("outputs", self.data_name, self.model_name)
+        self.eval_dir = os.path.join("eval", self.data_name, self.model_name)
         self.prompt_text = prompt_text
         self.grounded_sam_path = "Grounded-SAM2-for-masking"
         with open(os.path.join(self.base_path, 'transforms.json'), 'r') as f:
@@ -201,23 +203,28 @@ class Initial_Reconstruction:
         subprocess.run(command, shell=True, check=True)
         print("GSplat exported.")
 
-    def evaluation(self):
-        rendering_evaluation(self.output_dir, self.eval_dir, self.data_name)
-        mesh_dir = os.path.join(self.output_dir, "MESH")
-        chamfer_eval(self.base_path, mesh_dir)
-        mask_rendering_evaluation(self.base_path, self.eval_dir)
+    def evaluation(self, rendering_eval=True, mask_rendering=True, chamfer_eval=True):
+        if rendering_eval:
+            rendering_evaluation(self.output_dir, self.eval_dir, self.data_name)
+        if chamfer_eval:
+            mesh_dir = os.path.join(self.output_dir, "MESH")
+            chamfer_eval(self.base_path, mesh_dir)
+        if mask_rendering:
+            mask_rendering_evaluation(self.base_path, self.eval_dir)
         print("Evaluation complete.")
 
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument("--data_name", type=str, default="blackbunny3")
+    parser.add_argument("--model_name", type=str, default="Model0")
     parser.add_argument("--prompt_text", type=str, default="transparent bunny statue")
     args = parser.parse_args()
 
     data_name = args.data_name
     prompt_text = args.prompt_text
-    init_recon = Initial_Reconstruction(data_name, prompt_text)
+    model_name = args.model_name
+    init_recon = Initial_Reconstruction(data_name, model_name, prompt_text)
     configs = GSReconstructionConfig(output_dir=init_recon.output_dir, data_path=init_recon.base_path)
 
     # CONSOLE.log("Step 1: Selecting Images for training...")
@@ -235,8 +242,8 @@ if __name__ == "__main__":
     # CONSOLE.log("Step 7: Setting transforms.json")
     # init_recon.set_transforms_and_configs()
 
-    # CONSOLE.log("Step 8: Initialize training")
-    # init_recon.train_model(configs=configs)
+    CONSOLE.log("Step 8: Initialize training")
+    init_recon.train_model(configs=configs)
     # CONSOLE.log("Step 9: Extracting mesh")
     # init_recon.extract_mesh(config_path=os.path.join(configs.output_dir, "config.yml"))
 
@@ -248,6 +255,6 @@ if __name__ == "__main__":
     # init_recon.add_touch_train_model(configs=configs)
 
     CONSOLE.log("Step 11: Evaluating rendering")
-    init_recon.evaluation()
+    init_recon.evaluation(rendering_eval=True, mask_rendering=True, chamfer_eval=False)
 
     # init_recon.export_gsplats(config_path="outputs/unnamed/dn-splatter/2024-09-02_203650/config.yml", output_dir="exports/splat/")
