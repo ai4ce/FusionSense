@@ -594,6 +594,10 @@ class NormalNerfstudio(Nerfstudio):
                 # read touch patch from pcd/ply file
                 pts = o3d.io.read_point_cloud(str(self.config.data / touchframe["patch_path"]))
                 raw_pcd = torch.from_numpy(np.asarray(pts.points)).to(dtype=torch.float32)
+                touch_downsample_factor = 2
+                before = raw_pcd.shape[0]
+                raw_pcd = raw_pcd[:: touch_downsample_factor, :]
+                assert before == raw_pcd.shape[0]*touch_downsample_factor, f"{before}*{touch_downsample_factor} != {raw_pcd.shape[0]}"
                 tr = torch.tensor(touchframe["transform_matrix"], dtype=raw_pcd.dtype)  # 4x4 homogenous transform matrix
                 # centralize
                 pcd = raw_pcd.clone()
@@ -613,16 +617,18 @@ class NormalNerfstudio(Nerfstudio):
                     mask = np.load(str(self.config.data / touchframe["mask_path"]))
                 else:
                     raise KeyError("Unsupported mask type")
+                mask = mask[:: touch_downsample_factor]
                 np_pts = pcd[mask]
                 the_pcd = o3d.geometry.PointCloud()
                 the_pcd.points = o3d.utility.Vector3dVector(np_pts.numpy())
-                o3d.io.write_point_cloud(f"patch_{ind}.ply", the_pcd)
+                # o3d.io.write_point_cloud(f"validate_touch/patch_{ind}.ply", the_pcd)
                 ## save pcd
                 # the_pcd = o3d.geometry.PointCloud()
                 # the_pcd.points = o3d.utility.Vector3dVector(np_pts.numpy())
                 # o3d.io.write_point_cloud(f"patch_{ind}_new.ply", the_pcd)
                 ## load normals as 3D normal vectors
                 pcd_normals = torch.from_numpy(np.load(self.config.data / Path(touchframe["normal_path"])))
+                pcd_normals = pcd_normals[:: touch_downsample_factor, :]
                 if (pcd_normals.shape[-1]==2):
                     pcd_normals = pcd_normals.reshape(-1, 2)[mask] # MxNx2 file --> (MxN)x3
                     x = pcd_normals[..., 0]
@@ -656,7 +662,7 @@ class NormalNerfstudio(Nerfstudio):
                 aabb *= self.config.gel_scale_factor
                 aabb = mut_and_scale(aabb, tr[:3,:], 1.0)
                 aabb = mut_and_scale(aabb, transform_matrix, scale_factor)
-                o3d.io.write_point_cloud(f"{ind}_aabb.ply", o3d.geometry.PointCloud(o3d.utility.Vector3dVector(aabb)))
+                # o3d.io.write_point_cloud(f"validate_touch/{ind}_aabb.ply", o3d.geometry.PointCloud(o3d.utility.Vector3dVector(aabb)))
                 
                 assert pcd_normal3D.dtype == np_pts.dtype == tr.dtype
                 touch_patch = {

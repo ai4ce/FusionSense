@@ -7,9 +7,9 @@ from datetime import datetime
 from dataclasses import dataclass
 from utils.imgs_selection import select_imgs, filter_transform_json
 from utils.VisualHull import VisualHull
-from utils.metric3dv2_depth_generation import metric3d_depth_generation
-from utils.generate_pcd import Init_pcd_generate
-from eval_utils.rendering_evaluation import rendering_evaluation
+# from utils.metric3dv2_depth_generation import metric3d_depth_generation
+# from utils.generate_pcd import Init_pcd_generate
+# from eval_utils.rendering_evaluation import rendering_evaluation
 from eval_utils.chamfer_evaluation import chamfer_eval
 from eval_utils.mask_rendering_eval import mask_rendering_evaluation
 from nerfstudio.utils.rich_utils import CONSOLE
@@ -233,8 +233,8 @@ if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument("--data_name", type=str, default="transparent_bunny")
-    parser.add_argument("--model_name", type=str, default="Model0")
     parser.add_argument("--prompt_text", type=str, default="transparent bunny statue")
+    parser.add_argument("--model_name", type=str, default="transparent_bunny")
     args = parser.parse_args()
 
     data_name = args.data_name
@@ -258,19 +258,19 @@ if __name__ == "__main__":
     # CONSOLE.log("Step 7: Setting transforms.json")
     # init_recon.set_transforms_and_configs()
 
-    CONSOLE.log("Step 8: Initialize training")
-    init_recon.train_model(configs=configs)
-    CONSOLE.log("Step 9: Extracting mesh")
-    init_recon.extract_mesh(config_path=os.path.join(configs.output_dir, "config.yml"))
+    # CONSOLE.log("Step 8: Initialize training")
+    # init_recon.train_model(configs=configs)
+    # CONSOLE.log("Step 9: Extracting mesh")
+    # init_recon.extract_mesh(config_path=os.path.join(init_recon.base_path, "outputs_with_touches", "config.yml"))
 
-    CONSOLE.log("Step 10: Evaluating rendering")
-    init_recon.evaluation(rendering_eval=True, mask_rendering=True, chamfer=True)
+    # CONSOLE.log("Step 10: Evaluating rendering")
+    # init_recon.evaluation(rendering_eval=True, mask_rendering=True, chamfer=True)
 
-    # CONSOLE.log("Step 10: Training with touches")
-    # configs.load_touches = True
-    # init_recon.add_touch_train_model(configs=configs)
+    CONSOLE.log("Step 10: Training with touches")
+    configs.load_touches = True
+    init_recon.add_touch_train_model(configs=configs)
 
     # CONSOLE.log("Step 11: Evaluating rendering")
-    # init_recon.evaluation(rendering_eval=True, mask_rendering=True, chamfer_eval=False)
+    # init_recon.evaluation()
 
     # init_recon.export_gsplats(config_path="outputs/unnamed/dn-splatter/2024-09-02_203650/config.yml", output_dir="exports/splat/")
