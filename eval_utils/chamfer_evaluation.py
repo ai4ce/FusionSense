@@ -79,10 +79,10 @@ def Icp_preprocessing(mesh, pcd_real):
 
 
 if __name__ == "__main__":
-    pcd_real = o3d.io.read_point_cloud("outputs/blackbunny3/MESH/after_clean_points_surface_level_0.3_closest_gaussian.ply")
+    pcd_real = o3d.io.read_point_cloud("outputs/transparent_bunny/MESH/after_clean_points_surface_level_0.3_closest_gaussian.ply")
     cad_mesh = o3d.io.read_triangle_mesh("/home/ks8018/dn-splatter/outputs/blackbunny3/MESH/stanford_bunny.stl")
     pcd_cad = Icp_preprocessing(cad_mesh, pcd_real)
     dist = Chamfer_Distance(pcd_cad, pcd_real)
 
-    o3d.io.write_point_cloud("/home/ks8018/dn-splatter/outputs/blackbunny3/MESH/pcd_cad.ply", pcd_cad)
+    o3d.io.write_point_cloud("/home/ks8018/dn-splatter/outputs/transparent_bunny/MESH/pcd_cad.ply", pcd_cad)
     print(f"Chamfer Distance: {dist}")

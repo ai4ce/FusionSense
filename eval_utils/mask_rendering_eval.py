@@ -13,6 +13,7 @@ from rich.progress import track
 from torchmetrics.functional import mean_squared_error
 from torchmetrics.image import PeakSignalNoiseRatio, StructuralSimilarityIndexMeasure
 from torchmetrics.image.lpip import LearnedPerceptualImagePatchSimilarity
+from skimage.metrics import structural_similarity as ssim
 
 from dn_splatter.metrics import DepthMetrics
 from dn_splatter.utils.utils import depth_path_to_tensor
@@ -40,10 +41,10 @@ def rgb_eval(base_path, eval_path: Path = Path("eval"), data_name: str = "blackb
     image_list = sorted(image_list, key=lambda x: int(x.split("_")[-1]))
     num_frames = len(image_list)
 
-    mse = mean_squared_error
+    # mse = mean_squared_error
     # psnr = PeakSignalNoiseRatio(data_range=1.0)
-    ssim = StructuralSimilarityIndexMeasure(data_range=1.0, kernel_size=11)
-    lpips = LearnedPerceptualImagePatchSimilarity()
+    # ssim = StructuralSimilarityIndexMeasure(data_range=1.0, kernel_size=11)
+    # lpips = LearnedPerceptualImagePatchSimilarity()
 
     psnr_score_batch = []
     ssim_score_batch = []
@@ -79,12 +80,18 @@ def rgb_eval(base_path, eval_path: Path = Path("eval"), data_name: str = "blackb
             render_img = render_img * mask_img
             assert render_img.shape == origin_img.shape, f"render image shape {render_img.shape} does not match origin image shape {origin_img.shape}"
 
+            # Compute SSIM only over the masked (numpy array)
+            (ssim_value, ssim_map) = ssim(render_img, origin_img, full=True, channel_axis=-1, data_range=1.0)
+            ssim_value_masked = torch.tensor(np.mean(ssim_map[mask_img.squeeze()>0])).to(torch.float32)
+
+            # Compute PSNR only over the masked (torch tensor)
             origin_img = F.to_tensor(origin_img).to(torch.float32)
             render_img = F.to_tensor(render_img).to(torch.float32)
             mask_img = F.to_tensor(mask_img).to(torch.float32)
             psnr_score = psnr(render_img, origin_img, mask_img)
 
         psnr_score_batch.append(psnr_score)
+        ssim_score_batch.append(ssim_value_masked)
         # mse_score = mse(predicted_image, gt_image)
         # mse_score_batch.append(mse_score)
         # psnr_score = psnr(predicted_image, gt_image)
@@ -97,7 +104,7 @@ def rgb_eval(base_path, eval_path: Path = Path("eval"), data_name: str = "blackb
     mean_scores = {
         # "mse": float(torch.stack(mse_score_batch).mean().item()),
         "psnr": float(torch.stack(psnr_score_batch).mean().item()),
-        # "ssim": float(torch.stack(ssim_score_batch).mean().item()),
+        "ssim": float(torch.stack(ssim_score_batch).mean().item()),
         # "lpips": float(torch.stack(lpips_score_batch).mean().item()),
     }
     print(list(mean_scores.keys()))
