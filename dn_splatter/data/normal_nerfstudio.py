@@ -603,7 +603,7 @@ class NormalNerfstudio(Nerfstudio):
                 # our pcd data has integer xy index, so need to multiply by the factor
                 pcd *= self.config.gel_scale_factor
                 pcd = mut_and_scale(pcd, tr[:3, :], 1.0)
-                # pcd = mut_and_scale(pcd, transform_matrix, scale_factor)
+                pcd = mut_and_scale(pcd, transform_matrix, scale_factor)
                 
                 # read and apply touch patch mask
                 if (touchframe["mask_path"].endswith(".pcd")):
@@ -655,7 +655,7 @@ class NormalNerfstudio(Nerfstudio):
                 ], dtype=pcd.dtype)
                 aabb *= self.config.gel_scale_factor
                 aabb = mut_and_scale(aabb, tr[:3,:], 1.0)
-                # aabb = mut_and_scale(aabb, transform_matrix, scale_factor)
+                aabb = mut_and_scale(aabb, transform_matrix, scale_factor)
                 o3d.io.write_point_cloud(f"{ind}_aabb.ply", o3d.geometry.PointCloud(o3d.utility.Vector3dVector(aabb)))
                 
                 assert pcd_normal3D.dtype == np_pts.dtype == tr.dtype
