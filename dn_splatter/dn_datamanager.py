@@ -17,6 +17,7 @@ from nerfstudio.data.datamanagers.full_images_datamanager import (
     FullImageDatamanagerConfig,
 )
 from nerfstudio.data.datasets.base_dataset import InputDataset
+from nerfstudio.data.utils.dataloaders import RandIndicesEvalDataloader
 
 
 @dataclass
@@ -69,6 +70,12 @@ class DNSplatterDataManager(FullImageDatamanager):
 
         self.load_normals = True if ("normal_filenames" in metadata) else False
         self.image_idx = 0
+
+        self.eval_dataloader = RandIndicesEvalDataloader(
+            input_dataset=self.eval_dataset,
+            device=self.device,
+            num_workers=self.world_size * 4,
+        )
 
     def create_train_dataset(self) -> InputDataset:
         """Sets up the data loaders for training"""

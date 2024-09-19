@@ -73,11 +73,11 @@ def Icp_preprocessing(mesh, pcd_real):
 
     # Print the transformation matrix
     print("ICP Transformation Matrix:")
-    print(icp_result.transformation)
+    print(Tr)
 
     # Apply the transformation to the CAD point cloud
     pcd_cad.transform(icp_result.transformation)
-    return pcd_cad
+    return pcd_cad, Tr
 
 def local_CD(center, pcd_cad, pcd_real, radius=0.01):
     points1 = np.asarray(pcd_cad.points)
@@ -117,7 +117,7 @@ def chamfer_eval(base_dir, mesh_dir):
     pcd_real = o3d.io.read_point_cloud(os.path.join(mesh_dir, "after_clean_points_surface_level_0.3_closest_gaussian.ply"))
     # pcd_real = o3d.io.read_point_cloud(os.path.join(mesh_dir, "after_clean_points_surface_level_0.3_closest_gaussian_touch.ply"))
     cad_mesh = o3d.io.read_triangle_mesh(os.path.join(base_dir, "stanford_bunny.stl"))
-    pcd_cad = Icp_preprocessing(cad_mesh, pcd_real)
+    pcd_cad, Tr = Icp_preprocessing(cad_mesh, pcd_real)
     o3d.io.write_point_cloud(os.path.join(mesh_dir, "pcd_cad.ply"), pcd_cad)
 
     # global chamfer distance
@@ -128,8 +128,24 @@ def chamfer_eval(base_dir, mesh_dir):
     # dist = touch_CD_eval(base_dir, pcd_cad, pcd_real)
     # dist = dist.tolist()
 
+    points = np.asarray(cad_mesh.vertices)
+    points = points / 1000.0
+
+    num_points = points.shape[0]
+    points_homogeneous = np.hstack((points, np.ones((num_points, 1))))
+    points_transformed = points_homogeneous @ Tr.T
+    points_transformed = points_transformed[:, :3]
+    cad_mesh.vertices = o3d.utility.Vector3dVector(points_transformed)
+    # cad_mesh.vertices  = o3d.utility.Vector3dVector(points)
+    # cad_mesh.transform(Tr)
+    o3d.io.write_triangle_mesh(os.path.join(mesh_dir, "cad_mesh_gt.ply"), cad_mesh)
+
     with open(os.path.join(mesh_dir, "chamfer_distance_eval.json"), "w") as f:
-        json.dump({"chamfer_distance": dist}, f, indent=4)
+        data = {    
+            "chamfer_distance": dist,
+            "ICP transformation": Tr.tolist()
+        }
+        json.dump(data, f, indent=4)
 
 # if __name__ == "__main__":
 #     pcd_real = o3d.io.read_point_cloud("outputs/transparent_bunny/MESH/after_clean_points_surface_level_0.3_closest_gaussian.ply")

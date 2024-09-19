@@ -65,9 +65,9 @@ class DNSplatterModelConfig(SplatfactoModelConfig):
     """Min depth value for depth loss"""
     smooth_loss_type: DepthLossType = DepthLossType.TV
     """Choose which smooth loss to train with Literal["TV", "EdgeAwareTV")"""
-    sensor_depth_lambda: float = 0.0
+    sensor_depth_lambda: float = 0.2
     """Regularizer for sensor depth loss"""
-    mono_depth_lambda: float = 0.0
+    mono_depth_lambda: float = 0.2
     """Regularizer for mono depth loss"""
     use_depth_smooth_loss: bool = False
     """Whether to enable depth smooth loss or not"""
@@ -1326,14 +1326,14 @@ class DNSplatterModel(SplatfactoModel):
                 [TrainingCallbackLocation.AFTER_TRAIN_ITERATION], self.after_train
             )
         )
-        # High grad saving
-        cbs.append(
-            TrainingCallback(
-                [TrainingCallbackLocation.AFTER_TRAIN_ITERATION],
-                self.high_grad_saving,
-                args=[training_callback_attributes.optimizers],
-            )
-        )
+        # # High grad saving
+        # cbs.append(
+        #     TrainingCallback(
+        #         [TrainingCallbackLocation.AFTER_TRAIN_ITERATION],
+        #         self.high_grad_saving,
+        #         args=[training_callback_attributes.optimizers],
+        #     )
+        # )
         cbs.append(
             TrainingCallback(
                 [TrainingCallbackLocation.AFTER_TRAIN_ITERATION],
