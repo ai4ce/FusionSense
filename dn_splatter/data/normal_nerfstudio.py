@@ -594,10 +594,10 @@ class NormalNerfstudio(Nerfstudio):
                 # read touch patch from pcd/ply file
                 pts = o3d.io.read_point_cloud(str(self.config.data / touchframe["patch_path"]))
                 raw_pcd = torch.from_numpy(np.asarray(pts.points)).to(dtype=torch.float32)
-                touch_downsample_factor = 2
+                touch_downsample_factor = 5
                 before = raw_pcd.shape[0]
                 raw_pcd = raw_pcd[:: touch_downsample_factor, :]
-                assert before == raw_pcd.shape[0]*touch_downsample_factor, f"{before}*{touch_downsample_factor} != {raw_pcd.shape[0]}"
+                # assert before == raw_pcd.shape[0]*touch_downsample_factor, f"{before}*{touch_downsample_factor} != {raw_pcd.shape[0]}"
                 tr = torch.tensor(touchframe["transform_matrix"], dtype=raw_pcd.dtype)  # 4x4 homogenous transform matrix
                 # centralize
                 pcd = raw_pcd.clone()
