@@ -857,7 +857,6 @@ class DNSplatterModel(SplatfactoModel):
                 mask=batch["mask"] if "mask" in batch else None,
             )
             ideal_sdfs = torch.abs(ideal_sdfs)
-            # print(f"get_ideal_sdf took { time.time() - start} s")
             current_sdfs = current_sdfs[valid_indices]
 
             weight = self.get_sdf_loss_weight(valid_indices)
@@ -1155,22 +1154,20 @@ class DNSplatterModel(SplatfactoModel):
                 for ind in range(len(touch_patches)): # this is a python array, considering change this
                     touch_patch = touch_patches[ind]
                     patch_pts = touch_patch["points_xyz"].to(self.device)
-                    patch_pts_rgb = torch.zeros_like(patch_pts)
                     patch_pts_normals = touch_patch["normals"].to(self.device)
-                    
-                    bbox = touch_patch["bbox"].to(self.device)
-                    patch_mask = points_in_non_aabb(pts, bbox).to(device=aabb_mask.device).unsqueeze(-1)
                     # initialize color to be the closest color in the original point cloud
-                    patch_knn_idx = knn_sk(pts, patch_pts, 1)
-                    # assert patch_knn_idx.shape[0] == patch_pts.shape[0]
-                    patch_pts_rgb = self.colors[patch_knn_idx].squeeze(1)
-                    # assert patch_pts_rgb.shape[0] == patch_pts.shape[0], f"{patch_pts_rgb.shape[0]} != {patch_pts.shape[0]}"
-                    aabb_mask |= patch_mask
-                    num_new_points += patch_pts.shape[0]
-
-                    touch_patches_points = torch.cat((touch_patches_points, patch_pts), dim=0)
-                    touch_patches_rgb = torch.cat((touch_patches_rgb, patch_pts_rgb), dim=0)
-                    touch_patches_normals = torch.cat((touch_patches_normals, patch_pts_normals), dim=0)
+                    if (patch_pts.shape[0] > 0):
+                        bbox = touch_patch["bbox"].to(self.device)
+                        patch_mask = points_in_non_aabb(pts, bbox).to(device=aabb_mask.device).unsqueeze(-1)
+                        patch_knn_idx = knn_sk(pts, patch_pts, 1)
+                        # assert patch_knn_idx.shape[0] == patch_pts.shape[0]
+                        patch_pts_rgb = self.colors[patch_knn_idx].squeeze(1)
+                        # assert patch_pts_rgb.shape[0] == patch_pts.shape[0], f"{patch_pts_rgb.shape[0]} != {patch_pts.shape[0]}"
+                        aabb_mask |= patch_mask
+                        num_new_points += patch_pts.shape[0]
+                        touch_patches_rgb = torch.cat((touch_patches_rgb, patch_pts_rgb), dim=0)
+                        touch_patches_points = torch.cat((touch_patches_points, patch_pts), dim=0)
+                        touch_patches_normals = torch.cat((touch_patches_normals, patch_pts_normals), dim=0)
                     
                 CONSOLE.log(f"There are {aabb_mask.sum()}/{aabb_mask.shape[0]} previous GS points within the aabb box of the touch patch")
                 # aabb_mask = torch.where(aabb_mask.squeeze(-1))[0].unique().contiguous()
@@ -1213,7 +1210,7 @@ class DNSplatterModel(SplatfactoModel):
                 # append to the end
                 for name, param in self.gauss_params.items():
                     if name in outs:
-                        CONSOLE.print(name, param.shape, outs[name].shape)
+                        # CONSOLE.print(name, param.shape, outs[name].shape)
                         self.gauss_params[name] = torch.nn.Parameter(
                             torch.cat([param, outs[name]], dim=0)
                         )
@@ -1601,8 +1598,7 @@ class DNSplatterModel(SplatfactoModel):
             )
             inv_rots = quat_to_rotmat(invert_quaternion(quat=quats))
             gaussian_standard_deviations = (
-                torch.exp(self.scales[valid_indices])
-                * torch.bmm(inv_rots, viewdirs[..., None])[..., 0]
+                torch.exp(self.scales[valid_indices]) * torch.bmm(inv_rots, viewdirs[..., None])[..., 0]
             ).norm(dim=-1)
             return gaussian_standard_deviations
 

@@ -90,6 +90,14 @@ conda activate fusionsense
 python Initial_Recon.py --data_name {DATASET_NAME} --model_name {MODEL_NAME}
 ```
 
+### Render outputs
+
+For render jpeg or mp4 outputs using nerfstudio, we recommend install ffmpeg in conda environment:
+
+```sh
+conda install -c conda-forge x264=='1!161.3030' ffmpeg=4.3.2
+```
+
 ## Dataset Format
 ```bash
 datasets/
