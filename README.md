@@ -148,3 +148,9 @@ outputs/
 eval/
     ds_name/ *evaluation results files*
 ```
+
+## Render your video 
+```bash
+python render_video.py camera-path --load_config your-model-config --camera_path_filename camera_path.json
+```
+more details in nerfstudio `ns-render`.
