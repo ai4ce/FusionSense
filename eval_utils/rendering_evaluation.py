@@ -11,7 +11,7 @@ def rendering_evaluation(input_dir, full_exp_dir, exp_name, past_n_trials=0):
     print(full_cmd)
     os.system(full_cmd)
     
-    full_cmd = f'ns-render dataset --load-config={config_yml_path} --output-path={full_exp_dir} --rendered_output_names rgb depth normal'
+    full_cmd = f'ns-render dataset --load-config={config_yml_path} --output-path={full_exp_dir} --rendered_output_names rgb depth normal gt-sensor_depth'
     #    rendered_output_names = ['rgb', 'depth', 'normal', 'accumulation', 'background', 'normal_touch',  
     #   'raw-rgb', 'raw-depth', 'raw-normal', 'raw-accumulation', 'raw-background', 'raw-normal_touch', 'gt-image_idx',     
     #   'gt-sensor_depth', 'gt-normal', 'gt-rgb', 'raw-gt-image_idx', 'raw-gt-sensor_depth', 'raw-gt-normal', 'raw-gt-rgb']  

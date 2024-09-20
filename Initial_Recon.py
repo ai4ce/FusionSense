@@ -14,19 +14,19 @@ from eval_utils.chamfer_evaluation import chamfer_eval
 from eval_utils.mask_rendering_eval import mask_rendering_evaluation
 from nerfstudio.utils.rich_utils import CONSOLE
 
-proc = None
-def signal_handler(sig, frame):
-    global proc  # Reference the global 'proc' variable
-    print("\nCtrl+C detected. Terminating the subprocess...")
-    if proc:
-        proc.terminate()  # Terminate the subprocess
-        proc.wait()  # Wait for the process to clean up
-        print("Subprocess terminated.")
-    else:
-        print("No subprocess to terminate.")
+# proc = None
+# def signal_handler(sig, frame):
+#     global proc  # Reference the global 'proc' variable
+#     print("\nCtrl+C detected. Terminating the subprocess...")
+#     if proc:
+#         proc.terminate()  # Terminate the subprocess
+#         proc.wait()  # Wait for the process to clean up
+#         print("Subprocess terminated.")
+#     else:
+#         print("No subprocess to terminate.")
 
-# Register the signal handler for SIGINT
-signal.signal(signal.SIGINT, signal_handler)
+# # Register the signal handler for SIGINT
+# signal.signal(signal.SIGINT, signal_handler)
 
 @dataclass
 class GSReconstructionConfig:
@@ -48,7 +48,7 @@ class GSReconstructionConfig:
     load_pcd_normals: bool = True
     load_3D_points: bool = True
     normal_format: str = "opencv"
-    load_touches: bool = True
+    load_touches: bool = False
 
     model_type: str = "normal-nerfstudio"
     warmup_length: int = 500
@@ -197,8 +197,7 @@ class Initial_Reconstruction:
             "gs-mesh",
             "gaussians",
             "--load-config", str(config_path),
-            # "--output-dir", str(save_dir+"/gaussian"),
-            "--output-dir", str(save_dir),
+            "--output-dir", str(save_dir+"/gaussian"),
         ]
         command_sugar = [
             "gs-mesh",
@@ -223,11 +222,11 @@ class Initial_Reconstruction:
     def evaluation(self, rendering_eval=True, mask_rendering=True, chamfer=True):
         if rendering_eval:
             rendering_evaluation(self.output_dir, self.eval_dir, self.data_name)
+        if mask_rendering:
+            mask_rendering_evaluation(self.base_path, self.eval_dir)
         if chamfer:
             mesh_dir = os.path.join(self.output_dir, "MESH")
             chamfer_eval(self.base_path, mesh_dir)
-        if mask_rendering:
-            mask_rendering_evaluation(self.base_path, self.eval_dir)
         print("Evaluation complete.")
 
 if __name__ == "__main__":
@@ -235,7 +234,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--data_name", type=str, default="transparent_bunny")
     parser.add_argument("--prompt_text", type=str, default="transparent bunny statue")
-    parser.add_argument("--model_name", type=str, default="")
+    parser.add_argument("--model_name", type=str, default="transparent_bunny")
     args = parser.parse_args()
 
     data_name = args.data_name
@@ -273,14 +272,16 @@ if __name__ == "__main__":
     # CONSOLE.log("Step 7: Setting transforms.json")
     # init_recon.set_transforms_and_configs()
 
+    # configs.load_touches = False
     # CONSOLE.log("Step 8: Initialize training")
     # configs.load_touches = False
     # init_recon.train_model(configs=configs)
-    # CONSOLE.log("Step 9: Extracting mesh")
-    # init_recon.extract_mesh(config_path=os.path.join(init_recon.base_path, "outputs", "config.yml"))
+
+    CONSOLE.log("Step 9: Extracting mesh")
+    init_recon.extract_mesh(config_path=os.path.join(configs.output_dir, "config.yml"))
 
     # CONSOLE.log("Step 10: Evaluating rendering")
-    # init_recon.evaluation(rendering_eval=True, mask_rendering=True, chamfer=True)
+    # init_recon.evaluation(rendering_eval=False, mask_rendering=False, chamfer=True)
 
     # CONSOLE.log("Step 10: Training with touches")
     # configs.load_touches = True
@@ -288,6 +289,6 @@ if __name__ == "__main__":
     init_recon.extract_mesh(config_path=os.path.join(configs.output_dir, "config.yml"))
 
     # CONSOLE.log("Step 11: Evaluating rendering")
-    # init_recon.evaluation()
+    # init_recon.evaluation(rendering_eval=True, mask_rendering=True, chamfer_eval=False)
 
     # init_recon.export_gsplats(config_path="outputs/unnamed/dn-splatter/2024-09-02_203650/config.yml", output_dir="exports/splat/")
