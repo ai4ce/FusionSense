@@ -159,6 +159,6 @@ eval/
 
 ## Render your video 
 ```bash
-python render_video.py camera-path --load_config your-model-config --camera_path_filename camera_path.json
+python render_video.py camera-path --load_config your-model-config --camera_path_filename camera_path.json --rendered_output_names rgb depth normal
 ```
 more details in nerfstudio `ns-render`.
