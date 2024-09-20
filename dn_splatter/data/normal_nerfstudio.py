@@ -59,7 +59,7 @@ class NormalNerfstudioConfig(NerfstudioDataParserConfig):
     """Set to true to load normal maps"""
     normal_format: Literal["opencv", "opengl"] = "opengl"
     """Which format the normal maps in camera frame are saved in."""
-    load_pcd_normals: bool = True
+    load_pcd_normals: bool = False
     """Whether to load pcd normals for normal initialisation"""
     
     grad_visualization: bool = False
