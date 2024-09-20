@@ -257,6 +257,7 @@ if __name__ == "__main__":
     # # init_recon.generate_normals()
     # CONSOLE.log("Step 7: Setting transforms.json")
     # init_recon.set_transforms_and_configs()
+    
     # CONSOLE.log("Step 1: Selecting Images for training...")
     # init_recon.select_frames()
     # # CONSOLE.log("Step 2: Generate Mask Images using Grounded SAM...")
@@ -272,21 +273,20 @@ if __name__ == "__main__":
     # CONSOLE.log("Step 7: Setting transforms.json")
     # init_recon.set_transforms_and_configs()
 
-    # configs.load_touches = False
     # CONSOLE.log("Step 8: Initialize training")
     # configs.load_touches = False
     # init_recon.train_model(configs=configs)
 
-    CONSOLE.log("Step 9: Extracting mesh")
-    init_recon.extract_mesh(config_path=os.path.join(configs.output_dir, "config.yml"))
+    # CONSOLE.log("Step 9: Extracting mesh")
+    # init_recon.extract_mesh(config_path=os.path.join(configs.output_dir, "config.yml"))
 
     # CONSOLE.log("Step 10: Evaluating rendering")
     # init_recon.evaluation(rendering_eval=False, mask_rendering=False, chamfer=True)
 
-    # CONSOLE.log("Step 10: Training with touches")
-    # configs.load_touches = True
-    # init_recon.train_model(configs=configs)
-    init_recon.extract_mesh(config_path=os.path.join(configs.output_dir, "config.yml"))
+    CONSOLE.log("Step 10: Training with touches")
+    configs.load_touches = True
+    init_recon.train_model(configs=configs)
+    # init_recon.extract_mesh(config_path=os.path.join(configs.output_dir, "config.yml"))
 
     # CONSOLE.log("Step 11: Evaluating rendering")
     # init_recon.evaluation(rendering_eval=True, mask_rendering=True, chamfer_eval=False)
