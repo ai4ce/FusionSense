@@ -7,7 +7,7 @@ from datetime import datetime
 from dataclasses import dataclass
 from utils.imgs_selection import select_imgs, filter_transform_json
 from utils.VisualHull import VisualHull
-from utils.metric3dv2_depth_generation import metric3d_depth_generation
+# from utils.metric3dv2_depth_generation import metric3d_depth_generation
 from utils.generate_pcd import Init_pcd_generate
 from eval_utils.rendering_evaluation import rendering_evaluation
 from eval_utils.chamfer_evaluation import chamfer_eval
@@ -210,6 +210,7 @@ class Initial_Reconstruction:
         ]
         # gs-mesh tsdf --load-config outputs/blackbunny/001/config.yml --output-dir MESH/blackbunny
         print("Extracting mesh...")
+        CONSOLE.log(command_sugar)
         subprocess.run(command_sugar)
         print("Mesh extracted")
     
@@ -234,8 +235,8 @@ if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument("--data_name", type=str, default="transparent_bunny")
-    parser.add_argument("--model_name", type=str, default="9view")
-    parser.add_argument("--prompt_text", type=str, default="black bunny statue")
+    parser.add_argument("--prompt_text", type=str, default="transparent bunny statue")
+    parser.add_argument("--model_name", type=str, default="transparent_bunny")
     args = parser.parse_args()
 
     data_name = args.data_name
@@ -270,9 +271,10 @@ if __name__ == "__main__":
     # CONSOLE.log("Step 10: Evaluating rendering")
     # init_recon.evaluation(rendering_eval=False, mask_rendering=False, chamfer=True)
 
-    # CONSOLE.log("Step 10: Training with touches")
-    # configs.load_touches = True
-    # init_recon.add_touch_train_model(configs=configs)
+    CONSOLE.log("Step 10: Training with touches")
+    configs.load_touches = True
+    init_recon.train_model(configs=configs)
+    # init_recon.extract_mesh(config_path=os.path.join(configs.output_dir, "config.yml"))
 
     # CONSOLE.log("Step 11: Evaluating rendering")
     # init_recon.evaluation(rendering_eval=True, mask_rendering=True, chamfer_eval=False)
