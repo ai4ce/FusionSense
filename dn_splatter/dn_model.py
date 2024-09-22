@@ -860,7 +860,6 @@ class DNSplatterModel(SplatfactoModel):
                 mask=batch["mask"] if "mask" in batch else None,
             )
             ideal_sdfs = torch.abs(ideal_sdfs)
-            # print(f"get_ideal_sdf took { time.time() - start} s")
             current_sdfs = current_sdfs[valid_indices]
 
             weight = self.get_sdf_loss_weight(valid_indices)
@@ -1108,7 +1107,6 @@ class DNSplatterModel(SplatfactoModel):
         param_state = optimizer.state[param]
         if "exp_avg" in param_state:
             repeat_dims = (n,) + tuple(1 for _ in range(param_state["exp_avg"].dim() - 1))
-            CONSOLE.log(param_state["exp_avg"].shape)
             param_state["exp_avg"] = torch.cat(
                 [
                     param_state["exp_avg"],
@@ -1158,26 +1156,24 @@ class DNSplatterModel(SplatfactoModel):
                 for ind in range(len(touch_patches)): # this is a python array, considering change this
                     touch_patch = touch_patches[ind]
                     patch_pts = touch_patch["points_xyz"].to(self.device)
-                    patch_pts_rgb = torch.zeros_like(patch_pts)
                     patch_pts_normals = touch_patch["normals"].to(self.device)
-                    
-                    bbox = touch_patch["bbox"].to(self.device)
-                    patch_mask = points_in_non_aabb(pts, bbox).to(device=aabb_mask.device).unsqueeze(-1)
                     # initialize color to be the closest color in the original point cloud
-                    patch_knn_idx = knn_sk(pts, patch_pts, 1)
-                    # assert patch_knn_idx.shape[0] == patch_pts.shape[0]
-                    patch_pts_rgb = self.colors[patch_knn_idx].squeeze(1)
-                    # assert patch_pts_rgb.shape[0] == patch_pts.shape[0], f"{patch_pts_rgb.shape[0]} != {patch_pts.shape[0]}"
-                    aabb_mask |= patch_mask
-                    num_new_points += patch_pts.shape[0]
-
-                    touch_patches_points = torch.cat((touch_patches_points, patch_pts), dim=0)
-                    touch_patches_rgb = torch.cat((touch_patches_rgb, patch_pts_rgb), dim=0)
-                    touch_patches_normals = torch.cat((touch_patches_normals, patch_pts_normals), dim=0)
+                    if (patch_pts.shape[0] > 0):
+                        bbox = touch_patch["bbox"].to(self.device)
+                        patch_mask = points_in_non_aabb(pts, bbox).to(device=aabb_mask.device).unsqueeze(-1)
+                        patch_knn_idx = knn_sk(pts, patch_pts, 1)
+                        # assert patch_knn_idx.shape[0] == patch_pts.shape[0]
+                        patch_pts_rgb = self.colors[patch_knn_idx].squeeze(1)
+                        # assert patch_pts_rgb.shape[0] == patch_pts.shape[0], f"{patch_pts_rgb.shape[0]} != {patch_pts.shape[0]}"
+                        aabb_mask |= patch_mask
+                        num_new_points += patch_pts.shape[0]
+                        touch_patches_rgb = torch.cat((touch_patches_rgb, patch_pts_rgb), dim=0)
+                        touch_patches_points = torch.cat((touch_patches_points, patch_pts), dim=0)
+                        touch_patches_normals = torch.cat((touch_patches_normals, patch_pts_normals), dim=0)
                     
                 CONSOLE.log(f"There are {aabb_mask.sum()}/{aabb_mask.shape[0]} previous GS points within the aabb box of the touch patch")
-                # aabb_mask = torch.where(aabb_mask.squeeze(-1))[0].unique().contiguous()
-                # self.cull_gaussians(aabb_mask)
+                deleted_aabb_mask = self.cull_gaussians(aabb_mask.squeeze())
+                self.remove_from_all_optim(optimizers, deleted_aabb_mask)
                 # generate ideal gaussians point cloud at touch_patches_points
                 new_shs = torch.zeros((num_new_points, num_sh_bases(self.config.sh_degree), 3)).float().cuda()
                 if self.config.sh_degree > 0:
@@ -1213,20 +1209,19 @@ class DNSplatterModel(SplatfactoModel):
                     "scales": new_scales,
                     "quats": new_quats,
                 }
+                self.added_count = touch_patches_points.shape[0]  
+                self.add_mask = torch.cat([
+                    torch.zeros(self.num_points, dtype=bool), 
+                    torch.ones(self.added_count, dtype=bool)
+                ]).squeeze().to(device=pts.device)
                 # append to the end
                 for name, param in self.gauss_params.items():
                     if name in outs:
-                        CONSOLE.print(name, param.shape, outs[name].shape)
+                        # CONSOLE.print(name, param.shape, outs[name].shape)
                         self.gauss_params[name] = torch.nn.Parameter(
                             torch.cat([param, outs[name]], dim=0)
                         )
-                      
-                self.added_count = touch_patches_points.shape[0]  
-                self.add_mask = torch.cat([
-                    torch.zeros(pts.shape[0], dtype=bool), 
-                    torch.ones(self.added_count, dtype=bool)
-                ]).squeeze().to(device=pts.device)
-                
+                        
                 self.add_in_all_optim(optimizers, self.added_count, 1)
                 # reset these in refine_after manner
                 self.xys_grad_norm = None
@@ -1262,6 +1257,33 @@ class DNSplatterModel(SplatfactoModel):
             self.remove_from_all_optim(optimizers, deleted_mask)
             del distances, min_distances, hull_mask, visual_hull
 
+    def touch_pruning(self, optimizers: Optimizers, step):
+        assert step == self.step
+        if self.step <= self.config.warmup_length or self.add_mask is None:
+            return
+        aabb_mask = torch.zeros([self.num_points, 1], dtype=torch.bool).to(self.device)
+        with torch.no_grad():
+            touch_patches = self.kwargs["metadata"]['touch_patches']
+            # use aabb box to pruning inner gs points
+            for ind in range(len(touch_patches)): # this is a python array, considering change this
+                touch_patch = touch_patches[ind]
+                patch_pts = touch_patch["points_xyz"].to(self.device)
+                # initialize color to be the closest color in the original point cloud
+                if (patch_pts.shape[0] > 0):
+                    bbox = touch_patch["bbox"].to(self.device)
+                    patch_mask = points_in_non_aabb(self.means, bbox).to(device=aabb_mask.device).unsqueeze(-1)
+                    # assert patch_knn_idx.shape[0] == patch_pts.shape[0]
+                    # assert patch_pts_rgb.shape[0] == patch_pts.shape[0], f"{patch_pts_rgb.shape[0]} != {patch_pts.shape[0]}"
+                    aabb_mask |= patch_mask
+            CONSOLE.log(f"There are {aabb_mask.sum()}/{aabb_mask.shape[0]} previous GS points within the aabb box of the touch patch")
+            if self.add_mask is not None:
+                aabb_mask[self.add_mask] = False
+            CONSOLE.print(f"There are {aabb_mask.sum()}/{aabb_mask.shape[0]} previous non touch GS points")
+            deleted_aabb_mask = self.cull_gaussians(aabb_mask.squeeze())
+            self.remove_from_all_optim(optimizers, deleted_aabb_mask)
+
+        
+    
     def high_grad_saving(self, optimizers: Optimizers, step):
         assert step == self.step
         if self.step == (self.config.stop_split_at - 5e2):
@@ -1365,6 +1387,15 @@ class DNSplatterModel(SplatfactoModel):
             TrainingCallback(
                 [TrainingCallbackLocation.AFTER_TRAIN_ITERATION],
                 self.hull_pruning,
+                update_every_num_iters=self.config.refine_every,
+                args=[training_callback_attributes.optimizers],
+            )
+        )
+        # Touch pruning
+        cbs.append(
+            TrainingCallback(
+                [TrainingCallbackLocation.AFTER_TRAIN_ITERATION],
+                self.touch_pruning,
                 update_every_num_iters=self.config.refine_every,
                 args=[training_callback_attributes.optimizers],
             )
@@ -1629,8 +1660,7 @@ class DNSplatterModel(SplatfactoModel):
             )
             inv_rots = quat_to_rotmat(invert_quaternion(quat=quats))
             gaussian_standard_deviations = (
-                torch.exp(self.scales[valid_indices])
-                * torch.bmm(inv_rots, viewdirs[..., None])[..., 0]
+                torch.exp(self.scales[valid_indices]) * torch.bmm(inv_rots, viewdirs[..., None])[..., 0]
             ).norm(dim=-1)
             return gaussian_standard_deviations
 
