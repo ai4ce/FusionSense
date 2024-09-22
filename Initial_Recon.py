@@ -261,10 +261,10 @@ if __name__ == "__main__":
     # CONSOLE.log("Step 7: Setting transforms.json")
     # init_recon.set_transforms_and_configs()
 
-    configs.load_touches = False
-    configs.camera_path_filename = "outputs/transparent_bunny/9view/camera_paths/camera.json"
-    CONSOLE.log("Step 8: Initialize training")
-    init_recon.train_model(configs=configs)
+    # configs.load_touches = False
+    # configs.camera_path_filename = "outputs/transparent_bunny/9view/camera_paths/camera.json"
+    # CONSOLE.log("Step 8: Initialize training")
+    # init_recon.train_model(configs=configs)
 
     # CONSOLE.log("Step 9: Extracting mesh")
     # init_recon.extract_mesh(config_path=os.path.join(configs.output_dir, "config.yml"))
@@ -274,6 +274,7 @@ if __name__ == "__main__":
 
     CONSOLE.log("Step 10: Training with touches")
     configs.load_touches = True
+    configs.camera_path_filename = "outputs/transparent_bunny/ours/camera_paths/touch_vs_nontouch_campose.json"
     init_recon.train_model(configs=configs)
     # init_recon.extract_mesh(config_path=os.path.join(configs.output_dir, "config.yml"))
 
