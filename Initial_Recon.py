@@ -49,6 +49,7 @@ class GSReconstructionConfig:
     load_3D_points: bool = True
     normal_format: str = "opencv"
     load_touches: bool = False
+    camera_path_filename: Path = None
 
     model_type: str = "normal-nerfstudio"
     warmup_length: int = 500
@@ -140,6 +141,7 @@ class Initial_Reconstruction:
             "--load-3D-points", str(configs.load_3D_points),
             "--normal-format", configs.normal_format,
             "--load-touches", str(configs.load_touches),
+            "--camera-path-filename", configs.camera_path_filename
         ]
 
         # command = "CUDA_VISIBLE_DEVICES=0 ns-train dn-splatter --steps-per-save 30000 --max_num_iterations 30001 --pipeline.model.use-depth-loss True --pipeline.model.normal-lambda 0.4 --pipeline.model.sensor-depth-lambda 0.2 --pipeline.model.use-depth-smooth-loss True  --pipeline.model.use-binary-opacities True  --pipeline.model.use-normal-loss True  --pipeline.model.normal-supervision mono  --pipeline.model.random_init False normal-nerfstudio  --data datasets/touchgs  --load-pcd-normals True --load-3D-points True  --normal-format opencv"
@@ -244,23 +246,8 @@ if __name__ == "__main__":
     init_recon = Initial_Reconstruction(data_name, model_name, prompt_text)
     configs = GSReconstructionConfig(output_dir=init_recon.output_dir, data_path=init_recon.base_path)
 
-    # CONSOLE.log("Step 1: Selecting Images for training...")
-    # init_recon.select_frames()
-    # # CONSOLE.log("Step 2: Generate Mask Images using Grounded SAM...")
-    # # init_recon.generate_mask_images()
-    # CONSOLE.log("Step 3: Generating visual hull...")
-    # init_recon.generate_visual_hull(error=5)
-    # # CONSOLE.log("Step 4: Running metric3d depth for ")
-    # # init_recon.run_metric3d_depth()
-    # CONSOLE.log("Step 5: Initialize pcd")
-    # init_recon.Init_pcd_generation()
-    # # CONSOLE.log("Step 6: Generate normals")
-    # # init_recon.generate_normals()
-    # CONSOLE.log("Step 7: Setting transforms.json")
-    # init_recon.set_transforms_and_configs()
-    
-    # CONSOLE.log("Step 1: Selecting Images for training...")
-    # init_recon.select_frames()
+    CONSOLE.log("Step 1: Selecting Images for training...")
+    init_recon.select_frames()
     # # CONSOLE.log("Step 2: Generate Mask Images using Grounded SAM...")
     # # init_recon.generate_mask_images()
     # CONSOLE.log("Step 3: Generating visual hull...")
@@ -274,9 +261,10 @@ if __name__ == "__main__":
     # CONSOLE.log("Step 7: Setting transforms.json")
     # init_recon.set_transforms_and_configs()
 
-    # CONSOLE.log("Step 8: Initialize training")
-    # configs.load_touches = False
-    # init_recon.train_model(configs=configs)
+    configs.load_touches = False
+    configs.camera_path_filename = "outputs/transparent_bunny/9view/camera_paths/camera.json"
+    CONSOLE.log("Step 8: Initialize training")
+    init_recon.train_model(configs=configs)
 
     # CONSOLE.log("Step 9: Extracting mesh")
     # init_recon.extract_mesh(config_path=os.path.join(configs.output_dir, "config.yml"))
