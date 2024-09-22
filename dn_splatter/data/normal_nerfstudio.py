@@ -647,8 +647,8 @@ class NormalNerfstudio(Nerfstudio):
                 x_diff = torch.abs(torch.max(raw_pcd[:, 0]) - torch.min(raw_pcd[:, 0]))
                 y_diff = torch.abs(torch.max(raw_pcd[:, 1]) - torch.min(raw_pcd[:, 1]))
                 z_diff = torch.abs(torch.max(raw_pcd[:, 2]) - torch.min(raw_pcd[:, 2])) # raw pcd z coordinate is negative
-                min_corner = [-x_diff/2, -y_diff/2, -z_diff*2]
-                max_corner = [x_diff/2, y_diff/2, z_diff*2]
+                min_corner = [-x_diff/2, -y_diff/2, -z_diff*5]
+                max_corner = [x_diff/2, y_diff/2, 0]
                 aabb = torch.tensor([
                     [min_corner[0], min_corner[1], min_corner[2]],
                     [min_corner[0], min_corner[1], max_corner[2]],
@@ -667,7 +667,7 @@ class NormalNerfstudio(Nerfstudio):
                 assert pcd_normal3D.dtype == np_pts.dtype == tr.dtype
                 touch_patch = {
                     "points_xyz": np_pts,
-                    "points_rgb": torch.ones_like(np_pts, dtype=pcd.dtype) * 255., # init touch points to be white
+                    "points_rgb": torch.zeros_like(np_pts, dtype=pcd.dtype), # init touch points to be black
                     "normals": pcd_normal3D,
                     "bbox": aabb,
                 }

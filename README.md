@@ -98,6 +98,12 @@ For render jpeg or mp4 outputs using nerfstudio, we recommend install ffmpeg in 
 conda install -c conda-forge x264=='1!161.3030' ffmpeg=4.3.2
 ```
 
+To render outputs of pretrained models:
+
+```sh
+python render_video.py camera-path --load_config your-model-config --camera_path_filename camera_path.json --rendered_output_names rgb depth normal
+```
+
 ## Dataset Format
 ```bash
 datasets/

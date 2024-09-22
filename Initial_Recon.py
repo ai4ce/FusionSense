@@ -209,6 +209,7 @@ class Initial_Reconstruction:
         # gs-mesh tsdf --load-config outputs/blackbunny/001/config.yml --output-dir MESH/blackbunny
         print("Extracting mesh...")
         CONSOLE.log(command_sugar)
+        subprocess.run(command_gs)
         subprocess.run(command_sugar)
         print("Mesh extracted")
     
