@@ -1292,13 +1292,10 @@ class DNSplatterModel(SplatfactoModel):
                 if (patch_pts.shape[0] > 0):
                     bbox = touch_patch["bbox"].to(self.device)
                     patch_mask = points_in_non_aabb(self.means, bbox).to(device=aabb_mask.device).unsqueeze(-1)
-                    # assert patch_knn_idx.shape[0] == patch_pts.shape[0]
-                    # assert patch_pts_rgb.shape[0] == patch_pts.shape[0], f"{patch_pts_rgb.shape[0]} != {patch_pts.shape[0]}"
                     aabb_mask |= patch_mask
-            CONSOLE.log(f"There are {aabb_mask.sum()}/{aabb_mask.shape[0]} previous GS points within the aabb box of the touch patch")
+            # CONSOLE.log(f"There are {aabb_mask.sum()}/{aabb_mask.shape[0]} previous GS points within the aabb box of the touch patch")
             if self.add_mask is not None:
                 aabb_mask[self.add_mask] = False
-            CONSOLE.print(f"There are {aabb_mask.sum()}/{aabb_mask.shape[0]} previous non touch GS points")
             deleted_aabb_mask = self.cull_gaussians(aabb_mask.squeeze())
             self.remove_from_all_optim(optimizers, deleted_aabb_mask)
             # update knn
