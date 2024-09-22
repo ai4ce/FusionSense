@@ -103,9 +103,9 @@ class DNSplatterModelConfig(SplatfactoModelConfig):
     """Enable sdf loss during training"""
     sdf_loss_lambda: float = 0.1
     """Regularizer for sdf loss"""
-    apply_sdf_loss_after_iters: int = 200
+    apply_sdf_loss_after_iters: int = 1200
     """Start applying sdf loss after n training iterations"""
-    apply_sdf_loss_iters: int = 10
+    apply_sdf_loss_iters: int = 100
     """Iterations to apply sdf loss"""
     knn_to_track: int = 16
     """How many nearest neighbours per gaussian to track"""
@@ -149,7 +149,7 @@ class DNSplatterModel(SplatfactoModel):
             self.remove_from_optim(optimizers.optimizers[group], deleted_mask, param)
         torch.cuda.empty_cache()
         # remove_from_all_optim should never remove from add_mask=True positions, 
-        # so deleted_mask will only trim off False locations
+        #   so deleted_mask will only trim off False locations
         if self.add_mask is not None:
             # CONSOLE.input(f"We are Removing {deleted_mask.sum()}/{deleted_mask.shape[0]} GS points")
             # CONSOLE.input(self.add_mask.shape)
@@ -162,7 +162,7 @@ class DNSplatterModel(SplatfactoModel):
         for group, param in param_groups.items():
             self.dup_in_optim(optimizers.optimizers[group], dup_indices, param, n)
         # dup_in_optim should always add new gaussians to the end, 
-        # so touch patches will be in the same position in the array
+        #   so touch patches will be in the same position in the array
         if self.add_mask is not None:
             # CONSOLE.input(f"Adding {dup_mask.nonzero(as_tuple=False).shape[0]} new GS points")
             # CONSOLE.input(self.add_mask.shape)
@@ -170,7 +170,6 @@ class DNSplatterModel(SplatfactoModel):
                 self.add_mask, 
                 torch.zeros((dup_indices.shape[0]*n), device=self.add_mask.device, dtype=self.add_mask.dtype)
             ], dim=0).squeeze()
-            CONSOLE.log(self.add_mask.shape)
             # CONSOLE.log(self.add_mask.shape, self.means.shape)
 
             
@@ -521,14 +520,14 @@ class DNSplatterModel(SplatfactoModel):
             scales_crop = self.scales
             quats_crop = self.quats
 
+        # fix the position and opacity of the touch anchor points
         if self.add_mask is not None:
             opacities_crop = opacities_crop.clone()
             opacities_crop[self.add_mask] = opacities_crop[self.add_mask].detach()
             means_crop = means_crop.clone()
             means_crop[self.add_mask] = means_crop[self.add_mask].detach()
-            features_rest_crop = features_rest_crop.clone()
-            features_rest_crop[self.add_mask] = features_rest_crop[self.add_mask].detach()
-
+            scales_crop = scales_crop.clone()
+            scales_crop[self.add_mask] = scales_crop[self.add_mask].detach()
                         
         colors_crop = torch.cat((features_dc_crop[:, None, :], features_rest_crop), dim=1)
 
@@ -862,6 +861,7 @@ class DNSplatterModel(SplatfactoModel):
             weight = self.get_sdf_loss_weight(valid_indices)
 
             sdf_loss = (torch.abs(ideal_sdfs - current_sdfs) / (weight + 1e-5)).mean()
+            
 
         main_loss = (
             rgb_loss
@@ -879,11 +879,10 @@ class DNSplatterModel(SplatfactoModel):
                 touch_patches_normals = torch.cat((touch_patches_normals, touch_patch["normals"].to(self.device)), dim=0)
             assert normal_touch.shape == touch_patches_normals.shape
             L2_touch_normal_loss = (normal_touch - touch_patches_normals) ** 2
-            # CONSOLE.input(f"{L2_touch.shape}")
             MSE_touch_normal_loss = torch.mean(L2_touch_normal_loss)
             touch_normal_loss_lambda = 1.
             main_loss += MSE_touch_normal_loss * touch_normal_loss_lambda
-            # discourage 1D gaussian at touch
+            # discourage touch patch gaussians from becoming 1D
             # main_loss += torch.var(torch.exp(self.scales[self.add_mask]), dim=1, keepdim=True)[0].mean() * touch_normal_loss_lambda
 
         # save rgb per 100 step
@@ -1136,8 +1135,6 @@ class DNSplatterModel(SplatfactoModel):
     """
     def add_touch_patch(self, optimizers: Optimizers, step):
         assert step == self.step
-        if self.step <= self.config.warmup_length:
-            return
         if self.step != self.config.add_touch_at:
             return
         if ("touch_patches" in self.kwargs["metadata"]):
@@ -1159,9 +1156,8 @@ class DNSplatterModel(SplatfactoModel):
                         bbox = touch_patch["bbox"].to(self.device)
                         patch_mask = points_in_non_aabb(pts, bbox).to(device=aabb_mask.device).unsqueeze(-1)
                         patch_knn_idx = knn_sk(pts, patch_pts, 1)
-                        # assert patch_knn_idx.shape[0] == patch_pts.shape[0]
                         patch_pts_rgb = self.colors[patch_knn_idx].squeeze(1)
-                        # assert patch_pts_rgb.shape[0] == patch_pts.shape[0], f"{patch_pts_rgb.shape[0]} != {patch_pts.shape[0]}"
+                        # patch_pts_rgb = touch_patch["points_rgb"].to(self.device)
                         aabb_mask |= patch_mask
                         num_new_points += patch_pts.shape[0]
                         touch_patches_rgb = torch.cat((touch_patches_rgb, patch_pts_rgb), dim=0)
@@ -1224,6 +1220,17 @@ class DNSplatterModel(SplatfactoModel):
                 self.xys_grad_norm = None
                 self.vis_counts = None
                 self.max_2Dsize = None
+                # update knn
+                if (
+                    self.config.use_sdf_loss
+                    and self.step >= self.config.apply_sdf_loss_after_iters
+                ):
+                    means = torch.nan_to_num(self.means.data.detach().to("cuda"))
+                    start = time.time()
+                    self._knn = knn_sk(x=means, y=means, k=self.config.knn_to_track)
+                    CONSOLE.log(
+                        f"Recomputing KNN took: {time.time() - start} seconds for {self.num_points} points"
+                    )
                 CONSOLE.print(f"Added total {self.added_count} touch points to {self.means.shape[0]} GS points")
         else:
             CONSOLE.print(f"[bold green] Skip adding touch patch at step {step}")
@@ -1252,9 +1259,22 @@ class DNSplatterModel(SplatfactoModel):
             self.max_2Dsize = None
             deleted_mask = self.cull_gaussians(hull_mask)
             self.remove_from_all_optim(optimizers, deleted_mask)
+            # update knn
+            if (
+                self.config.use_sdf_loss
+                and self.step >= self.config.apply_sdf_loss_after_iters
+                and deleted_mask is not None
+            ):
+                means = torch.nan_to_num(self.means.data.detach().to("cuda"))
+                start = time.time()
+                self._knn = knn_sk(x=means, y=means, k=self.config.knn_to_track)
+                CONSOLE.log(
+                    f"Recomputing KNN took: {time.time() - start} seconds for {self.num_points} points"
+                )
             del distances, min_distances, hull_mask, visual_hull
 
     def touch_pruning(self, optimizers: Optimizers, step):
+        """Pruning GS points within touch patches"""
         assert step == self.step
         if self.step <= self.config.warmup_length or self.add_mask is None:
             return
@@ -1278,6 +1298,18 @@ class DNSplatterModel(SplatfactoModel):
             CONSOLE.print(f"There are {aabb_mask.sum()}/{aabb_mask.shape[0]} previous non touch GS points")
             deleted_aabb_mask = self.cull_gaussians(aabb_mask.squeeze())
             self.remove_from_all_optim(optimizers, deleted_aabb_mask)
+            # update knn
+            if (
+                self.config.use_sdf_loss
+                and self.step >= self.config.apply_sdf_loss_after_iters
+                and deleted_aabb_mask is not None
+            ):
+                means = torch.nan_to_num(self.means.data.detach().to("cuda"))
+                start = time.time()
+                self._knn = knn_sk(x=means, y=means, k=self.config.knn_to_track)
+                CONSOLE.log(
+                    f"Recomputing KNN took: {time.time() - start} seconds for {self.num_points} points"
+                )
 
         
     
@@ -1526,7 +1558,12 @@ class DNSplatterModel(SplatfactoModel):
         """
         if closest_gaussians is None:
             closest_gaussians = self.get_closest_gaussians(samples=sdf_samples)
+        # CONSOLE.log(closest_gaussians.shape, closest_gaussians.max(), self.num_points)
+        # input("1...")
         closest_gaussians_idx = closest_gaussians
+        # CONSOLE.log(closest_gaussians_idx)
+        # input("2...")
+        assert closest_gaussians.shape[0] == self.num_points, "Wrong number of closest gaussians"
         closest_gaussian_centers = self.means[closest_gaussians]
 
         closest_gaussian_inv_scaled_rotation = scale_rot_to_inv_cov3d(
@@ -1924,6 +1961,7 @@ class DNSplatterModel(SplatfactoModel):
         ).sum(dim=-2)
         # normal is the negative of the grad
         density_grad = -torch.nn.functional.normalize(density_grad, dim=-1)
+        CONSOLE.log(density_grad.shape, self.means.shape)
         return density_grad
 
 def points_in_non_aabb(point_cloud, box_vertices):
