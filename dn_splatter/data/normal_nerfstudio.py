@@ -12,6 +12,7 @@ from natsort import natsorted
 
 from nerfstudio.cameras import camera_utils
 from nerfstudio.cameras.cameras import CAMERA_MODEL_TO_TYPE, Cameras, CameraType
+from nerfstudio.cameras.camera_paths import get_path_from_json
 from nerfstudio.data.dataparsers.base_dataparser import (
     DataparserOutputs,
 )
@@ -72,6 +73,8 @@ class NormalNerfstudioConfig(NerfstudioDataParserConfig):
     center_method: Literal['poses', 'focus', 'none'] = 'none'
     auto_scale_poses: bool = True
     scene_scale = 5.0
+
+    camera_path_filename: Path = None
 
 @dataclass
 class NormalNerfstudio(Nerfstudio):
@@ -685,6 +688,14 @@ class NormalNerfstudio(Nerfstudio):
 
         grad_visualization_dict = {'grad_visualization': self.config.grad_visualization}
         metadata.update(grad_visualization_dict)
+
+        if self.config.camera_path_filename is not None:
+            import json
+            with open(self.config.camera_path_filename, "r", encoding="utf-8") as f:
+                camera_path = json.load(f)
+            camera_path = get_path_from_json(camera_path)
+            camera_path_dict = {"camera_path": camera_path}
+            metadata.update(camera_path_dict)
 
         dataparser_outputs = DataparserOutputs(
             image_filenames=image_filenames,
