@@ -138,6 +138,9 @@ class DNSplatterModelConfig(SplatfactoModelConfig):
 
     base_dir: Path = Path("datasets")
 
+    background_color: str = "white"
+    """set background color"""
+
 class DNSplatterModel(SplatfactoModel):
     """Depth + Normal splatter"""
 
@@ -1302,6 +1305,21 @@ class DNSplatterModel(SplatfactoModel):
             CONSOLE.log("Extracting high gradients ...")
             dbscan_cluster_centers(self.high_grads_gs, self.config.base_dir)
 
+    def save_training_image(self, optimizers: Optimizers, step):
+        camera_path = self.kwargs["metadata"]["camera_path"]
+        camera_idx = step % len(camera_path)
+        outputs = self.get_outputs_for_camera(camera_path[camera_idx : camera_idx + 1], obb_box=None)
+        output_image = outputs['rgb'].detach().cpu().numpy()
+        training_dir = Path("training_render")
+        if not training_dir.exists():
+            training_dir.mkdir()
+        image_path = training_dir / f"{step:06d}.png"
+        if not image_path.parent.exists():
+            image_path.parent.mkdir(parents=True)
+        import numpy as np
+        from PIL import Image
+        Image.fromarray((output_image * 255).astype(np.uint8)).save(image_path)
+
     def get_training_callbacks(
         self, training_callback_attributes: TrainingCallbackAttributes
     ) -> List[TrainingCallback]:
@@ -1348,6 +1366,16 @@ class DNSplatterModel(SplatfactoModel):
                 [TrainingCallbackLocation.AFTER_TRAIN_ITERATION],
                 self.hull_pruning,
                 update_every_num_iters=self.config.refine_every,
+                args=[training_callback_attributes.optimizers],
+            )
+        )
+
+        # save training image
+        cbs.append(
+            TrainingCallback(
+                [TrainingCallbackLocation.AFTER_TRAIN_ITERATION],
+                self.save_training_image,
+                update_every_num_iters=1,
                 args=[training_callback_attributes.optimizers],
             )
         )
