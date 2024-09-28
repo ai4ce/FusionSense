@@ -175,3 +175,30 @@ body {
 #interpolation-image-wrapper img {
   border-radius: 5px;
 }
+
+
+.iframe-container {
+  display: flex;
+  justify-content: space-around; /* Change to 'space-around' or 'space-evenly' for more space */
+  align-items: center;
+}
+
+.iframe-container iframe {
+  margin: 0 50px; /* Adds horizontal space between the two iframes */
+}
+
+.sliders-container {
+  display: flex;
+  justify-content: space-between; /* Or 'space-around' for more spacing */
+  gap: 0px; /* Adds space between the sliders */
+  flex-wrap: unset; /* Prevents the sliders from wrapping */
+}
+
+.slider-wrapper {
+  width: 48%; /* Make each slider 48% of the container width for side-by-side */
+}
+
+#trans_depth, #trans_normal, #trans_rgb, #trans_object {
+  width: 480px; /* General width for all sliders */
+  height: 270px; /* General height for all sliders */
+}

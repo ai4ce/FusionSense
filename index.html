@@ -42,7 +42,12 @@
         src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/MathJax.js?config=TeX-MML-AM_CHTML">
     </script>
   <link rel="shortcut icon" type="image/x-icon" href="./static/images/ai4ce.png" />
+  
+  <script src="https://cdn.knightlab.com/libs/juxtapose/latest/js/juxtapose.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.knightlab.com/libs/juxtapose/latest/css/juxtapose.css">
 </head>
+
+
 <body>
 
 <nav class="navbar" role="navigation" aria-label="main navigation">
@@ -67,14 +72,14 @@
 </nav>
 
 
+<!-- Title and authors. -->
 <section class="hero">
   <div class="hero-body">
     <div class="container is-max-desktop">
       <div class="columns is-centered">
         <div class="column has-text-centered">
           <h1 class="title is-1 publication-title">
-            <!-- <img src="./static/images/logo.png" width="45"> -->
-            FusionSense&nbsp;&nbsp;
+            FusionSense
           </h1>
           <h1 class="title is-2 publication-title">Bridging Common Sense, Vision, and Touch for Robust Sparse-View Reconstruction</h1>
           <div class="column is-full_width">
@@ -112,17 +117,13 @@
           </div>
 
           <div class="is-size-5 publication-authors">
-            <span class="author-block"><sup>1</sup> New York University </span>
-          </div>
-          <div class="is-size-5 publication-authors">
-            <span class="author-block"><sup>2</sup> Carnegie Mellon University </span>
-          </div>
-          <div class="is-size-5 publication-authors">
+            <span class="author-block"><sup>1</sup> New York University, </span>
+            <span class="author-block"><sup>2</sup> Carnegie Mellon University, </span>
             <span class="author-block"><sup>3</sup> University of Illinois, Urbana-Champaign </span>
-          </div>
-          <div class="is-size-5 publication-authors">
+            <br>
             <span class="author-block"><sup>*</sup> Equal Contribution </span>
           </div>
+
 
 
           <div class="column has-text-centered">
@@ -207,33 +208,123 @@
 
 <section class="hero teaser">
   <div class="container is-max-desktop">
-    <div class="hero-body">
-      <!-- <video id="teaser" autoplay muted loop height="100%">
-        <source src="./static/images/SUBT_video.mp4"
-                type="video/mp4">
-      </video> -->
-      <!-- <img src="./static/images/kitti_map.jpg" height="300"> -->
-      
-      <!-- <img class="rounded" src="./static/images/teasing_figure.png" >
-      <br><br><br>
-        <h2 class="subtitle has-text-centered">
-          A human wearing a helmet camera manipulates objects in a shared
-          workspace with a UR10E cobot. The cobot tries to reach the anticipated 3D action target with the shortest Cartesian path.
-        </h2> -->
+    <div class="columns is-centered">
+      <div class="column is-full-width teaser no-margin">
+        
+        <h2 class="title is-3">Snapshot</h2>
+        <p>
+          Reconstruction <b>visually and geometrically</b> accurate scene and object from sparse-view RGB-D images, enhanced with tactile sensing.
+        </p>
+        <div class="sliders-container">
+          <div class="slider-wrapper">
+            <h2>Novel View Synthesis (RGB) </h2>
+            <div id="trans_rgb"></div>
+          </div>
+          <div class="slider-wrapper">
+            <h2>Object Reconstruction (RGB)</h2>
+            <div id="trans_object"></div>
+          </div>
+        </div>
+        <br>
+        <!-- depth and normal sliders -->
+        <div class="sliders-container">
+          <div class="slider-wrapper">
+            <h2>Novel View Synthesis (Depth) </h2>
+            <div id="trans_depth"></div>
+          </div>
+          <div class="slider-wrapper">
+            <h2>Novel View Synthesis (Normal)</h2>
+            <div id="trans_normal"></div>
+          </div>
+        </div>
 
+        <script src="https://cdn.knightlab.com/libs/juxtapose/latest/js/juxtapose.min.js"></script>
+        <link rel="stylesheet" href="https://cdn.knightlab.com/libs/juxtapose/latest/css/juxtapose.css">
+        <script src="./static/js/juxtapose-slider.js"></script> <!-- Include your slider.js file -->
+        <script>
+          // Slider configurations
+          const sliders = [
+            {
+              elementId: '#trans_rgb',
+              images: [
+                {
+                  src: './static/images/FS_trans_RGB_22.png',
+                  label: 'FusionSense',
+                },
+                {
+                  src: './static/images/DN_trans_RGB_22.png',
+                  label: 'DN-Splatter',
+                }
+              ],
+              options: sliderOptions // You can reference the options defined in slider.js if needed
+            },
+            {
+              elementId: '#trans_object',
+              images: [
+                {
+                  src: './static/images/FS_trans_obj_7.jpg',
+                  label: 'FusionSense',
+                },
+                {
+                  src: './static/images/GO_trans_obj_7.png',
+                  label: 'GaussianObject',
+                }
+              ],
+              options: sliderOptions // Reference the same or a different options object
+            },
+            {
+              elementId: '#trans_depth',
+              images: [
+                {
+                  src: './static/images/FS_trans_depth_0.png',
+                  label: 'FusionSense',
+                },
+                {
+                  src: './static/images/DN_trans_depth_0.png',
+                  label: 'DN-Splatter',
+                }
+              ],
+              options: sliderOptions // You can reference the options defined in slider.js if needed
+            },
+            {
+              elementId: '#trans_normal',
+              images: [
+                {
+                  src: './static/images/FS_trans_normal_22.png',
+                  label: 'FusionSense',
+                },
+                {
+                  src: './static/images/DN_trans_normal_22.png',
+                  label: 'DN-Splatter',
+                }
+              ],
+              options: sliderOptions // Reference the same or a different options object
+            }
+          ];
+    
+          // Initialize sliders
+          initializeSliders(sliders);
+        </script>
+
+
+    
+        <!-- <script src="https://cdn.knightlab.com/libs/juxtapose/latest/js/juxtapose.min.js"></script>
+        <link rel="stylesheet" href="https://cdn.knightlab.com/libs/juxtapose/latest/css/juxtapose.css">
+        <script src="./static/js/juxtapose-slider.js"></script> <!-- Include your slider.js file -->
+        
+      </div>
     </div>
-    <iframe frameborder="0" class="juxtapose" width="100%" height="1080" src="https://cdn.knightlab.com/libs/juxtapose/latest/embed/index.html?uid=8fd73dba-7b57-11ef-9397-d93975fe8866"></iframe>
-    <iframe frameborder="0" class="juxtapose" width="100%" height="1080" src="https://cdn.knightlab.com/libs/juxtapose/latest/embed/index.html?uid=5c987e1c-7b54-11ef-9397-d93975fe8866"></iframe>
-    <iframe frameborder="0" class="juxtapose" width="100%" height="1080" src="https://cdn.knightlab.com/libs/juxtapose/latest/embed/index.html?uid=887d0b86-7b56-11ef-9397-d93975fe8866"></iframe>
+  </div>
+</section>
+
+    
+    <!--  -->
     <!-- <center>   
       <video muted autoplay loop width="700px" height="400px" controls controls>
         <source src="./static/videos/EgoPAT3Dv2-Demo2.mp4" type="video/mp4">
       </video>
     </center> -->
-  </div>
 
-
-</section>
 
 <section class="section">
   <div class="container is-max-desktop">
@@ -261,197 +352,104 @@
           </p>
           <!-- <img class="rounded" src="./static/images/teasing_version11.png" > -->
           <br><br><br>
-          <!DOCTYPE html>
-          <html>
-          <head>
-            <meta charset="utf-8">
-            <meta name="description"
-                  content="Egocentric 3D Action Target Prediction">
-            <meta name="keywords" content="Robotics, Computer Vision, Human-Robot Interaction">
-            <meta name="viewport" content="width=device-width, initial-scale=1">
-            <title>EgoPAT3Dv2</title>
-          
-            <!-- Global site tag (gtag.js) - Google Analytics -->
-            <!-- <script async src="https://www.googletagmanager.com/gtag/js?id=G-PYVRSFMDRL"></script>
-            <script>
-              window.dataLayer = window.dataLayer || [];
-          
-              function gtag() {
-                dataLayer.push(arguments);
-              }
-          
-              gtag('js', new Date());
-          
-              gtag('config', 'G-PYVRSFMDRL');
-            </script> -->
-            <link href="https://fonts.googleapis.com/css?family=Google+Sans|Noto+Sans|Castoro"
-                  rel="stylesheet">
-          
-            <link rel="stylesheet" href="./static/css/bulma.min.css">
-            <link rel="stylesheet" href="./static/css/bulma-carousel.min.css">
-            <link rel="stylesheet" href="./static/css/bulma-slider.min.css">
-            <link rel="stylesheet" href="./static/css/fontawesome.all.min.css">
-            <link rel="stylesheet"
-                  href="https://cdn.jsdelivr.net/gh/jpswalsh/academicons@1/css/academicons.min.css">
-            <link rel="stylesheet" href="./static/css/index.css">
-          
-            <!-- <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script> -->
-            <script defer src="./static/js/fontawesome.all.min.js"></script>
-            <script src="./static/js/bulma-carousel.min.js"></script>
-            <script src="./static/js/bulma-slider.min.js"></script>
-            <script src="./static/js/index.js"></script>
-            <link rel="shortcut icon" type="image/x-icon" href="./static/images/ai4ce.png" />
-          </head>
-          <body>        
-            </div>
-          </nav>
-
-          
-          <div class="columns is-centered has-text-centered">
-            <div class="column is-full_width">
-              <h2 class="title is-3">Overview Video (3 mins)</h2>
-            </div>
-          </div>
-          <p>
-            &nbsp
-          </p>
-
-          <div class="column is-full_width">
-            <video muted autoplay loop width="700px" height="400px" controls controls>
-              <source src="./static/videos/overview.mp4" type="video/mp4">
-            </video>
-            <br> <br>
-            <div class="columns is-centered has-text-centered">
-              <div class="column is-full_width">
-                <h2 class="title is-3">Detail Video (7 mins.)</h2>
-              </div>
-            </div>
-            <p>
-              &nbsp
-            </p>
   
-            <div class="column is-full_width">
-              <video muted autoplay loop width="700px" height="400px" controls controls>
-                <source src="./static/videos/extended_overview.mp4" type="video/mp4">
-              </video>
-              <br> <br>
+
 
           
-          <section class="section">
-            <div class="container is-max-desktop">
-              <!-- Method. -->
-              <div class="columns is-centered has-text-centered">
-                <div class="column is-full_width">
-                  <hr>
-                  <h2 class="title is-3">Method</h2>
-                  <br>
-                  <img src="./static/images/workflow.png" class="center"/>
-                  <div class="content has-text-justified">
-                    <br>  
-                    <p>
-                      We employ ConvNeXt_Tiny (denoted by <span style="font-style: italic;">ψ</span>) to extract visual feature <span style="font-style: italic;">v<sub>t</sub> = ψ(X<sub>t</sub>)</span> from each RGB frame. Hand landmarks {<span style="font-style: italic;">LM<sup>1</sup><sub>t</sub>, LM<sup>2</sup><sub>t</sub> ... LM<sup>21</sup><sub>t</sub>}</span> are firstly extracted by the Hand API from Google's MediaPipe. If no hand detected, then all landmarks are set to be 0. A multi-layer perceptron (MLP) denoted by <span style="font-style: italic;">φ</span> is then used to encode hand landmarks to features <span style="font-style: italic;">h<sub>t</sub> = φ(LM<sup>21stack</sup><sub>t</sub>)</span>. After the feature encodings, the two features were concatenated and fed into another MLP to obtain the fused feature <span style="font-style: italic;">u<sub>t</sub> = MLP(cat(v<sub>t</sub>,h<sub>t</sub>))</span> for a single frame.
-                  </p>
-                  
-                  <p>
-                      We use a 2-layer LSTM to process the fused feature. The steps to handle LSTM outputs are similar to the original EgoPAT3D baseline. We divide a 3D space into grids of dimension <span style="font-style: italic;">1024×1024×1024</span> and aim to generate a confidence score for each grid. We used three separate MLPs to process the output of the LSTM and obtain the confidence scores in three dimensions. For example, without loss of generality, for dimension <span style="font-style: italic;">x</span> at frame <span style="font-style: italic;">t</span>, let <span style="font-style: italic;">g ∈ ℝ<sup>1024</sup></span> denote all the grids in the <span style="font-style: italic;">x</span>-dimension, where we normalize the coordinates of each grid to be in [-1, 1]. The score vector <span style="font-style: italic;">s<sup>x</sup><sub>t</sub> ∈ ℝ<sup>1024</sup></span> is computed by <span style="font-style: italic;">s<sup>x</sup><sub>t</sub> = MLP<sub>X</sub>(LSTM(u<sub>t</sub>, l<sub>t-1</sub>))</span>, where <span style="font-style: italic;">l<sub>t-1</sub></span> is the learned hidden representation and <span style="font-style: italic;">l<sub>0</sub></span> is set to be 0. A binary mask <span style="font-style: italic;">m<sub>t</sub><sup>x</sup> ∈ ℝ<sup>1024</sup></span> is used to remove the value for all the grids where the confidence is less than a threshold <span style="font-style: italic;">γ</span>. Let <span style="font-style: italic;">s<sup>x</sup><sub>t</sub>[i]</span>, <span style="font-style: italic;">m<sup>x</sup><sub>t</sub>[i]</span> denote the score and mask for the <span style="font-style: italic;">i</span>-th grid, we have that:
-                  </p>
-                  
-                  <div id="equation1">
-                    \[
-                    m^x_{t}[i] =
-                    \begin{cases}
-                     1, & i \in \{j \,|\, s^x_{t}[j] > \gamma\} \\
-                     0, & i \in \{j \,|\, s^x_{t}[j] \leq \gamma\} \\
-                    \end{cases} 
-                    \]
-                  </div>
-                  
-                  <p>
-                      The masked score is then calculated by <span style="font-style: italic;">ŝ<sup>x</sup><sub>t</sub> = m<sup>x</sup><sub>t</sub> ⊙ s<sup>x</sup><sub>t</sub></span>, where <span style="font-style: italic;">⊙</span> denotes the element-wise dot product. Then, we can get the estimated target position value for dimension <span style="font-style: italic;">x</span> at frame <span style="font-style: italic;">t</span> as:
-                  </p>
-                  
-                  <div class="math">
-                    \[ x_t \in \mathcal{R} = (\hat{s}^x_{t})^Tg \]
-                  </div>
-                  
-                  <p>
-                      We conduct post-processing for each result produced by the LSTM to incorporate human prior knowledge. For each frame <span style="font-style: italic;">t</span>, we choose the coordinate of the landmark that marks the end of the index finger to be the 2D hand position <span style="font-style: italic;">Ĥ<sub>t</sub></span>. The predicted 3D target position <span style="font-style: italic;">P<sub>t</sub></span> (in meter) was transformed into 2D position <span style="font-style: italic;">Ĥ<sub>Pt</sub></span> in pixel values with the help of camera intrinsic parameter <span style="font-style: italic;">K</span> and image resolution (4K in our case). We ignore the depth information in this transformation. We calculate the hand position offset between each frame by <span style="font-style: italic;">ĥ<sub>t</sub> = ||Ĥ<sub>t</sub> - Ĥ<sub>t-1</sub>||<sub>2</sub></span> and keep track of the max historical hand position offset <span style="font-style: italic;">Ĝ<sub>t</sub> = max(ĥ<sub>t</sub>)</span> for <span style="font-style: italic;">i < t</span>. The final 2D position is calculated as <span style="font-style: italic;">Ĝ<sub>Pt</sub> = Ĥ<sub>Pt</sub>*(ĥ<sub>t</sub>/Ĝ<sub>t</sub>) + Ĥ<sub>t</sub>*(1-ĥ<sub>t</sub>/Ĝ<sub>t</sub>)</span>. The 2D result is then transformed back to a 3D position <span style="font-style: italic;">ĥat{P<sub>t</sub>}</span> with the pre-transformed depth, again with camera intrinsic parameter <span style="font-style: italic;">K</span> and image resolution, to serve as the final prediction.
-                  </p>
-                  
-                  </div>
-                </div>
-              </div>
-              <hr>
+  <section class="section">
+    <div class="container is-max-desktop">
+      <!-- Method. -->
+      <div class="columns is-centered has-text-centered">
+        <div class="column is-full_width">
+          <hr>
+          <h2 class="title is-3">Method</h2>
+          <br>
+          <img src="./static/images/workflow.png" class="center"/>
+          <div class="content has-text-justified">
+            <br>  
+            <p>
+              We employ ConvNeXt_Tiny (denoted by <span style="font-style: italic;">ψ</span>) to extract visual feature <span style="font-style: italic;">v<sub>t</sub> = ψ(X<sub>t</sub>)</span> from each RGB frame. Hand landmarks {<span style="font-style: italic;">LM<sup>1</sup><sub>t</sub>, LM<sup>2</sup><sub>t</sub> ... LM<sup>21</sup><sub>t</sub>}</span> are firstly extracted by the Hand API from Google's MediaPipe. If no hand detected, then all landmarks are set to be 0. A multi-layer perceptron (MLP) denoted by <span style="font-style: italic;">φ</span> is then used to encode hand landmarks to features <span style="font-style: italic;">h<sub>t</sub> = φ(LM<sup>21stack</sup><sub>t</sub>)</span>. After the feature encodings, the two features were concatenated and fed into another MLP to obtain the fused feature <span style="font-style: italic;">u<sub>t</sub> = MLP(cat(v<sub>t</sub>,h<sub>t</sub>))</span> for a single frame.
+          </p>
+          
+          <p>
+              We use a 2-layer LSTM to process the fused feature. The steps to handle LSTM outputs are similar to the original EgoPAT3D baseline. We divide a 3D space into grids of dimension <span style="font-style: italic;">1024×1024×1024</span> and aim to generate a confidence score for each grid. We used three separate MLPs to process the output of the LSTM and obtain the confidence scores in three dimensions. For example, without loss of generality, for dimension <span style="font-style: italic;">x</span> at frame <span style="font-style: italic;">t</span>, let <span style="font-style: italic;">g ∈ ℝ<sup>1024</sup></span> denote all the grids in the <span style="font-style: italic;">x</span>-dimension, where we normalize the coordinates of each grid to be in [-1, 1]. The score vector <span style="font-style: italic;">s<sup>x</sup><sub>t</sub> ∈ ℝ<sup>1024</sup></span> is computed by <span style="font-style: italic;">s<sup>x</sup><sub>t</sub> = MLP<sub>X</sub>(LSTM(u<sub>t</sub>, l<sub>t-1</sub>))</span>, where <span style="font-style: italic;">l<sub>t-1</sub></span> is the learned hidden representation and <span style="font-style: italic;">l<sub>0</sub></span> is set to be 0. A binary mask <span style="font-style: italic;">m<sub>t</sub><sup>x</sup> ∈ ℝ<sup>1024</sup></span> is used to remove the value for all the grids where the confidence is less than a threshold <span style="font-style: italic;">γ</span>. Let <span style="font-style: italic;">s<sup>x</sup><sub>t</sub>[i]</span>, <span style="font-style: italic;">m<sup>x</sup><sub>t</sub>[i]</span> denote the score and mask for the <span style="font-style: italic;">i</span>-th grid, we have that:
+          </p>
+          
+          <div id="equation1">
+            \[
+            m^x_{t}[i] =
+            \begin{cases}
+              1, & i \in \{j \,|\, s^x_{t}[j] > \gamma\} \\
+              0, & i \in \{j \,|\, s^x_{t}[j] \leq \gamma\} \\
+            \end{cases} 
+            \]
+          </div>
+          
+          <p>
+              The masked score is then calculated by <span style="font-style: italic;">ŝ<sup>x</sup><sub>t</sub> = m<sup>x</sup><sub>t</sub> ⊙ s<sup>x</sup><sub>t</sub></span>, where <span style="font-style: italic;">⊙</span> denotes the element-wise dot product. Then, we can get the estimated target position value for dimension <span style="font-style: italic;">x</span> at frame <span style="font-style: italic;">t</span> as:
+          </p>
+          
+          <div class="math">
+            \[ x_t \in \mathcal{R} = (\hat{s}^x_{t})^Tg \]
+          </div>
+          
+          <p>
+              We conduct post-processing for each result produced by the LSTM to incorporate human prior knowledge. For each frame <span style="font-style: italic;">t</span>, we choose the coordinate of the landmark that marks the end of the index finger to be the 2D hand position <span style="font-style: italic;">Ĥ<sub>t</sub></span>. The predicted 3D target position <span style="font-style: italic;">P<sub>t</sub></span> (in meter) was transformed into 2D position <span style="font-style: italic;">Ĥ<sub>Pt</sub></span> in pixel values with the help of camera intrinsic parameter <span style="font-style: italic;">K</span> and image resolution (4K in our case). We ignore the depth information in this transformation. We calculate the hand position offset between each frame by <span style="font-style: italic;">ĥ<sub>t</sub> = ||Ĥ<sub>t</sub> - Ĥ<sub>t-1</sub>||<sub>2</sub></span> and keep track of the max historical hand position offset <span style="font-style: italic;">Ĝ<sub>t</sub> = max(ĥ<sub>t</sub>)</span> for <span style="font-style: italic;">i < t</span>. The final 2D position is calculated as <span style="font-style: italic;">Ĝ<sub>Pt</sub> = Ĥ<sub>Pt</sub>*(ĥ<sub>t</sub>/Ĝ<sub>t</sub>) + Ĥ<sub>t</sub>*(1-ĥ<sub>t</sub>/Ĝ<sub>t</sub>)</span>. The 2D result is then transformed back to a 3D position <span style="font-style: italic;">ĥat{P<sub>t</sub>}</span> with the pre-transformed depth, again with camera intrinsic parameter <span style="font-style: italic;">K</span> and image resolution, to serve as the final prediction.
+          </p>
+          
+          </div>
+        </div>
+      </div>
+    </div>
+
           
               
-              <!-- Applications.-->
-              <div class="columns is-centered has-text-centered">
-                <div class="column is-full_width">
-                  <h2 class="title is-3">EgoPAT3Dv2 Dataset</h2>
-                </div>
-              </div>
-              <p>
-                &nbsp
-              </p>
-              <div class="column is-full_width">
-                The access to the new EgoPAT3Dv2 dataset will be available soon.
-                
-              <br> <br>
-              </div>
-              <p>
-                &nbsp;
-              </p>
-              <p>
-                &nbsp;
-              </p>
           
           
               
           
-          <section class="section" id="BibTeX"> 
-            <div class="container is-max-desktop content">
-              <h2 id="bibtexTitle" class="title">BibTeX</h2>
-              <button id="copyButton" onclick="copyToClipboard()">
-                <i class="fas fa-copy"></i>
-              </button>
-              <pre style="display: inline-flex; text-align: left";><code id="bibtexInfo">
-Coming Soon
-                </code>
-              </pre>
-            </div>
-          </section>
+  <section class="section" id="BibTeX"> 
+    <div class="container is-max-desktop content">
+      <h2 id="bibtexTitle" class="title">BibTeX</h2>
+      <button id="copyButton" onclick="copyToClipboard()">
+        <i class="fas fa-copy"></i>
+      </button>
+      <pre style="display: inline-flex; text-align: left";><code id="bibtexInfo">
+          Coming Soon
+        </code>
+      </pre>
+    </div>
+  </section>
           
           
-          <section class="section" id="Acknowledgements">
-            <div class="container is-max-desktop content">
-              <h2 class="title">Acknowledgements</h2>
-              Chen Feng is the corresponding author. This work is supported by NSF Grant 2026479, and by NYU IT High-Performance Computing resources, services, and staff expertise.
-            </div>
-          </section>
+  <section class="section" id="Acknowledgements">
+    <div class="container is-max-desktop content">
+      <h2 class="title">Acknowledgements</h2>
+      Jing Zhang and Chen Feng are the corresponding authors.
+    </div>
+  </section>
           
           
-          <footer class="footer">
-            <div class="container">
-              <div class="content has-text-centered">
-              </div>
-              <div class="columns is-centered">
-                <div class="column is-8">
-                  <div class="content">
-                    <p>
-                      This website is licensed under a <a rel="license"
-                                                          href="http://creativecommons.org/licenses/by-sa/4.0/">Creative
-                      Commons Attribution-ShareAlike 4.0 International License</a>.
-                      This webpage template is from <a href="https://github.com/nerfies/nerfies.github.io">Nerfies</a>. 
-                      We sincerely thank <a href="https://keunhong.com/">Keunhong Park</a> for developing and open-sourcing this template.
-                    </p>
-                  </div>
-                </div>
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </footer>
-          
-          </body>
-          </html>
+  <footer class="footer">
+    <div class="container">
+      <div class="content has-text-centered">
+      </div>
+      <div class="columns is-centered">
+        <div class="column is-8">
+          <div class="content">
+            <p>
+              This website is licensed under a <a rel="license"
+                                                  href="http://creativecommons.org/licenses/by-sa/4.0/">Creative
+              Commons Attribution-ShareAlike 4.0 International License</a>.
+              This webpage template is from <a href="https://github.com/nerfies/nerfies.github.io">Nerfies</a>. 
+              We sincerely thank <a href="https://keunhong.com/">Keunhong Park</a> for developing and open-sourcing this template.
+            </p>
+          </div>
+        </div>
+            </p>
+          </div>
+        </div>
+    </div>
+  </footer>
+</body>
+</html>
