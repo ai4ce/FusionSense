@@ -202,3 +202,29 @@ body {
   width: 480px; /* General width for all sliders */
   height: 270px; /* General height for all sliders */
 }
+
+.btn {
+  background-color: #8b00e1cb; /* Green background */
+  color: white; /* White text */
+  padding: 10px 20px; /* Padding around the button */
+  border: none; /* Remove border */
+  border-radius: 5px; /* Rounded corners */
+  cursor: pointer; /* Pointer cursor on hover */
+  font-size: 16px; /* Font size */
+  margin: 10px; /* Space between buttons */
+  transition: background-color 0.3s ease; /* Smooth background color transition */
+}
+.btn:hover {
+  background-color: #8b00e178; /* Darker green on hover */
+}
+
+.btn.active {
+  background-color: #8b00e178;
+}
+.btn.inactive {
+  background-color: #8b00e1cb;
+}
+
+.hidden {
+  display: none;
+}

@@ -138,7 +138,7 @@
                   <span>arXiv</span>
                 </a>
               </span>
-              <span class="link-block">
+              <!-- <span class="link-block"> -->
                 <!-- add here later. -->
                <!-- <a href=""                    
                   class="external-link button is-normal is-rounded is-dark">
@@ -147,17 +147,17 @@
                  </span>
                  <span>Appendix</span>
                </a> -->
-             </span>
+             <!-- </span> -->
               <!-- Video Link. -->
-              <!-- <span class="link-block">
-                <a href="https://www.youtube.com/watch?v=MrKrnHhk8IA"
+              <span class="link-block">
+                <a href="https://youtu.be/thC0PeAQxe0"
                    class="external-link button is-normal is-rounded is-dark">
                   <span class="icon">
                       <i class="fab fa-youtube"></i>
                   </span>
                   <span>Video</span>
                 </a>
-              </span> -->
+              </span>
               <!-- Code Link. -->
               <span class="link-block">
                 <a href="https://github.com/ai4ce/FusionSense"
@@ -165,7 +165,7 @@
                   <span class="icon">
                       <i class="fab fa-github"></i>
                   </span>
-                  <span>Code (Comming Soon)</span>
+                  <span>Code</span>
                   </a>
               </span>
               <!-- Dataset Link. -->
@@ -187,34 +187,17 @@
   </div>
 </section>
 
+<!-- Teaser. -->
 <section class="hero teaser">
   <div class="container is-max-desktop">
-    <div class="hero-body">
-      <!-- <video id="teaser" controls loop height="100%">
-        <source src="./static/video/Multimedia.mp4"
-                type="video/mp4">
-      </video> -->
-      <!-- <img class="rounded" src="./media/nice-slam/teaser.png" > -->
-      <!-- <br><br><br> -->
-      <!-- <h2 class="subtitle has-text-centered">
-      Project explanation
-      </h2> -->
-    <!-- <h2 class="subtitle has-text-centered">
-      (The <span style="color:#000000;">black</span> / <span style="color:#ff0000;">red</span> lines are the ground truth / predicted camera trajectory)
-    </h2> -->    
-    </div>
-  </div>
-</section>
-
-<section class="hero teaser">
-  <div class="container is-max-desktop">
-    <div class="columns is-centered">
+    <div class="columns is-centered has-text-centered">
       <div class="column is-full-width teaser no-margin">
         
         <h2 class="title is-3">Snapshot</h2>
-        <p>
-          Reconstruction <b>visually and geometrically</b> accurate scene and object from sparse-view RGB-D images, enhanced with tactile sensing.
+        <p style="font-size: 20px; background-color: #8b00e13b;">
+          Reconstruct <b>visually</b> and <b>geometrically</b> accurate scene and object from <b>sparse-view</b> RGB-D images, enhanced with <b>tactile sensing</b>.
         </p>
+        <br>
         <div class="sliders-container">
           <div class="slider-wrapper">
             <h2>Novel View Synthesis (RGB) </h2>
@@ -305,151 +288,208 @@
           // Initialize sliders
           initializeSliders(sliders);
         </script>
-
-
-    
-        <!-- <script src="https://cdn.knightlab.com/libs/juxtapose/latest/js/juxtapose.min.js"></script>
-        <link rel="stylesheet" href="https://cdn.knightlab.com/libs/juxtapose/latest/css/juxtapose.css">
-        <script src="./static/js/juxtapose-slider.js"></script> <!-- Include your slider.js file -->
-        
       </div>
     </div>
   </div>
 </section>
 
-    
-    <!--  -->
-    <!-- <center>   
-      <video muted autoplay loop width="700px" height="400px" controls controls>
-        <source src="./static/videos/EgoPAT3Dv2-Demo2.mp4" type="video/mp4">
-      </video>
-    </center> -->
+<hr>
 
-
+<!-- How it works -->
 <section class="section">
   <div class="container is-max-desktop">
-        <!-- Paper video. -->
-        <!-- <div class="columns is-centered has-text-centered">
-          <div class="column is-four-fifths">
-            <h2 class="title is-3">Video</h2>
-            <div class="publication-video">
-              <iframe src="https://www.youtube.com/embed/V5hYTz5os0M?rel=0&amp;showinfo=0"
-                      frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
-            </div>
-          </div>
-        </div> -->
-        <!--/ Paper video. -->
-      
-    <!-- <br> -->
-    <!-- Abstract. -->
-    <div class="columns is-centered has-text-centered">
-      <div class="column is-four-fifths">
-        <h2 class="title is-3">Abstract</h2>
+    <div class="columns is-centered ">
+      <div class="column is-full-width">
+        <h2 class="title is-3 has-text-centered">How it works</h2>
         <div class="content has-text-justified">
-         <p>
-          A robot's ability to anticipate the 3D action target location of a hand's movement from egocentric videos can greatly improve safety and efficiency in human-robot interaction (HRI).
-          While previous research predominantly focused on semantic action classification or 2D target region prediction, we argue that predicting the action target's 3D coordinate could pave the way for more versatile downstream robotics tasks, especially given the increasing prevalence of headset devices. This study substantially expands EgoPAT3D, the sole dataset dedicated to egocentric 3D action target prediction. We augment both its size and diversity, enhancing its potential for generalization. Moreover, we substantially enhance the baseline algorithm by introducing a large pre-trained model and human prior knowledge. Remarkably, our novel algorithm can now achieve superior prediction outcomes using solely RGB images, eliminating the previous need for 3D point clouds and IMU input. Furthermore, we deploy our enhanced baseline algorithm on a real-world robotic platform to illustrate its practical utility in a straightforward HRI task. This demonstration underscores the real-world applicability of our advancements and may inspire more HRI use cases involving egocentric vision.
+          <p>
+          1. <b>Robust Global Shape Representation:</b> Visual hull and depth estimated from foundation models initiates 3D Gaussians. RGB-D images and foundation-model-estimated normals are used to supervise subsequent training.
           </p>
-          <!-- <img class="rounded" src="./static/images/teasing_version11.png" > -->
-          <br><br><br>
-  
+          <p>
+          2. <b>Active Touch Selection:</b> Geometric properties and common-sense from VLM guide the robot to touch the most informative regions.
+          </p>
+          <p>
+          3. <b>Local Geometric Optimization:</b> Add tactile readings as new anchor Gaussian points to improve the original 3D Gaussians.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
 
+<!-- Video Comparison -->
+<section class="section">
+  <div class="container is-max-desktop">
+    <div class="columns is-centered ">
+      <div class="column is-full-width">
+        <h2 class="title is-3 has-text-centered">Video Comparison</h2>
+        <div class="content has-text-justified">
+          <center>
+            <button class="btn" id="rgb_button" onclick="switchVideo('rgb')">RGB</button>
+            <button class="btn" id="depth_button" onclick="switchVideo('depth')">Depth</button>
+            <button class="btn" id="normal_button" onclick="switchVideo('normal')">Normal</button>
+            <button class="btn" id="touch_button" onclick="switchVideo('touch')">Touch Integration</button>
+            <br>
+            <br>
+            <video muted autoplay loop width="700px" height="400px" controls controls id="videoPlayer">
+              <source src="./static/videos/rgb.mp4" type="video/mp4">
+            </video>
+          </center>
+            <script>
+                document.getElementById('rgb_button').classList.add('active');
+                function switchVideo(videoSrc) {
+                    document.getElementById('rgb_button').classList.remove('active');
+                    document.getElementById('depth_button').classList.remove('active');
+                    document.getElementById('normal_button').classList.remove('active');
+                    document.getElementById('touch_button').classList.remove('active');
 
-          
-  <section class="section">
-    <div class="container is-max-desktop">
-      <!-- Method. -->
-      <div class="columns is-centered has-text-centered">
-        <div class="column is-full_width">
-          <hr>
-          <h2 class="title is-3">Method</h2>
-          <br>
-          <img src="./static/images/workflow.png" class="center"/>
+                    document.getElementById(videoSrc+'_button').classList.add('active');
+                    const videoPlayer = document.getElementById('videoPlayer');
+                    videoPlayer.src = './static/videos/' + videoSrc + '.mp4';
+                    videoPlayer.play();  // Play automatically when the video is switched
+                }
+            </script>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr>
+
+<!-- Method Overview -->
+<section class="section">
+  <div class="container is-max-desktop">
+    <div class="columns is-centered ">
+      <div class="column is-full-width">
+        <h2 class="title is-3 has-text-centered">Method</h2>
+        <center>
+          <div id="overview">
+            <img src="./static/images/Overview.png" style="width: 45vw; min-width: 330px;" alt="Overview Image"> 
+          </div>
+
+          <button id="method_button1" class="btn" onclick="changeContent(1)">1. Robust Global Shape Representation</button>
+          <button id="method_button2" class="btn" onclick="changeContent(2)">2. Active Touch Selection</button>
+          <button id="method_button3" class="btn" onclick="changeContent(3)">3. Local Geometric Optimization</button>
+
           <div class="content has-text-justified">
-            <br>  
-            <p>
-              We employ ConvNeXt_Tiny (denoted by <span style="font-style: italic;">ψ</span>) to extract visual feature <span style="font-style: italic;">v<sub>t</sub> = ψ(X<sub>t</sub>)</span> from each RGB frame. Hand landmarks {<span style="font-style: italic;">LM<sup>1</sup><sub>t</sub>, LM<sup>2</sup><sub>t</sub> ... LM<sup>21</sup><sub>t</sub>}</span> are firstly extracted by the Hand API from Google's MediaPipe. If no hand detected, then all landmarks are set to be 0. A multi-layer perceptron (MLP) denoted by <span style="font-style: italic;">φ</span> is then used to encode hand landmarks to features <span style="font-style: italic;">h<sub>t</sub> = φ(LM<sup>21stack</sup><sub>t</sub>)</span>. After the feature encodings, the two features were concatenated and fed into another MLP to obtain the fused feature <span style="font-style: italic;">u<sub>t</sub> = MLP(cat(v<sub>t</sub>,h<sub>t</sub>))</span> for a single frame.
-          </p>
-          
-          <p>
-              We use a 2-layer LSTM to process the fused feature. The steps to handle LSTM outputs are similar to the original EgoPAT3D baseline. We divide a 3D space into grids of dimension <span style="font-style: italic;">1024×1024×1024</span> and aim to generate a confidence score for each grid. We used three separate MLPs to process the output of the LSTM and obtain the confidence scores in three dimensions. For example, without loss of generality, for dimension <span style="font-style: italic;">x</span> at frame <span style="font-style: italic;">t</span>, let <span style="font-style: italic;">g ∈ ℝ<sup>1024</sup></span> denote all the grids in the <span style="font-style: italic;">x</span>-dimension, where we normalize the coordinates of each grid to be in [-1, 1]. The score vector <span style="font-style: italic;">s<sup>x</sup><sub>t</sub> ∈ ℝ<sup>1024</sup></span> is computed by <span style="font-style: italic;">s<sup>x</sup><sub>t</sub> = MLP<sub>X</sub>(LSTM(u<sub>t</sub>, l<sub>t-1</sub>))</span>, where <span style="font-style: italic;">l<sub>t-1</sub></span> is the learned hidden representation and <span style="font-style: italic;">l<sub>0</sub></span> is set to be 0. A binary mask <span style="font-style: italic;">m<sub>t</sub><sup>x</sup> ∈ ℝ<sup>1024</sup></span> is used to remove the value for all the grids where the confidence is less than a threshold <span style="font-style: italic;">γ</span>. Let <span style="font-style: italic;">s<sup>x</sup><sub>t</sub>[i]</span>, <span style="font-style: italic;">m<sup>x</sup><sub>t</sub>[i]</span> denote the score and mask for the <span style="font-style: italic;">i</span>-th grid, we have that:
-          </p>
-          
-          <div id="equation1">
-            \[
-            m^x_{t}[i] =
-            \begin{cases}
-              1, & i \in \{j \,|\, s^x_{t}[j] > \gamma\} \\
-              0, & i \in \{j \,|\, s^x_{t}[j] \leq \gamma\} \\
-            \end{cases} 
-            \]
+            <p id="text-content"> <b>1.1 Hybrid Structure Priors:</b> 
+              <br><b>(1) Visual Hull:</b> After taking sparse view images, we use GPT-4o to classify the centric object. The classification label is fed to <a href=\"https://github.com/IDEA-Research/Grounded-SAM-2\">Grounded SAM 2</a> to acquire the masks of the object. The masks along with the camera poses recorded by the robot are used to estimate the <b>visual hull</b>. This method is robust against traditionally challenging surfaces and materials
+              <br><b>(2) Metric Depth Estimator:</b> For every sparse view RGB image, we use <a href=\"https://jugghm.github.io/Metric3Dv2/\">Metric3D v2</a> to estimate the depth. We do not use the more accurate depth captured by our <a href=\"https://www.intelrealsense.com/depth-camera-d405/\">RealSense</a> camera because we found estimated depth smoother and less noisy. 
+              <br><b>(3) Gaussians Initialization:</b> The visual hull and estimated depth are combined to initialize the 3D Gaussian Primitives.  
+              <br><br><b>1.2 Hull Pruning:</b> 
+              <br><b>(4) Visual Hull Pruning:</b> During training, we design a "shell" around the visual hull to remove floaters around it. Empircally, we notice that those floaters around objects, while small at first, often snowball to very large negative impact on the overall reconstruction quality. 
+              <br><b>(5) Supervision:</b> We then use RGB-D images captured by our RealSense camera and normals estimated from <a href=\"https://baegwangbin.github.io/DSINE/\">DSINE</a> to supervise the subsequent training. 
+            </p>
+            <center>
+              <img id="image-content" src="./static/images/Method_1.png" style="width: 45vw; min-width: 330px;" />
+            </center>
           </div>
-          
-          <p>
-              The masked score is then calculated by <span style="font-style: italic;">ŝ<sup>x</sup><sub>t</sub> = m<sup>x</sup><sub>t</sub> ⊙ s<sup>x</sup><sub>t</sub></span>, where <span style="font-style: italic;">⊙</span> denotes the element-wise dot product. Then, we can get the estimated target position value for dimension <span style="font-style: italic;">x</span> at frame <span style="font-style: italic;">t</span> as:
-          </p>
-          
-          <div class="math">
-            \[ x_t \in \mathcal{R} = (\hat{s}^x_{t})^Tg \]
-          </div>
-          
-          <p>
-              We conduct post-processing for each result produced by the LSTM to incorporate human prior knowledge. For each frame <span style="font-style: italic;">t</span>, we choose the coordinate of the landmark that marks the end of the index finger to be the 2D hand position <span style="font-style: italic;">Ĥ<sub>t</sub></span>. The predicted 3D target position <span style="font-style: italic;">P<sub>t</sub></span> (in meter) was transformed into 2D position <span style="font-style: italic;">Ĥ<sub>Pt</sub></span> in pixel values with the help of camera intrinsic parameter <span style="font-style: italic;">K</span> and image resolution (4K in our case). We ignore the depth information in this transformation. We calculate the hand position offset between each frame by <span style="font-style: italic;">ĥ<sub>t</sub> = ||Ĥ<sub>t</sub> - Ĥ<sub>t-1</sub>||<sub>2</sub></span> and keep track of the max historical hand position offset <span style="font-style: italic;">Ĝ<sub>t</sub> = max(ĥ<sub>t</sub>)</span> for <span style="font-style: italic;">i < t</span>. The final 2D position is calculated as <span style="font-style: italic;">Ĝ<sub>Pt</sub> = Ĥ<sub>Pt</sub>*(ĥ<sub>t</sub>/Ĝ<sub>t</sub>) + Ĥ<sub>t</sub>*(1-ĥ<sub>t</sub>/Ĝ<sub>t</sub>)</span>. The 2D result is then transformed back to a 3D position <span style="font-style: italic;">ĥat{P<sub>t</sub>}</span> with the pre-transformed depth, again with camera intrinsic parameter <span style="font-style: italic;">K</span> and image resolution, to serve as the final prediction.
-          </p>
-          
-          </div>
-        </div>
-      </div>
-    </div>
+        </center>
 
-          
+        <script>
+          document.getElementById('method_button1').classList.add('active');
+          function changeContent(buttonNumber) {
+              const textElement = document.getElementById('text-content');
+              const imageElement = document.getElementById('image-content');
               
-          
-          
-              
-          
-  <section class="section" id="BibTeX"> 
-    <div class="container is-max-desktop content">
-      <h2 id="bibtexTitle" class="title">BibTeX</h2>
-      <button id="copyButton" onclick="copyToClipboard()">
-        <i class="fas fa-copy"></i>
-      </button>
-      <pre style="display: inline-flex; text-align: left";><code id="bibtexInfo">
-          Coming Soon
-        </code>
-      </pre>
-    </div>
-  </section>
-          
-          
-  <section class="section" id="Acknowledgements">
-    <div class="container is-max-desktop content">
-      <h2 class="title">Acknowledgements</h2>
-      Jing Zhang and Chen Feng are the corresponding authors.
-    </div>
-  </section>
-          
-          
-  <footer class="footer">
-    <div class="container">
-      <div class="content has-text-centered">
+              document.getElementById('method_button1').classList.remove('active');
+              document.getElementById('method_button2').classList.remove('active');
+              document.getElementById('method_button3').classList.remove('active');
+
+              // Add 'active' class to the clicked button
+              document.getElementById('method_button' + buttonNumber).classList.add('active');
+
+              if (buttonNumber === 1) {
+                  textElement.innerHTML = "<b>1.1 Hybrid Structure Priors:</b> \
+                                           <br><b>(1) Visual Hull:</b> After taking sparse view images, we use GPT-4o to classify the centric object. The classification label is fed to <a href=\"https://github.com/IDEA-Research/Grounded-SAM-2\">Grounded SAM 2</a> to acquire the masks of the object. The masks along with the camera poses recorded by the robot are used to estimate the <b>visual hull</b>. This method is robust against traditionally challenging surfaces and materials \
+                                           <br><b>(2) Metric Depth Estimator:</b> For every sparse view RGB image, we use <a href=\"https://jugghm.github.io/Metric3Dv2/\">Metric3D v2</a> to estimate the depth. We do not use the more accurate depth captured by our <a href=\"https://www.intelrealsense.com/depth-camera-d405/\">RealSense</a> camera because we found estimated depth smoother and less noisy \
+                                           <br><b>(3) Gaussians Initialization:</b> The visual hull and estimated depth are combined to initialize the 3D Gaussian Primitives.  \
+                                           <br><br><b>1.2 Hull Pruning:</b> \
+                                           <br><b>(4) Visual Hull Pruning:</b> During training, we design a \"shell\" around the visual hull to remove floaters around it. Empircally, we notice that those floaters around objects, while small at first, often snowball to very large negative impact on the overall reconstruction quality. \
+                                           <br><b>(5) Supervision:</b> We then use RGB-D images captured by our RealSense camera and normals estimated from <a href=\"https://baegwangbin.github.io/DSINE/\">DSINE</a> to supervise the subsequent training. \
+                                           ";
+                  imageElement.classList.remove('hidden');
+                  imageElement.src = "./static/images/Method_1.png";
+                  // imageElement.alt = "Image 1";
+              } else if (buttonNumber === 2) {
+                  textElement.innerHTML = "<b>2.1 Geometry Ranking:</b> \
+                                           <br><b>(1) High Gradient Points:</b> By design, in 3D Gaussian Splatting training, points with high gradient indicate rapid changes in spatial/geometric features and larger discrepancies between the rendering and the ground truth image, which means a need for further optimization. \
+                                           Therefore, we select a few clusters of points with high gradients as seen in <i>Rabbit 3</i>.\
+                                           <br><br><b>2.2 Common-Sense Reranking:</b> \
+                                           <br><b>(2) Semantic Grounding:</b> In the first step, along with classification, we also asked GPT-4o to give us a list of parts of this object. Using zero-shot open-vocabulary part segmentation model such as <a href=\"https://arxiv.org/abs/2212.01558\">PartSLIP</a>, we can ground such semantic information to our reconstruction, as can be seen in <i>Rabbit 2</i>.\
+                                           <br><b>(3) Commen-Sense Ranking:</b> We then ask GPT-4o which part should have priority when it comes to touching.  \
+                                           Then, without violating the geometric ranking, we rank the points within the same cluster based on their part priority. This ensures that even if the part segmentation fails, the robot will still have points to touch, as seen in <i>Rabbit 4</i>";
+                  imageElement.classList.remove('hidden');
+                  imageElement.src = "./static/images/Method_2.png";
+                  // imageElement.alt = "Image 2";
+              } else if (buttonNumber === 3) {
+                  textElement.innerHTML = "<b>3.1 Touch Transform:</b> \
+                                           <br><b>(1) Touch Patch Transformation:</b> Based on photometric stereo, we can acquire depth and normal of the touch spot, which gives us a dense point cloud. \
+                                           <br><br><b>3.2 Anchor Gaussian Optimization:</b> \
+                                           <br><b>(2) Anchor Gaussian Points:</b> The dense point cloud are added as anchor Gaussian points.\
+                                           <br><b>(3) Optimization:</b> We then apply Gaussian normal supervision to further optimize the 3D Gaussians.";
+                  imageElement.classList.add('hidden');
+                                           // imageElement.src = "image3.jpg";
+                  // imageElement.alt = "Image 3";
+              }
+          }
+      </script>
+
       </div>
-      <div class="columns is-centered">
-        <div class="column is-8">
-          <div class="content">
-            <p>
-              This website is licensed under a <a rel="license"
-                                                  href="http://creativecommons.org/licenses/by-sa/4.0/">Creative
-              Commons Attribution-ShareAlike 4.0 International License</a>.
-              This webpage template is from <a href="https://github.com/nerfies/nerfies.github.io">Nerfies</a>. 
-              We sincerely thank <a href="https://keunhong.com/">Keunhong Park</a> for developing and open-sourcing this template.
-            </p>
-          </div>
-        </div>
-            </p>
-          </div>
-        </div>
     </div>
-  </footer>
+  </div>
+</section>
+
+<hr>
+
+
+<section class="section" id="BibTeX"> 
+  <div class="container is-max-desktop content">
+    <center>
+    <h2 id="bibtexTitle" class="title">BibTeX</h2>
+    <button id="copyButton" onclick="copyToClipboard()">
+      <i class="fas fa-copy"></i>
+    </button>
+    <br>
+    <pre style="display: inline-flex; text-align: left";><code id="bibtexInfo">
+Coming Soon
+      </code>
+    </pre>
+  </center>
+  </div>
+</section>
+          
+          
+<section class="section" id="Acknowledgements">
+  <div class="container is-max-desktop content">
+    <h2 class="title">Acknowledgements</h2>
+    Jing Zhang and Chen Feng are the corresponding authors.
+  </div>
+</section>
+          
+          
+<footer class="footer">
+  <div class="container">
+    <div class="content has-text-centered">
+    </div>
+    <div class="columns is-centered">
+      <div class="column is-8">
+        <div class="content">
+          <p>
+            This website is licensed under a <a rel="license"
+                                                href="http://creativecommons.org/licenses/by-sa/4.0/">Creative
+            Commons Attribution-ShareAlike 4.0 International License</a>.
+            This webpage template is from <a href="https://github.com/nerfies/nerfies.github.io">Nerfies</a>. 
+            We sincerely thank <a href="https://keunhong.com/">Keunhong Park</a> for developing and open-sourcing this template.
+          </p>
+        </div>
+      </div>
+          </p>
+        </div>
+      </div>
+  </div>
+</footer>
+
 </body>
 </html>
