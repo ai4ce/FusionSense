@@ -204,7 +204,7 @@ body {
 }
 
 .btn {
-  background-color: #8b00e1cb; /* Green background */
+  background-color: #8b00e1cb !important; /* Green background */
   color: white; /* White text */
   padding: 10px 20px; /* Padding around the button */
   border: none; /* Remove border */
@@ -215,14 +215,14 @@ body {
   transition: background-color 0.3s ease; /* Smooth background color transition */
 }
 .btn:hover {
-  background-color: #8b00e178; /* Darker green on hover */
+  background-color: #8b00e178 !important; /* Darker green on hover */
 }
 
 .btn.active {
-  background-color: #8b00e178;
+  background-color: #8b00e178 !important;
 }
 .btn.inactive {
-  background-color: #8b00e1cb;
+  background-color: #8b00e1cb !important;
 }
 
 .hidden {
