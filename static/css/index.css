@@ -199,8 +199,7 @@ body {
 }
 
 #trans_depth, #trans_normal, #trans_rgb, #trans_object {
-  width: 480px; /* General width for all sliders */
-  height: 270px; /* General height for all sliders */
+  width: 100%; /* General width for all sliders */
 }
 
 .btn {
