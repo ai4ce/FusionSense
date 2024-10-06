@@ -3,7 +3,7 @@ function createSlider(elementId, images, options) {
   return new juxtapose.JXSlider(elementId, images, options);
 }
 
-const sliderOptions = {
+sliderOptions = {
   animate: true,
   showLabels: true,
   showCredits: false,

@@ -176,15 +176,14 @@ body {
   border-radius: 5px;
 }
 
-
-.iframe-container {
-  display: flex;
-  justify-content: space-around; /* Change to 'space-around' or 'space-evenly' for more space */
-  align-items: center;
+.slider-block{
+  display: none; /* Hide all divs initially */
+  opacity: 0;
 }
 
-.iframe-container iframe {
-  margin: 0 50px; /* Adds horizontal space between the two iframes */
+.slider-block.show{
+  display: block;
+  opacity: 1;
 }
 
 .sliders-container {
@@ -198,7 +197,8 @@ body {
   width: 48%; /* Make each slider 48% of the container width for side-by-side */
 }
 
-#trans_depth, #trans_normal, #trans_rgb, #trans_object {
+#trans_depth, #trans_normal, #trans_rgb, #trans_object, #black_9_depth, #black_9_normal, #black_9_rgb, #black_9_object,
+#black_5_depth, #black_5_normal, #black_5_rgb, #black_5_object {
   width: 100%; /* General width for all sliders */
 }
 

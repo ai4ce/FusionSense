@@ -434,7 +434,7 @@
                   // imageElement.alt = "Image 3";
               }
           }
-      </script>
+        </script>
 
       </div>
     </div>
@@ -442,6 +442,230 @@
 </section>
 
 <hr>
+
+<!-- More Visualization -->
+<section class="section">
+  <div class="container is-max-desktop">
+    <div class="columns is-centered has-text-centered">
+      <div class="column is-full-width">
+        
+        <h2 class="title is-3">More Visualizations</h2>
+        <center>
+          <button class="btn" id="black_9_button" onclick="switchSlider('black_9')">Black Bunny (9 Views)</button>
+          <button class="btn" id="black_5_button" onclick="switchSlider('black_5')">Black Bunny (5 Views)</button>
+          <br>
+          <br>
+        </center>
+
+        <div class="slider-block" id="black_9_block">
+          <div class="sliders-container">
+            <div class="slider-wrapper">
+              <h2>Novel View Synthesis (RGB) </h2>
+              <div id="black_9_rgb"></div>
+            </div>
+            <div class="slider-wrapper">
+              <h2>Ground Truth Comparison (RGB)</h2>
+              <div id="black_9_object"></div>
+            </div>
+          </div>
+          <br>
+          <!-- depth and normal sliders -->
+          <div class="sliders-container">
+            <div class="slider-wrapper">
+              <h2>Novel View Synthesis (Depth) </h2>
+              <div id="black_9_depth"></div>
+            </div>
+            <div class="slider-wrapper">
+              <h2>Novel View Synthesis (Normal)</h2>
+              <div id="black_9_normal"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="slider-block" id="black_5_block">
+          <div class="sliders-container">
+            <div class="slider-wrapper">
+              <h2>Novel View Synthesis (RGB) </h2>
+              <div id="black_5_rgb"></div>
+            </div>
+            <div class="slider-wrapper">
+              <h2>Ground Truth Comparison (RGB)</h2>
+              <div id="black_5_object"></div>
+            </div>
+          </div>
+          <br>
+          <!-- depth and normal sliders -->
+          <div class="sliders-container">
+            <div class="slider-wrapper">
+              <h2>Novel View Synthesis (Depth) </h2>
+              <div id="black_5_depth"></div>
+            </div>
+            <div class="slider-wrapper">
+              <h2>Novel View Synthesis (Normal)</h2>
+              <div id="black_5_normal"></div>
+            </div>
+          </div>
+        </div>
+
+        <script src="https://cdn.knightlab.com/libs/juxtapose/latest/js/juxtapose.min.js"></script>
+        <link rel="stylesheet" href="https://cdn.knightlab.com/libs/juxtapose/latest/css/juxtapose.css">
+        <script src="./static/js/juxtapose-slider.js"></script> <!-- Include your slider.js file
+         
+        <!-- script for the sliders -->
+        <script>
+          // Slider configurations
+          let slider_dict = {
+            black_9: 
+            [
+              {
+                elementId: '#black_9_rgb',
+                images: [
+                  {
+                    src: './static/images/sliders/black_bunny/9_view/FS_black_RGB_13.jpg',
+                    label: 'FusionSense',
+                  },
+                  {
+                    src: './static/images/sliders/black_bunny/9_view/DN_black_RGB_13.jpg',
+                    label: 'DN-Splatter',
+                  }
+                ],
+                options: sliderOptions // You can reference the options defined in slider.js if needed
+              },
+              {
+                elementId: '#black_9_object',
+                images: [
+                  {
+                    src: './static/images/FS_trans_obj_7.jpg',
+                    label: 'FusionSense',
+                  },
+                  {
+                    src: './static/images/GO_trans_obj_7.png',
+                    label: 'GaussianObject',
+                  }
+                ],
+                options: sliderOptions // Reference the same or a different options object
+              },
+              {
+                elementId: '#black_9_depth',
+                images: [
+                  {
+                    src: './static/images/FS_trans_depth_0.png',
+                    label: 'FusionSense',
+                  },
+                  {
+                    src: './static/images/DN_trans_depth_0.png',
+                    label: 'DN-Splatter',
+                  }
+                ],
+                options: sliderOptions // You can reference the options defined in slider.js if needed
+              },
+              {
+                elementId: '#black_9_normal',
+                images: [
+                  {
+                    src: './static/images/FS_trans_normal_22.png',
+                    label: 'FusionSense',
+                  },
+                  {
+                    src: './static/images/DN_trans_normal_22.png',
+                    label: 'DN-Splatter',
+                  }
+                ],
+                options: sliderOptions // Reference the same or a different options object
+              }
+            ],
+            black_5:
+            [
+              {
+                elementId: '#black_5_rgb',
+                images: [
+                  {
+                    src: './static/images/FS_trans_RGB_22.png',
+                    label: 'FusionSense',
+                  },
+                  {
+                    src: './static/images/DN_trans_RGB_22.png',
+                    label: 'DN-Splatter',
+                  }
+                ],
+                options: sliderOptions // You can reference the options defined in slider.js if needed
+              },
+              {
+                elementId: '#black_5_object',
+                images: [
+                  {
+                    src: './static/images/FS_trans_obj_7.jpg',
+                    label: 'FusionSense',
+                  },
+                  {
+                    src: './static/images/GO_trans_obj_7.png',
+                    label: 'GaussianObject',
+                  }
+                ],
+                options: sliderOptions // Reference the same or a different options object
+              },
+              {
+                elementId: '#black_5_depth',
+                images: [
+                  {
+                    src: './static/images/FS_trans_depth_0.png',
+                    label: 'FusionSense',
+                  },
+                  {
+                    src: './static/images/DN_trans_depth_0.png',
+                    label: 'DN-Splatter',
+                  }
+                ],
+                options: sliderOptions // You can reference the options defined in slider.js if needed
+              },
+              {
+                elementId: '#black_5_normal',
+                images: [
+                  {
+                    src: './static/images/FS_trans_normal_22.png',
+                    label: 'FusionSense',
+                  },
+                  {
+                    src: './static/images/DN_trans_normal_22.png',
+                    label: 'DN-Splatter',
+                  }
+                ],
+                options: sliderOptions // Reference the same or a different options object
+              }
+            ]
+          };
+    
+          
+
+          // Function to show the specific div based on button click
+          function switchSlider(block_id) {
+              // Remove 'active' class from all buttons to reset color
+              // buttons.forEach(button => button.classList.remove('active'));
+  
+              // // Add 'active' class to the clicked button to change its color
+              // document.getElementById('button' + divNumber).classList.add('active');
+  
+              // Select all content divs and hide them
+              contentDivs = document.querySelectorAll('.slider-block');
+              contentDivs.forEach(div => {
+                  div.classList.remove('show'); // Hide all divs
+              });
+  
+              // Show the selected div with a fade effect
+              selectedDiv = document.getElementById(block_id+'_block');
+              selectedDiv.classList.add('show');
+
+              if (!selectedDiv.initialized) {
+                initializeSliders(slider_dict[block_id]);
+                selectedDiv.initialized = true;
+              }
+          }
+        </script>
+      </div>
+    </div>
+  </div>
+</section>
+
 
 <!-- BibTeX -->
 <section class="section" id="BibTeX"> 
