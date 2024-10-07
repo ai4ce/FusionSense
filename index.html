@@ -453,6 +453,12 @@
         <center>
           <button class="btn" id="black_9_button" onclick="switchSlider('black_9')">Black Bunny (9 Views)</button>
           <button class="btn" id="black_5_button" onclick="switchSlider('black_5')">Black Bunny (5 Views)</button>
+          <button class="btn" id="reflective_9_button" onclick="switchSlider('reflective_9')">Reflective Bunny (9 Views)</button>
+          <button class="btn" id="reflective_5_button" onclick="switchSlider('reflective_5')">Reflective Bunny (5 Views)</button>
+          <button class="btn" id="transparent_9_button" onclick="switchSlider('transparent_9')">Transparent Bunny (9 Views)</button>
+          <button class="btn" id="transparent_5_button" onclick="switchSlider('transparent_5')">Transparent Bunny (5 Views)</button>
+          <button class="btn" id="coke_9_button" onclick="switchSlider('coke_9')">Coke Bottle (9 Views)</button>
+          <button class="btn" id="coke_5_button" onclick="switchSlider('coke_5')">Coke Bottle (5 Views)</button>
           <br>
           <br>
         </center>
@@ -535,12 +541,12 @@
                 elementId: '#black_9_object',
                 images: [
                   {
-                    src: './static/images/FS_trans_obj_7.jpg',
+                    src: './static/images/sliders/black_bunny/9_view/FS_black_RGB_13.jpg',
                     label: 'FusionSense',
                   },
                   {
-                    src: './static/images/GO_trans_obj_7.png',
-                    label: 'GaussianObject',
+                    src: './static/images/sliders/black_bunny/9_view/GT_black_RGB_13.png',
+                    label: 'Ground Truth',
                   }
                 ],
                 options: sliderOptions // Reference the same or a different options object
@@ -549,11 +555,11 @@
                 elementId: '#black_9_depth',
                 images: [
                   {
-                    src: './static/images/FS_trans_depth_0.png',
+                    src: './static/images/sliders/black_bunny/9_view/FS_black_depth_13.jpg',
                     label: 'FusionSense',
                   },
                   {
-                    src: './static/images/DN_trans_depth_0.png',
+                    src: './static/images/sliders/black_bunny/9_view/DN_black_depth_13.jpg',
                     label: 'DN-Splatter',
                   }
                 ],
@@ -563,28 +569,28 @@
                 elementId: '#black_9_normal',
                 images: [
                   {
-                    src: './static/images/FS_trans_normal_22.png',
+                    src: './static/images/sliders/black_bunny/9_view/FS_black_normal_13.jpg',
                     label: 'FusionSense',
                   },
                   {
-                    src: './static/images/DN_trans_normal_22.png',
+                    src: './static/images/sliders/black_bunny/9_view/DN_black_normal_13.jpg',
                     label: 'DN-Splatter',
                   }
                 ],
                 options: sliderOptions // Reference the same or a different options object
               }
             ],
-            black_5:
+            black_5: 
             [
               {
                 elementId: '#black_5_rgb',
                 images: [
                   {
-                    src: './static/images/FS_trans_RGB_22.png',
+                    src: './static/images/sliders/black_bunny/5_view/FS_black_RGB_3.jpg',
                     label: 'FusionSense',
                   },
                   {
-                    src: './static/images/DN_trans_RGB_22.png',
+                    src: './static/images/sliders/black_bunny/5_view/DN_black_RGB_3.jpg',
                     label: 'DN-Splatter',
                   }
                 ],
@@ -594,12 +600,12 @@
                 elementId: '#black_5_object',
                 images: [
                   {
-                    src: './static/images/FS_trans_obj_7.jpg',
+                    src: './static/images/sliders/black_bunny/5_view/FS_black_RGB_2.jpg',
                     label: 'FusionSense',
                   },
                   {
-                    src: './static/images/GO_trans_obj_7.png',
-                    label: 'GaussianObject',
+                    src: './static/images/sliders/black_bunny/5_view/GT_black_RGB_2.png',
+                    label: 'Ground Truth',
                   }
                 ],
                 options: sliderOptions // Reference the same or a different options object
@@ -608,11 +614,11 @@
                 elementId: '#black_5_depth',
                 images: [
                   {
-                    src: './static/images/FS_trans_depth_0.png',
+                    src: './static/images/sliders/black_bunny/5_view/FS_black_depth_3.jpg',
                     label: 'FusionSense',
                   },
                   {
-                    src: './static/images/DN_trans_depth_0.png',
+                    src: './static/images/sliders/black_bunny/5_view/DN_black_depth_3.jpg',
                     label: 'DN-Splatter',
                   }
                 ],
@@ -622,17 +628,17 @@
                 elementId: '#black_5_normal',
                 images: [
                   {
-                    src: './static/images/FS_trans_normal_22.png',
+                    src: './static/images/sliders/black_bunny/5_view/FS_black_normal_3.jpg',
                     label: 'FusionSense',
                   },
                   {
-                    src: './static/images/DN_trans_normal_22.png',
+                    src: './static/images/sliders/black_bunny/5_view/DN_black_normal_3.jpg',
                     label: 'DN-Splatter',
                   }
                 ],
                 options: sliderOptions // Reference the same or a different options object
               }
-            ]
+            ],
           };
     
           
