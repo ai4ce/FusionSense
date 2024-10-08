@@ -197,8 +197,15 @@ body {
   width: 48%; /* Make each slider 48% of the container width for side-by-side */
 }
 
-#trans_depth, #trans_normal, #trans_rgb, #trans_object, #black_9_depth, #black_9_normal, #black_9_rgb, #black_9_object,
-#black_5_depth, #black_5_normal, #black_5_rgb, #black_5_object {
+#trans_depth, #trans_normal, #trans_rgb, #trans_object, 
+#transparent_9_depth, #transparent_9_normal, #transparent_9_rgb, #transparent_9_gt, 
+#transparent_9_depth, #transparent_9_normal, #transparent_9_rgb, #transparent_9_gt, 
+#black_9_depth, #black_9_normal, #black_9_rgb, #black_9_gt,
+#black_5_depth, #black_5_normal, #black_5_rgb, #black_5_gt,
+#reflective_9_depth, #reflective_9_normal, #reflective_9_rgb, #reflective_9_gt,
+#reflective_5_depth, #reflective_5_normal, #reflective_5_rgb, #reflective_5_gt,
+#coke_9_depth, #coke_9_normal, #coke_9_rgb, #coke_9_gt,
+#coke_5_depth, #coke_5_normal, #coke_5_rgb, #coke_5_gt {
   width: 100%; /* General width for all sliders */
 }
 

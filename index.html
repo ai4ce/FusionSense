@@ -231,11 +231,11 @@
               elementId: '#trans_rgb',
               images: [
                 {
-                  src: './static/images/FS_trans_RGB_22.png',
+                  src: './static/images/sliders/transparent_bunny/9_view/FS_trans_RGB_22.png',
                   label: 'FusionSense',
                 },
                 {
-                  src: './static/images/DN_trans_RGB_22.png',
+                  src: './static/images/sliders/transparent_bunny/9_view/DN_trans_RGB_22.png',
                   label: 'DN-Splatter',
                 }
               ],
@@ -245,11 +245,11 @@
               elementId: '#trans_object',
               images: [
                 {
-                  src: './static/images/FS_trans_obj_7.jpg',
+                  src: './static/images/sliders/transparent_bunny/9_view/FS_trans_obj_7.jpg',
                   label: 'FusionSense',
                 },
                 {
-                  src: './static/images/GO_trans_obj_7.png',
+                  src: './static/images/sliders/transparent_bunny/9_view/GO_trans_obj_7.png',
                   label: 'GaussianObject',
                 }
               ],
@@ -259,11 +259,11 @@
               elementId: '#trans_depth',
               images: [
                 {
-                  src: './static/images/FS_trans_depth_0.png',
+                  src: './static/images/sliders/transparent_bunny/9_view/FS_trans_depth_0.png',
                   label: 'FusionSense',
                 },
                 {
-                  src: './static/images/DN_trans_depth_0.png',
+                  src: './static/images/sliders/transparent_bunny/9_view/DN_trans_depth_0.png',
                   label: 'DN-Splatter',
                 }
               ],
@@ -273,11 +273,11 @@
               elementId: '#trans_normal',
               images: [
                 {
-                  src: './static/images/FS_trans_normal_22.png',
+                  src: './static/images/sliders/transparent_bunny/9_view/FS_trans_normal_22.png',
                   label: 'FusionSense',
                 },
                 {
-                  src: './static/images/DN_trans_normal_22.png',
+                  src: './static/images/sliders/transparent_bunny/9_view/DN_trans_normal_22.png',
                   label: 'DN-Splatter',
                 }
               ],
@@ -325,6 +325,7 @@
         <h2 class="title is-3 has-text-centered">Video Comparison</h2>
         <div class="content has-text-justified">
           <center>
+            <!-- Here, the switchVideo's argument should be the name of the video -->
             <button class="btn" id="rgb_button" onclick="switchVideo('rgb')">RGB</button>
             <button class="btn" id="depth_button" onclick="switchVideo('depth')">Depth</button>
             <button class="btn" id="normal_button" onclick="switchVideo('normal')">Normal</button>
@@ -364,10 +365,12 @@
       <div class="column is-full-width">
         <h2 class="title is-3 has-text-centered">Method</h2>
         <center>
+          <!-- This image is always visible  -->
           <div id="overview">
             <img src="./static/images/Overview.png" style="width: 45vw; min-width: 330px;" alt="Overview Image"> 
           </div>
 
+          <!-- Here, the changeContent's parameter is just the number of the button. Has no intrinsic association with the content -->
           <button id="method_button1" class="btn" onclick="changeContent(1)">1. Robust Global Shape Representation</button>
           <button id="method_button2" class="btn" onclick="changeContent(2)">2. Active Touch Selection</button>
           <button id="method_button3" class="btn" onclick="changeContent(3)">3. Local Geometric Optimization</button>
@@ -397,7 +400,7 @@
               document.getElementById('method_button2').classList.remove('active');
               document.getElementById('method_button3').classList.remove('active');
 
-              // Add 'active' class to the clicked button
+              // Add 'active' class to the clicked button so that it will have a different color when its content is present
               document.getElementById('method_button' + buttonNumber).classList.add('active');
 
               if (buttonNumber === 1) {
@@ -451,6 +454,7 @@
         
         <h2 class="title is-3">More Visualizations</h2>
         <center>
+          <!-- Here, the argument of the switchSlider function should be the name of the slider block, just without the "_block" part. -->
           <button class="btn" id="black_9_button" onclick="switchSlider('black_9')">Black Bunny (9 Views)</button>
           <button class="btn" id="black_5_button" onclick="switchSlider('black_5')">Black Bunny (5 Views)</button>
           <button class="btn" id="reflective_9_button" onclick="switchSlider('reflective_9')">Reflective Bunny (9 Views)</button>
@@ -471,7 +475,7 @@
             </div>
             <div class="slider-wrapper">
               <h2>Ground Truth Comparison (RGB)</h2>
-              <div id="black_9_object"></div>
+              <div id="black_9_gt"></div>
             </div>
           </div>
           <br>
@@ -496,7 +500,7 @@
             </div>
             <div class="slider-wrapper">
               <h2>Ground Truth Comparison (RGB)</h2>
-              <div id="black_5_object"></div>
+              <div id="black_5_gt"></div>
             </div>
           </div>
           <br>
@@ -509,6 +513,156 @@
             <div class="slider-wrapper">
               <h2>Novel View Synthesis (Normal)</h2>
               <div id="black_5_normal"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="slider-block" id="transparent_9_block">
+          <div class="sliders-container">
+            <div class="slider-wrapper">
+              <h2>Novel View Synthesis (RGB) </h2>
+              <div id="transparent_9_rgb"></div>
+            </div>
+            <div class="slider-wrapper">
+              <h2>Ground Truth Comparison (RGB)</h2>
+              <div id="transparent_9_gt"></div>
+            </div>
+          </div>
+          <br>
+          <!-- depth and normal sliders -->
+          <div class="sliders-container">
+            <div class="slider-wrapper">
+              <h2>Novel View Synthesis (Depth) </h2>
+              <div id="transparent_9_depth"></div>
+            </div>
+            <div class="slider-wrapper">
+              <h2>Novel View Synthesis (Normal)</h2>
+              <div id="transparent_9_normal"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="slider-block" id="transparent_5_block">
+          <div class="sliders-container">
+            <div class="slider-wrapper">
+              <h2>Novel View Synthesis (RGB) </h2>
+              <div id="transparent_5_rgb"></div>
+            </div>
+            <div class="slider-wrapper">
+              <h2>Ground Truth Comparison (RGB)</h2>
+              <div id="transparent_5_gt"></div>
+            </div>
+          </div>
+          <br>
+          <!-- depth and normal sliders -->
+          <div class="sliders-container">
+            <div class="slider-wrapper">
+              <h2>Novel View Synthesis (Depth) </h2>
+              <div id="transparent_5_depth"></div>
+            </div>
+            <div class="slider-wrapper">
+              <h2>Novel View Synthesis (Normal)</h2>
+              <div id="transparent_5_normal"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="slider-block" id="reflective_9_block">
+          <div class="sliders-container">
+            <div class="slider-wrapper">
+              <h2>Novel View Synthesis (RGB) </h2>
+              <div id="reflective_9_rgb"></div>
+            </div>
+            <div class="slider-wrapper">
+              <h2>Ground Truth Comparison (RGB)</h2>
+              <div id="reflective_9_gt"></div>
+            </div>
+          </div>
+          <br>
+          <!-- depth and normal sliders -->
+          <div class="sliders-container">
+            <div class="slider-wrapper">
+              <h2>Novel View Synthesis (Depth) </h2>
+              <div id="reflective_9_depth"></div>
+            </div>
+            <div class="slider-wrapper">
+              <h2>Novel View Synthesis (Normal)</h2>
+              <div id="reflective_9_normal"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="slider-block" id="reflective_5_block">
+          <div class="sliders-container">
+            <div class="slider-wrapper">
+              <h2>Novel View Synthesis (RGB) </h2>
+              <div id="reflective_5_rgb"></div>
+            </div>
+            <div class="slider-wrapper">
+              <h2>Ground Truth Comparison (RGB)</h2>
+              <div id="reflective_5_gt"></div>
+            </div>
+          </div>
+          <br>
+          <!-- depth and normal sliders -->
+          <div class="sliders-container">
+            <div class="slider-wrapper">
+              <h2>Novel View Synthesis (Depth) </h2>
+              <div id="reflective_5_depth"></div>
+            </div>
+            <div class="slider-wrapper">
+              <h2>Novel View Synthesis (Normal)</h2>
+              <div id="reflective_5_normal"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="slider-block" id="coke_9_block">
+          <div class="sliders-container">
+            <div class="slider-wrapper">
+              <h2>Novel View Synthesis (RGB) </h2>
+              <div id="coke_9_rgb"></div>
+            </div>
+            <div class="slider-wrapper">
+              <h2>Ground Truth Comparison (RGB)</h2>
+              <div id="coke_9_gt"></div>
+            </div>
+          </div>
+          <br>
+          <!-- depth and normal sliders -->
+          <div class="sliders-container">
+            <div class="slider-wrapper">
+              <h2>Novel View Synthesis (Depth) </h2>
+              <div id="coke_9_depth"></div>
+            </div>
+            <div class="slider-wrapper">
+              <h2>Novel View Synthesis (Normal)</h2>
+              <div id="coke_9_normal"></div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="slider-block" id="coke_5_block">
+          <div class="sliders-container">
+            <div class="slider-wrapper">
+              <h2>Novel View Synthesis (RGB) </h2>
+              <div id="coke_5_rgb"></div>
+            </div>
+            <div class="slider-wrapper">
+              <h2>Ground Truth Comparison (RGB)</h2>
+              <div id="coke_5_gt"></div>
+            </div>
+          </div>
+          <br>
+          <!-- depth and normal sliders -->
+          <div class="sliders-container">
+            <div class="slider-wrapper">
+              <h2>Novel View Synthesis (Depth) </h2>
+              <div id="coke_5_depth"></div>
+            </div>
+            <div class="slider-wrapper">
+              <h2>Novel View Synthesis (Normal)</h2>
+              <div id="coke_5_normal"></div>
             </div>
           </div>
         </div>
@@ -538,7 +692,7 @@
                 options: sliderOptions // You can reference the options defined in slider.js if needed
               },
               {
-                elementId: '#black_9_object',
+                elementId: '#black_9_gt',
                 images: [
                   {
                     src: './static/images/sliders/black_bunny/9_view/FS_black_RGB_13.jpg',
@@ -597,7 +751,7 @@
                 options: sliderOptions // You can reference the options defined in slider.js if needed
               },
               {
-                elementId: '#black_5_object',
+                elementId: '#black_5_gt',
                 images: [
                   {
                     src: './static/images/sliders/black_bunny/5_view/FS_black_RGB_2.jpg',
@@ -639,18 +793,382 @@
                 options: sliderOptions // Reference the same or a different options object
               }
             ],
+            transparent_9: 
+            [
+              {
+                elementId: '#transparent_9_rgb',
+                images: [
+                  {
+                    src: './static/images/sliders/transparent_bunny/9_view/FS_trans_RGB_22.png',
+                    label: 'FusionSense',
+                  },
+                  {
+                    src: './static/images/sliders/transparent_bunny/9_view/DN_trans_RGB_22.png',
+                    label: 'DN-Splatter',
+                  }
+                ],
+                options: sliderOptions // You can reference the options defined in slider.js if needed
+              },
+              {
+                elementId: '#transparent_9_gt',
+                images: [
+                  {
+                    src: './static/images/sliders/transparent_bunny/9_view/FS_trans_RGB_22.jpg',
+                    label: 'FusionSense',
+                  },
+                  {
+                    src: './static/images/sliders/transparent_bunny/9_view/GT_trans_RGB_22.png',
+                    label: 'Ground Truth',
+                  }
+                ],
+                options: sliderOptions // Reference the same or a different options object
+              },
+              {
+                elementId: '#transparent_9_depth',
+                images: [
+                  {
+                    src: './static/images/sliders/transparent_bunny/9_view/FS_trans_depth_0.png',
+                    label: 'FusionSense',
+                  },
+                  {
+                    src: './static/images/sliders/transparent_bunny/9_view/DN_trans_depth_0.png',
+                    label: 'DN-Splatter',
+                  }
+                ],
+                options: sliderOptions // You can reference the options defined in slider.js if needed
+              },
+              {
+                elementId: '#transparent_9_normal',
+                images: [
+                  {
+                    src: './static/images/sliders/transparent_bunny/9_view/FS_trans_normal_22.png',
+                    label: 'FusionSense',
+                  },
+                  {
+                    src: './static/images/sliders/transparent_bunny/9_view/DN_trans_normal_22.png',
+                    label: 'DN-Splatter',
+                  }
+                ],
+                options: sliderOptions // Reference the same or a different options object
+              }
+            ],
+            transparent_5: 
+            [
+              {
+                elementId: '#transparent_5_rgb',
+                images: [
+                  {
+                    src: './static/images/sliders/transparent_bunny/5_view/FS_trans_RGB_22.jpg',
+                    label: 'FusionSense',
+                  },
+                  {
+                    src: './static/images/sliders/transparent_bunny/5_view/DN_trans_RGB_22.jpg',
+                    label: 'DN-Splatter',
+                  }
+                ],
+                options: sliderOptions
+              },
+              {
+                elementId: '#transparent_5_gt',
+                images: [
+                  {
+                    src: './static/images/sliders/transparent_bunny/5_view/FS_trans_RGB_22.jpg',
+                    label: 'FusionSense',
+                  },
+                  {
+                    src: './static/images/sliders/transparent_bunny/5_view/GT_trans_RGB_22.png',
+                    label: 'Ground Truth',
+                  }
+                ],
+                options: sliderOptions
+              },
+              {
+                elementId: '#transparent_5_depth',
+                images: [
+                  {
+                    src: './static/images/sliders/transparent_bunny/5_view/FS_trans_depth_22.jpg',
+                    label: 'FusionSense',
+                  },
+                  {
+                    src: './static/images/sliders/transparent_bunny/5_view/DN_trans_depth_22.jpg',
+                    label: 'DN-Splatter',
+                  }
+                ],
+                options: sliderOptions
+              },
+              {
+                elementId: '#transparent_5_normal',
+                images: [
+                  {
+                    src: './static/images/sliders/transparent_bunny/5_view/FS_trans_normal_22.jpg',
+                    label: 'FusionSense',
+                  },
+                  {
+                    src: './static/images/sliders/transparent_bunny/5_view/DN_trans_normal_22.jpg',
+                    label: 'DN-Splatter',
+                  }
+                ],
+                options: sliderOptions
+              }
+            ],
+            reflective_9: 
+            [
+              {
+                elementId: '#reflective_9_rgb',
+                images: [
+                  {
+                    src: './static/images/sliders/reflective_bunny/9_view/FS_reflective_RGB_8.jpg',
+                    label: 'FusionSense',
+                  },
+                  {
+                    src: './static/images/sliders/reflective_bunny/9_view/DN_reflective_RGB_8.jpg',
+                    label: 'DN-Splatter',
+                  }
+                ],
+                options: sliderOptions
+              },
+              {
+                elementId: '#reflective_9_gt',
+                images: [
+                  {
+                    src: './static/images/sliders/reflective_bunny/9_view/FS_reflective_RGB_8.jpg',
+                    label: 'FusionSense',
+                  },
+                  {
+                    src: './static/images/sliders/reflective_bunny/9_view/GT_reflective_RGB_8.png',
+                    label: 'Ground Truth',
+                  }
+                ],
+                options: sliderOptions
+              },
+              {
+                elementId: '#reflective_9_depth',
+                images: [
+                  {
+                    src: './static/images/sliders/reflective_bunny/9_view/FS_reflective_depth_8.jpg',
+                    label: 'FusionSense',
+                  },
+                  {
+                    src: './static/images/sliders/reflective_bunny/9_view/DN_reflective_depth_8.jpg',
+                    label: 'DN-Splatter',
+                  }
+                ],
+                options: sliderOptions
+              },
+              {
+                elementId: '#reflective_9_normal',
+                images: [
+                  {
+                    src: './static/images/sliders/reflective_bunny/9_view/FS_reflective_normal_8.jpg',
+                    label: 'FusionSense',
+                  },
+                  {
+                    src: './static/images/sliders/reflective_bunny/9_view/DN_reflective_normal_8.jpg',
+                    label: 'DN-Splatter',
+                  }
+                ],
+                options: sliderOptions
+              }
+            ],
+            reflective_5: 
+            [
+              {
+                elementId: '#reflective_5_rgb',
+                images: [
+                  {
+                    src: './static/images/sliders/reflective_bunny/5_view/FS_reflective_RGB_8.jpg',
+                    label: 'FusionSense',
+                  },
+                  {
+                    src: './static/images/sliders/reflective_bunny/5_view/DN_reflective_RGB_8.jpg',
+                    label: 'DN-Splatter',
+                  }
+                ],
+                options: sliderOptions
+              },
+              {
+                elementId: '#reflective_5_gt',
+                images: [
+                  {
+                    src: './static/images/sliders/reflective_bunny/5_view/FS_reflective_RGB_8.jpg',
+                    label: 'FusionSense',
+                  },
+                  {
+                    src: './static/images/sliders/reflective_bunny/5_view/GT_reflective_RGB_8.png',
+                    label: 'Ground Truth',
+                  }
+                ],
+                options: sliderOptions
+              },
+              {
+                elementId: '#reflective_5_depth',
+                images: [
+                  {
+                    src: './static/images/sliders/reflective_bunny/5_view/FS_reflective_depth_8.jpg',
+                    label: 'FusionSense',
+                  },
+                  {
+                    src: './static/images/sliders/reflective_bunny/5_view/DN_reflective_depth_8.jpg',
+                    label: 'DN-Splatter',
+                  }
+                ],
+                options: sliderOptions
+              },
+              {
+                elementId: '#reflective_5_normal',
+                images: [
+                  {
+                    src: './static/images/sliders/reflective_bunny/5_view/FS_reflective_normal_8.jpg',
+                    label: 'FusionSense',
+                  },
+                  {
+                    src: './static/images/sliders/reflective_bunny/5_view/DN_reflective_normal_8.jpg',
+                    label: 'DN-Splatter',
+                  }
+                ],
+                options: sliderOptions
+              }
+            ],
+            coke_9: 
+            [
+              {
+                elementId: '#coke_9_rgb',
+                images: [
+                  {
+                    src: './static/images/sliders/coke/9_view/FS_coke_RGB_1.jpg',
+                    label: 'FusionSense',
+                  },
+                  {
+                    src: './static/images/sliders/coke/9_view/DN_coke_RGB_1.jpg',
+                    label: 'DN-Splatter',
+                  }
+                ],
+                options: sliderOptions
+              },
+              {
+                elementId: '#coke_9_gt',
+                images: [
+                  {
+                    src: './static/images/sliders/coke/9_view/FS_coke_RGB_1.jpg',
+                    label: 'FusionSense',
+                  },
+                  {
+                    src: './static/images/sliders/coke/9_view/GT_coke_RGB_1.png',
+                    label: 'Ground Truth',
+                  }
+                ],
+                options: sliderOptions
+              },
+              {
+                elementId: '#coke_9_depth',
+                images: [
+                  {
+                    src: './static/images/sliders/coke/9_view/FS_coke_depth_1.jpg',
+                    label: 'FusionSense',
+                  },
+                  {
+                    src: './static/images/sliders/coke/9_view/DN_coke_depth_1.jpg',
+                    label: 'DN-Splatter',
+                  }
+                ],
+                options: sliderOptions
+              },
+              {
+                elementId: '#coke_9_normal',
+                images: [
+                  {
+                    src: './static/images/sliders/coke/9_view/FS_coke_normal_1.jpg',
+                    label: 'FusionSense',
+                  },
+                  {
+                    src: './static/images/sliders/coke/9_view/DN_coke_normal_1.jpg',
+                    label: 'DN-Splatter',
+                  }
+                ],
+                options: sliderOptions
+              }
+            ],
+            coke_5: 
+            [
+              {
+                elementId: '#coke_5_rgb',
+                images: [
+                  {
+                    src: './static/images/sliders/coke/5_view/FS_coke_RGB_1.jpg',
+                    label: 'FusionSense',
+                  },
+                  {
+                    src: './static/images/sliders/coke/5_view/DN_coke_RGB_1.jpg',
+                    label: 'DN-Splatter',
+                  }
+                ],
+                options: sliderOptions
+              },
+              {
+                elementId: '#coke_5_gt',
+                images: [
+                  {
+                    src: './static/images/sliders/coke/5_view/FS_coke_RGB_1.jpg',
+                    label: 'FusionSense',
+                  },
+                  {
+                    src: './static/images/sliders/coke/5_view/GT_coke_RGB_1.png',
+                    label: 'Ground Truth',
+                  }
+                ],
+                options: sliderOptions
+              },
+              {
+                elementId: '#coke_5_depth',
+                images: [
+                  {
+                    src: './static/images/sliders/coke/5_view/FS_coke_depth_1.jpg',
+                    label: 'FusionSense',
+                  },
+                  {
+                    src: './static/images/sliders/coke/5_view/DN_coke_depth_1.jpg',
+                    label: 'DN-Splatter',
+                  }
+                ],
+                options: sliderOptions
+              },
+              {
+                elementId: '#coke_5_normal',
+                images: [
+                  {
+                    src: './static/images/sliders/coke/5_view/FS_coke_normal_1.jpg',
+                    label: 'FusionSense',
+                  },
+                  {
+                    src: './static/images/sliders/coke/5_view/DN_coke_normal_1.jpg',
+                    label: 'DN-Splatter',
+                  }
+                ],
+                options: sliderOptions
+              }
+            ]
           };
-    
           
+          // Show black_9_block by default
+          document.addEventListener('DOMContentLoaded', () => {
+            switchSlider('black_9'); 
+          });
 
           // Function to show the specific div based on button click
           function switchSlider(block_id) {
               // Remove 'active' class from all buttons to reset color
-              // buttons.forEach(button => button.classList.remove('active'));
-  
-              // // Add 'active' class to the clicked button to change its color
-              // document.getElementById('button' + divNumber).classList.add('active');
-  
+              document.getElementById('black_9_button').classList.remove('active');
+              document.getElementById('black_5_button').classList.remove('active');
+              document.getElementById('reflective_9_button').classList.remove('active');
+              document.getElementById('reflective_5_button').classList.remove('active');
+              document.getElementById('transparent_9_button').classList.remove('active');
+              document.getElementById('transparent_5_button').classList.remove('active');
+              document.getElementById('coke_9_button').classList.remove('active');
+              document.getElementById('coke_5_button').classList.remove('active');
+
+              // Add 'active' class to the clicked button so that it will have a different color when its content is present
+              document.getElementById(block_id+'_button').classList.add('active');
+
               // Select all content divs and hide them
               contentDivs = document.querySelectorAll('.slider-block');
               contentDivs.forEach(div => {
@@ -666,6 +1184,7 @@
                 selectedDiv.initialized = true;
               }
           }
+
         </script>
       </div>
     </div>
