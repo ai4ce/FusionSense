@@ -231,6 +231,13 @@ body {
   background-color: #8b00e1cb !important;
 }
 
+/* this is for text and image block */
 .hidden {
   display: none;
+}
+
+.navbar-item.center {
+  flex-grow: 0;
+  flex-direction: column;
+  justify-content: center;
 }
