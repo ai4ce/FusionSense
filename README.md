@@ -7,7 +7,7 @@ This is the official implementation of [FusionSense: Bridging Common Sense, Visi
 
 FusionSense is a novel 3D reconstruction framework that enables robots to fuse priors from foundation models with highly sparse observations from vision and tactile sensors. It enables visually and geometrically accurate scene and object reconstruction for robots.
 
-![FusionSense Demo](https://github.com/ai4ce/FusionSense/blob/main/assets/snapshot.mp4)
+https://github.com/user-attachments/assets/73b8e120-7368-4519-b61c-f62d7a782c4d
 
 ## Installation
 
