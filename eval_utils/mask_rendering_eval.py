@@ -295,5 +295,5 @@ def mask_rendering_evaluation(
     #     depth_eval_faro(data, path_to_faro=path_to_faro)
 
 
-# if __name__ == "__main__":
-#     tyro.cli(main)
+if __name__ == "__main__":
+    tyro.cli(mask_rendering_evaluation)

@@ -49,7 +49,8 @@ class GSReconstructionConfig:
     load_3D_points: bool = True
     normal_format: str = "opencv"
     load_touches: bool = False
-    camera_path_filename: Path = None
+    load_cameras: bool = False
+    camera_path_filename: Path = Path("camera_path.json")
 
     model_type: str = "normal-nerfstudio"
     warmup_length: int = 500
@@ -141,6 +142,7 @@ class Initial_Reconstruction:
             "--load-3D-points", str(configs.load_3D_points),
             "--normal-format", configs.normal_format,
             "--load-touches", str(configs.load_touches),
+            "--load-cameras", str(configs.load_cameras),
             "--camera-path-filename", configs.camera_path_filename
         ]
 
@@ -236,7 +238,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--data_name", type=str, default="transparent_bunny")
     parser.add_argument("--prompt_text", type=str, default="transparent bunny statue")
-    parser.add_argument("--model_name", type=str, default="transparent_bunny")
+    parser.add_argument("--model_name", type=str, default="9view")
     args = parser.parse_args()
 
     data_name = args.data_name
@@ -245,8 +247,8 @@ if __name__ == "__main__":
     init_recon = Initial_Reconstruction(data_name, model_name, prompt_text)
     configs = GSReconstructionConfig(output_dir=init_recon.output_dir, data_path=init_recon.base_path)
 
-    CONSOLE.log("Step 1: Selecting Images for training...")
-    init_recon.select_frames()
+    # CONSOLE.log("Step 1: Selecting Images for training...")
+    # init_recon.select_frames()
     # # CONSOLE.log("Step 2: Generate Mask Images using Grounded SAM...")
     # # init_recon.generate_mask_images()
     # CONSOLE.log("Step 3: Generating visual hull...")
@@ -260,20 +262,21 @@ if __name__ == "__main__":
     # CONSOLE.log("Step 7: Setting transforms.json")
     # init_recon.set_transforms_and_configs()
 
-    configs.load_touches = False
-    configs.camera_path_filename = "outputs/transparent_bunny/9view/camera_paths/camera.json"
-    CONSOLE.log("Step 8: Initialize training")
-    init_recon.train_model(configs=configs)
+    # configs.load_touches = False
+    # configs.load_cameras = False
+    # # configs.camera_path_filename = "outputs/transparent_bunny/9view/camera_paths/cam_9v_interpl.json"
+    # CONSOLE.log("Step 8: Initialize training")
+    # init_recon.train_model(configs=configs)
 
     # CONSOLE.log("Step 9: Extracting mesh")
     # init_recon.extract_mesh(config_path=os.path.join(configs.output_dir, "config.yml"))
 
-    # CONSOLE.log("Step 10: Evaluating rendering")
-    # init_recon.evaluation(rendering_eval=False, mask_rendering=False, chamfer=True)
+    CONSOLE.log("Step 10: Evaluating rendering")
+    init_recon.evaluation(rendering_eval=True, mask_rendering=False, chamfer=False)
 
-    CONSOLE.log("Step 10: Training with touches")
-    configs.load_touches = True
-    init_recon.train_model(configs=configs)
+    # CONSOLE.log("Step 10: Training with touches")
+    # configs.load_touches = True
+    # init_recon.train_model(configs=configs)
     # init_recon.extract_mesh(config_path=os.path.join(configs.output_dir, "config.yml"))
 
     # CONSOLE.log("Step 11: Evaluating rendering")

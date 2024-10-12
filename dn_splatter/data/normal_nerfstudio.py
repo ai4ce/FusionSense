@@ -74,6 +74,7 @@ class NormalNerfstudioConfig(NerfstudioDataParserConfig):
     auto_scale_poses: bool = True
     scene_scale = 5.0
 
+    load_cameras: bool = False
     camera_path_filename: Path = None
 
 @dataclass
@@ -689,13 +690,18 @@ class NormalNerfstudio(Nerfstudio):
         grad_visualization_dict = {'grad_visualization': self.config.grad_visualization}
         metadata.update(grad_visualization_dict)
 
-        if self.config.camera_path_filename is not None:
+        if self.config.load_cameras:
             import json
             with open(self.config.camera_path_filename, "r", encoding="utf-8") as f:
                 camera_path = json.load(f)
             camera_path = get_path_from_json(camera_path)
+            laod_cameras_dict = {"load_cameras": self.config.load_cameras}
             camera_path_dict = {"camera_path": camera_path}
+            metadata.update(laod_cameras_dict)
             metadata.update(camera_path_dict)
+        else:
+            laod_cameras_dict = {"load_cameras": self.config.load_cameras}
+            metadata.update(laod_cameras_dict)
 
         dataparser_outputs = DataparserOutputs(
             image_filenames=image_filenames,
