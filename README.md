@@ -1,6 +1,6 @@
 :new: [2024-10-11] *Made Public*
 # FusionSense
-## [Page](https://ai4ce.github.io/FusionSense/) | [Paper](https://ai4ce.github.io/FusionSense/) | [Video](https://ai4ce.github.io/FusionSense/Video]
+### [[Page](https://ai4ce.github.io/FusionSense/)] | [[Paper](https://ai4ce.github.io/FusionSense/)] | [[Video](https://youtu.be/thC0PeAQxe0)]
 This is the official implementation of [FusionSense: Bridging Common Sense, Vision, and Touch for Robust Sparse-View Reconstruction](https://ai4ce.github.io/FusionSense/)
 
 
