@@ -116,7 +116,9 @@ def touch_CD_eval(base_dir, pcd_cad, pcd_real):
 def chamfer_eval(base_dir, mesh_dir):
     pcd_real = o3d.io.read_point_cloud(os.path.join(mesh_dir, "after_clean_points_surface_level_0.3_closest_gaussian.ply"))
     # pcd_real = o3d.io.read_point_cloud(os.path.join(mesh_dir, "after_clean_points_surface_level_0.3_closest_gaussian_touch.ply"))
-    cad_mesh = o3d.io.read_triangle_mesh(os.path.join(base_dir, "stanford_bunny.stl"))
+    cad_mesh_path = os.path.join(base_dir, "stanford_bunny.stl")
+    assert os.path.exists(cad_mesh_path), f"cad mesh file does not exist."
+    cad_mesh = o3d.io.read_triangle_mesh(cad_mesh_path)
     pcd_cad, Tr = Icp_preprocessing(cad_mesh, pcd_real)
     o3d.io.write_point_cloud(os.path.join(mesh_dir, "pcd_cad.ply"), pcd_cad)
 
