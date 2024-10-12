@@ -1,5 +1,13 @@
+:new: [2024-10-11] *Made Public*
 # FusionSense
-Integrates the vision, touch, and common-sense information of foundational models, customized to the agent's perceptual needs.
+This is the official implementation of [FusionSense: Bridging Common Sense, Vision, and Touch for Robust Sparse-View Reconstruction](https://ai4ce.github.io/FusionSense/)
+
+
+[Irving Fang](https://irvingf7.github.io/), [Kairui Shi](https://kairui-shi.github.io/), [Xujin He](https://www.linkedin.com/in/kim-he-064a36258/), Siqi Tan, Yifan Wang, [Hanwen Zhao](https://www.linkedin.com/in/hanwen-zhao-2523a4104/), [Hung-Jui Huang](https://joehjhuang.github.io), [Wenzhen Yuan](https://scholar.google.com/citations?user=SNqm6doAAAAJ&hl=en), [Chen Feng](https://scholar.google.com/citations?user=YeG8ZM0AAAAJ), [Jing Zhang](https://jingz6676.github.io)
+
+FusionSense is a novel 3D reconstruction framework that enables robots to fuse priors from foundation models with highly sparse observations from vision and tactile sensors. It enables visually and geometrically accurate scene and object reconstruction, even for conventionally challenging objects.
+
+<img src="assets/snapshot.gif" alt="FusionSense Snapshot" width="200"/>
 
 ## Installation
 
@@ -96,6 +104,12 @@ For render jpeg or mp4 outputs using nerfstudio, we recommend install ffmpeg in 
 
 ```sh
 conda install -c conda-forge x264=='1!161.3030' ffmpeg=4.3.2
+```
+
+To render outputs of pretrained models:
+
+```sh
+python render_video.py camera-path --load_config your-model-config --camera_path_filename camera_path.json --rendered_output_names rgb depth normal
 ```
 
 ## Dataset Format
