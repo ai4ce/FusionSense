@@ -99,11 +99,11 @@ class DNSplatterModelConfig(SplatfactoModelConfig):
     """Encourage 2D Gaussians"""
 
     ### SuGaR style sdf loss settings ###
-    use_sdf_loss: bool = False
+    use_sdf_loss: bool = True
     """Enable sdf loss during training"""
     sdf_loss_lambda: float = 0.1
     """Regularizer for sdf loss"""
-    apply_sdf_loss_after_iters: int = 1200
+    apply_sdf_loss_after_iters: int = 2000
     """Start applying sdf loss after n training iterations"""
     apply_sdf_loss_iters: int = 100
     """Iterations to apply sdf loss"""
@@ -154,28 +154,46 @@ class DNSplatterModel(SplatfactoModel):
         # remove_from_all_optim should never remove from add_mask=True positions, 
         #   so deleted_mask will only trim off False locations
         if self.add_mask is not None:
-            # CONSOLE.input(f"We are Removing {deleted_mask.sum()}/{deleted_mask.shape[0]} GS points")
-            # CONSOLE.input(self.add_mask.shape)
             self.add_mask = self.add_mask[~deleted_mask]
-            # CONSOLE.input(self.add_mask.shape)
     
     def dup_in_all_optim(self, optimizers, dup_indices, n):
         param_groups = self.get_gaussian_param_groups()
-        # CONSOLE.log(dup_indices.shape[0], "new GS points added")
         for group, param in param_groups.items():
             self.dup_in_optim(optimizers.optimizers[group], dup_indices, param, n)
         # dup_in_optim should always add new gaussians to the end, 
         #   so touch patches will be in the same position in the array
         if self.add_mask is not None:
             # CONSOLE.input(f"Adding {dup_mask.nonzero(as_tuple=False).shape[0]} new GS points")
-            # CONSOLE.input(self.add_mask.shape)
             self.add_mask = torch.cat([
                 self.add_mask, 
                 torch.zeros((dup_indices.shape[0]*n), device=self.add_mask.device, dtype=self.add_mask.dtype)
             ], dim=0).squeeze()
-            # CONSOLE.log(self.add_mask.shape, self.means.shape)
 
-            
+    def recompute_knn(self, optimizers: Optimizers, step):
+        assert step == self.step
+        if self.step <= self.config.warmup_length:
+            return
+        if (
+            self.config.use_sdf_loss
+            and self.step >= self.config.apply_sdf_loss_after_iters
+        ):
+            means = torch.nan_to_num(self.means.data.detach().to("cuda"))
+            start = time.time()
+            if (self.add_mask is not None):
+                self._knn = knn_sk(x=means, 
+                                   y=means, 
+                                   k=self.config.knn_to_track)
+            else:
+                self._knn = knn_sk(x=means, 
+                                   y=means, 
+                                   k=self.config.knn_to_track)
+            CONSOLE.log(
+                f"Recomputing KNN took: {time.time() - start} seconds for {self.num_points} points"
+            )
+        else:
+            CONSOLE.print("Skipped")
+        self.delete_mask_to_update_knn = None
+ 
     def populate_modules(self):
         """Instantiate the model"""
         if self.seed_points is not None and not self.config.random_init:
@@ -272,6 +290,7 @@ class DNSplatterModel(SplatfactoModel):
 
         # mask for added gaussian points
         self.add_mask = None
+        self.added_count = 0
         self.gauss_params = torch.nn.ParameterDict(
             {
                 "means": means,
@@ -428,19 +447,8 @@ class DNSplatterModel(SplatfactoModel):
             self.xys_grad_norm = None
             self.vis_counts = None
             self.max_2Dsize = None
-
-            if (
-                self.config.use_sdf_loss
-                and self.step >= self.config.apply_sdf_loss_after_iters
-                and deleted_mask is not None
-            ):
-                # BUG: it is possible to have NaNs
-                means = torch.nan_to_num(self.means.data.detach().to("cuda"))
-                start = time.time()
-                self._knn = knn_sk(x=means, y=means, k=self.config.knn_to_track)
-                CONSOLE.log(
-                    f"Recomputing KNN took: {time.time() - start} seconds for {self.num_points} points"
-                )
+            # update knn
+            self.delete_mask_to_update_knn = deleted_mask
 
     def get_gaussian_param_groups(self) -> Dict[str, List[Parameter]]:
         # Here we explicitly use the means, scales as parameters so that the user can override this function and
@@ -629,10 +637,10 @@ class DNSplatterModel(SplatfactoModel):
 
             xys = self.xys[0, ...].detach()
 
-            normal_touch = None
-            if self.add_mask is not None:
-                normal_touch = normals[self.add_mask]
-            
+            # normal_touch = None
+            # if self.add_mask is not None:
+            #     normal_touch = normals[self.add_mask]
+            # Compute per-pixel normals
             normals_im: Tensor = rasterize_gaussians(  # type: ignore
                 xys,
                 self.depths[0, ...],
@@ -659,7 +667,7 @@ class DNSplatterModel(SplatfactoModel):
             "normal": normals_im,
             "accumulation": alpha.squeeze(0),
             "background": background,
-            "normal_touch": normal_touch
+            # "normal_touch": normal_touch
         }
 
     def get_loss_dict(
@@ -837,12 +845,20 @@ class DNSplatterModel(SplatfactoModel):
                 num_samples = self.num_points
             else:
                 num_samples = self.config.num_sdf_samples
-
+            vis_indices = self.vis_indices
+            # lets say we dont want to compute points that are in the add_mask
+            if (self.add_mask is not None):
+                vis_indices = vis_indices[(~self.add_mask)[vis_indices].bool()]
             # sample points according to gaussian distribution on surface
             samples, indices = self.sample_points_in_gaussians(
-                num_samples=num_samples, vis_indices=self.vis_indices
+                num_samples=num_samples, vis_indices=vis_indices
             )
-            # query closest gaussians to sampled points
+            # CONSOLE.log(samples.shape[0], 
+            #             indices.shape[0], 
+            #             indices.to(device="cpu").max().item()+1, 
+            #             self.num_points-self.added_count, 
+            #             self._knn.shape[0])
+            # input("continue...")
             with torch.no_grad():
                 closest_gaussians = self._knn[indices]
             # compute current sdf estimates of samples
@@ -876,7 +892,8 @@ class DNSplatterModel(SplatfactoModel):
         
         # MSE_touch_normal_loss: per-gaussian normal error 
         if self.add_mask is not None:
-            normal_touch = outputs["normal_touch"]
+            # normal_touch = outputs["normal_touch"]
+            normal_touch = self.normals[self.add_mask]
             touch_patches_normals = torch.empty((0,3)).to(self.device)
             for touch_patch in self.kwargs["metadata"]['touch_patches']:
                 touch_patches_normals = torch.cat((touch_patches_normals, touch_patch["normals"].to(self.device)), dim=0)
@@ -1223,18 +1240,9 @@ class DNSplatterModel(SplatfactoModel):
                 self.xys_grad_norm = None
                 self.vis_counts = None
                 self.max_2Dsize = None
+                CONSOLE.print(f"Added total {self.added_count} touch points to now {self.means.shape[0]} GS points")
                 # update knn
-                if (
-                    self.config.use_sdf_loss
-                    and self.step >= self.config.apply_sdf_loss_after_iters
-                ):
-                    means = torch.nan_to_num(self.means.data.detach().to("cuda"))
-                    start = time.time()
-                    self._knn = knn_sk(x=means, y=means, k=self.config.knn_to_track)
-                    CONSOLE.log(
-                        f"Recomputing KNN took: {time.time() - start} seconds for {self.num_points} points"
-                    )
-                CONSOLE.print(f"Added total {self.added_count} touch points to {self.means.shape[0]} GS points")
+                self.delete_mask_to_update_knn = deleted_aabb_mask
         else:
             CONSOLE.print(f"[bold green] Skip adding touch patch at step {step}")
 
@@ -1252,7 +1260,7 @@ class DNSplatterModel(SplatfactoModel):
             filtered_means = self.means[close_mask]
             distances = torch.cdist(filtered_means, visual_hull)
             min_distances = distances.min(dim=-1).values
-            filtered_hull_mask  = (min_distances > 0.005 * self.kwargs["metadata"]['scale_factor']) & (min_distances <= 0.02 * self.kwargs["metadata"]['scale_factor'])
+            filtered_hull_mask  = (min_distances > 0.01 * self.kwargs["metadata"]['scale_factor']) & (min_distances <= 0.05 * self.kwargs["metadata"]['scale_factor'])
             # hull_mask = (min_distances > 0.02) & (min_distances <= 0.1)
             hull_mask = torch.zeros(self.means.shape[0], dtype=torch.bool, device=self.device)
             hull_mask[close_mask] = filtered_hull_mask
@@ -1263,19 +1271,10 @@ class DNSplatterModel(SplatfactoModel):
             deleted_mask = self.cull_gaussians(hull_mask)
             self.remove_from_all_optim(optimizers, deleted_mask)
             # update knn
-            if (
-                self.config.use_sdf_loss
-                and self.step >= self.config.apply_sdf_loss_after_iters
-                and deleted_mask is not None
-            ):
-                means = torch.nan_to_num(self.means.data.detach().to("cuda"))
-                start = time.time()
-                self._knn = knn_sk(x=means, y=means, k=self.config.knn_to_track)
-                CONSOLE.log(
-                    f"Recomputing KNN took: {time.time() - start} seconds for {self.num_points} points"
-                )
+            self.delete_mask_to_update_knn = deleted_mask
             del distances, min_distances, hull_mask, visual_hull
 
+            
     def touch_pruning(self, optimizers: Optimizers, step):
         """Pruning GS points within touch patches"""
         assert step == self.step
@@ -1299,19 +1298,7 @@ class DNSplatterModel(SplatfactoModel):
             deleted_aabb_mask = self.cull_gaussians(aabb_mask.squeeze())
             self.remove_from_all_optim(optimizers, deleted_aabb_mask)
             # update knn
-            if (
-                self.config.use_sdf_loss
-                and self.step >= self.config.apply_sdf_loss_after_iters
-                and deleted_aabb_mask is not None
-            ):
-                means = torch.nan_to_num(self.means.data.detach().to("cuda"))
-                start = time.time()
-                self._knn = knn_sk(x=means, y=means, k=self.config.knn_to_track)
-                CONSOLE.log(
-                    f"Recomputing KNN took: {time.time() - start} seconds for {self.num_points} points"
-                )
-
-        
+            self.delete_mask_to_update_knn = deleted_aabb_mask
     
     def high_grad_saving(self, optimizers: Optimizers, step):
         assert step == self.step
@@ -1429,16 +1416,23 @@ class DNSplatterModel(SplatfactoModel):
                 args=[training_callback_attributes.optimizers],
             )
         )
-
-        # save training image
         cbs.append(
             TrainingCallback(
                 [TrainingCallbackLocation.AFTER_TRAIN_ITERATION],
-                self.save_training_image,
-                update_every_num_iters=1,
+                self.recompute_knn,
+                update_every_num_iters=self.config.refine_every,
                 args=[training_callback_attributes.optimizers],
             )
         )
+        # save training image
+        # cbs.append(
+        #     TrainingCallback(
+        #         [TrainingCallbackLocation.AFTER_TRAIN_ITERATION],
+        #         self.save_training_image,
+        #         update_every_num_iters=1,
+        #         args=[training_callback_attributes.optimizers],
+        #     )
+        # )
 
         return cbs
 
@@ -1558,11 +1552,18 @@ class DNSplatterModel(SplatfactoModel):
         Returns:
             knn gaussians
         """
-        closest_gaussians = knn_sk(
-            x=self.means.data.to("cuda"),
-            y=samples.to("cuda"),
-            k=self.config.knn_to_track,
-        )
+        if self.add_mask is not None:
+            closest_gaussians = knn_sk(
+                x=self.means[~self.add_mask].data.to("cuda"),
+                y=samples.to("cuda"),
+                k=self.config.knn_to_track,
+            )
+        else:
+            closest_gaussians = knn_sk(
+                x=self.means.data.to("cuda"),
+                y=samples.to("cuda"),
+                k=self.config.knn_to_track,
+            )
         return closest_gaussians
 
     def get_density(
@@ -1583,12 +1584,9 @@ class DNSplatterModel(SplatfactoModel):
         """
         if closest_gaussians is None:
             closest_gaussians = self.get_closest_gaussians(samples=sdf_samples)
-        # CONSOLE.log(closest_gaussians.shape, closest_gaussians.max(), self.num_points)
-        # input("1...")
         closest_gaussians_idx = closest_gaussians
-        # CONSOLE.log(closest_gaussians_idx)
-        # input("2...")
-        assert closest_gaussians.shape[0] == self.num_points, "Wrong number of closest gaussians"
+        # assert closest_gaussians.shape[0] == self.num_points, "Wrong number of closest gaussians"
+        # assert closest_gaussians.to(device="cpu").max() <= self.num_points, "closest_gaussians include impossible indices"
         closest_gaussian_centers = self.means[closest_gaussians]
 
         closest_gaussian_inv_scaled_rotation = scale_rot_to_inv_cov3d(

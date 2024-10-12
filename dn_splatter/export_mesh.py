@@ -605,6 +605,12 @@ class LevelSetExtractor(GSMeshExporter):
                     pcd.normals = o3d.utility.Vector3dVector(np.asarray(pcd.normals)[hull_mask])
                     pcd.colors = o3d.utility.Vector3dVector(np.asarray(pcd.colors)[hull_mask])
                     
+                # add touch points to pcd
+                print(model.add_mask)
+                input("...")
+                add_mask = model.add_mask
+                # pcd.points = o3d.utility.Vector3dVector()
+                    
                 CONSOLE.print(
                     "Saving unclean points to ",
                     str(
