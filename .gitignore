@@ -15,11 +15,7 @@ test_colmap/
 tr-rabbit/
 tr-rabbit2/
 eval/
-testtest.py
 *.pyc
-set_colmapdatabase.py
-transforms2colmap.py
-transform_colmap_camera.py
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
