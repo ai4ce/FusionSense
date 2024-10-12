@@ -1,6 +1,9 @@
 :new: [2024-10-11] *Made Public*
-# FusionSense: Bridging Common Sense, Vision, and Touch for Robust Sparse-View Reconstruction
+# FusionSense
 ### [[Page](https://ai4ce.github.io/FusionSense/)] | [[Paper](https://ai4ce.github.io/FusionSense/)] | [[Video](https://youtu.be/thC0PeAQxe0)]
+This is the official implementation of [FusionSense: Bridging Common Sense, Vision, and Touch for Robust Sparse-View Reconstruction](https://ai4ce.github.io/FusionSense/)
+
+
 [Irving Fang](https://irvingf7.github.io/), [Kairui Shi](https://kairui-shi.github.io/), [Xujin He](https://www.linkedin.com/in/kim-he-064a36258/), Siqi Tan, Yifan Wang, [Hanwen Zhao](https://www.linkedin.com/in/hanwen-zhao-2523a4104/), [Hung-Jui Huang](https://joehjhuang.github.io), [Wenzhen Yuan](https://scholar.google.com/citations?user=SNqm6doAAAAJ&hl=en), [Chen Feng](https://scholar.google.com/citations?user=YeG8ZM0AAAAJ), [Jing Zhang](https://jingz6676.github.io)
 
 FusionSense is a novel 3D reconstruction framework that enables robots to fuse priors from foundation models with highly sparse observations from vision and tactile sensors. It enables visually and geometrically accurate scene and object reconstruction, even for conventionally challenging objects.
