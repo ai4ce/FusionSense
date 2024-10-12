@@ -7,7 +7,7 @@ from datetime import datetime
 from dataclasses import dataclass
 from utils.imgs_selection import select_imgs, filter_transform_json
 from utils.VisualHull import VisualHull
-# from utils.metric3dv2_depth_generation import metric3d_depth_generation
+from utils.metric3dv2_depth_generation import metric3d_depth_generation
 from utils.generate_pcd import Init_pcd_generate
 from eval_utils.rendering_evaluation import rendering_evaluation
 from eval_utils.chamfer_evaluation import chamfer_eval
@@ -182,8 +182,6 @@ class Initial_Reconstruction:
             "--normal-format", configs.normal_format,
             "--load-touches", str(configs.load_touches),
         ]
-
-        # command = "CUDA_VISIBLE_DEVICES=0 ns-train dn-splatter --steps-per-save 30000 --max_num_iterations 30001 --pipeline.model.use-depth-loss True --pipeline.model.normal-lambda 0.4 --pipeline.model.sensor-depth-lambda 0.2 --pipeline.model.use-depth-smooth-loss True  --pipeline.model.use-binary-opacities True  --pipeline.model.use-normal-loss True  --pipeline.model.normal-supervision mono  --pipeline.model.random_init False normal-nerfstudio  --data datasets/touchgs  --load-pcd-normals True --load-3D-points True  --normal-format opencv"
         print(command)
         print("Training the model...")
         subprocess.run(command)
@@ -210,7 +208,6 @@ class Initial_Reconstruction:
             # "--output-dir", str(save_dir+"/sugar-coarse"),
             "--output-dir", str(save_dir),
         ]
-        # gs-mesh tsdf --load-config outputs/blackbunny/001/config.yml --output-dir MESH/blackbunny
         print("Extracting mesh...")
         CONSOLE.log(command_sugar)
         subprocess.run(command_gs)
@@ -248,40 +245,29 @@ if __name__ == "__main__":
     init_recon = Initial_Reconstruction(data_name, model_name, prompt_text)
     configs = GSReconstructionConfig(output_dir=init_recon.output_dir, data_path=init_recon.base_path)
 
-    # CONSOLE.log("Step 1: Selecting Images for training...")
-    # init_recon.select_frames()
-    # # CONSOLE.log("Step 2: Generate Mask Images using Grounded SAM...")
-    # # init_recon.generate_mask_images()
-    # CONSOLE.log("Step 3: Generating visual hull...")
-    # init_recon.generate_visual_hull(error=5)
-    # # CONSOLE.log("Step 4: Running metric3d depth for ")
-    # # init_recon.run_metric3d_depth()
-    # CONSOLE.log("Step 5: Initialize pcd")
-    # init_recon.Init_pcd_generation()
-    # # CONSOLE.log("Step 6: Generate normals")
-    # # init_recon.generate_normals()
-    # CONSOLE.log("Step 7: Setting transforms.json")
-    # init_recon.set_transforms_and_configs()
+    CONSOLE.log("Step 1: Selecting Images for training...")
+    init_recon.select_frames()
+    # CONSOLE.log("Step 2: Generate Mask Images using Grounded SAM...")
+    # init_recon.generate_mask_images()
+    CONSOLE.log("Step 3: Generating visual hull...")
+    init_recon.generate_visual_hull(error=5)
+    CONSOLE.log("Step 4: Running metric3d depth for ")
+    init_recon.run_metric3d_depth()
+    CONSOLE.log("Step 5: Initialize pcd")
+    init_recon.Init_pcd_generation()
+    CONSOLE.log("Step 6: Generate normals")
+    init_recon.generate_normals()
+    CONSOLE.log("Step 7: Setting transforms.json")
+    init_recon.set_transforms_and_configs()
 
-    # # configs.load_touches = False
-    # # configs.load_cameras = False
-    # # configs.camera_path_filename = "outputs/transparent_bunny/9view/camera_paths/cam_9v_interpl.json"
-    # # CONSOLE.log("Step 8: Initialize training")
-    # # init_recon.train_model(configs=configs)
+    configs.load_touches = False
+    configs.load_cameras = False
+    configs.camera_path_filename = "outputs/transparent_bunny/9view/camera_paths/cam_9v_interpl.json"
+    CONSOLE.log("Step 8: Initialize training")
+    init_recon.train_model(configs=configs)
 
-    # CONSOLE.log("Step 9: Extracting mesh")
-    # init_recon.extract_mesh(config_path=os.path.join(configs.output_dir, "config.yml"))
-
-    CONSOLE.log("Step 10: Evaluating rendering")
-    init_recon.evaluation(rendering_eval=True, mask_rendering=False, chamfer=False)
-
-    # CONSOLE.log("Step 10: Training with touches")
-    # configs.load_touches = True
-    configs.camera_path_filename = "outputs/transparent_bunny/ours/camera_paths/touch_vs_nontouch_campose.json"
-    # init_recon.train_model(configs=configs)
+    CONSOLE.log("Step 9: Extracting mesh")
     init_recon.extract_mesh(config_path=os.path.join(configs.output_dir, "config.yml"))
 
-    # CONSOLE.log("Step 11: Evaluating rendering")
-    # init_recon.evaluation(rendering_eval=True, mask_rendering=True, chamfer_eval=False)
-
-    # init_recon.export_gsplats(config_path="outputs/unnamed/dn-splatter/2024-09-02_203650/config.yml", output_dir="exports/splat/")
+    CONSOLE.log("Step 10: Evaluating rendering")
+    init_recon.evaluation(rendering_eval=True, mask_rendering=True, chamfer=True)
