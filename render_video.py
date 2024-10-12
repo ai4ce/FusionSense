@@ -639,7 +639,7 @@ class RenderCameraPath(BaseRender):
 class RenderInterpolated(BaseRender):
     """Render a trajectory that interpolates between training or eval dataset images."""
 
-    pose_source: Literal["eval", "train"] = "eval"
+    pose_source: Literal["eval", "train"] = "train"
     """Pose source to render."""
     interpolation_steps: int = 10
     """Number of interpolation steps between eval dataset cameras."""

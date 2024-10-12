@@ -187,3 +187,5 @@ dn_splatter/__pycache__/
 playground/
 validate_touch/
 renders/
+training_render/
+*.mp4

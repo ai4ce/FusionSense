@@ -265,6 +265,7 @@ class GaussiansToPoisson(GSMeshExporter):
             hull_mask = min_distances < 0.05 * scale_factor
             # height_mask = vertices[:, 2] > np.min(visual_hull[:, 2]) + 0.01 * scale_factor
             # hull_mask = hull_mask & height_mask
+            vertices = (vertices/scale_factor - transform_matrix[:3, 3].T) @ transform_matrix[:3, :3]
             filtered_vertices = vertices[hull_mask]
             pcd.points = o3d.utility.Vector3dVector(filtered_vertices)
             pcd.normals = o3d.utility.Vector3dVector(np.asarray(pcd.normals)[hull_mask])
@@ -603,6 +604,12 @@ class LevelSetExtractor(GSMeshExporter):
                     pcd.points = o3d.utility.Vector3dVector(filtered_vertices)
                     pcd.normals = o3d.utility.Vector3dVector(np.asarray(pcd.normals)[hull_mask])
                     pcd.colors = o3d.utility.Vector3dVector(np.asarray(pcd.colors)[hull_mask])
+                    
+                # add touch points to pcd
+                print(model.add_mask)
+                input("...")
+                add_mask = model.add_mask
+                # pcd.points = o3d.utility.Vector3dVector()
                     
                 CONSOLE.print(
                     "Saving unclean points to ",
