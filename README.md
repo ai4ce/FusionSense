@@ -1,4 +1,5 @@
 :new: [2024-10-15] *More Documentation Ongoing for VLM Reasoning and Real World Experiment*
+
 :new: [2024-10-11] *Made Public*
 # FusionSense
 ### [[Page](https://ai4ce.github.io/FusionSense/)] | [[Paper](https://arxiv.org/abs/2410.08282)] | [[Video](https://youtu.be/thC0PeAQxe0)]
