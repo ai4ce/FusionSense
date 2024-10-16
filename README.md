@@ -113,9 +113,10 @@ run the script to extract masks.
 If the `num_no_detection` is not 0, you need to select the frame again. Then you will see mask_imgs in `/masks`, and you can check `/annotated` frames to see the results more directly.  
 
 ### Run pipeline
+You can change configs here:`configs/config.py`
 ```sh
 conda activate fusionsense
-python scripts/train.py --data_name {DATASET_NAME} --model_name {MODEL_NAME}
+python scripts/train.py --data_name {DATASET_NAME} --model_name {MODEL_NAME} --configs {CONFIG_PATH}
 ```
 
 ### Render outputs
