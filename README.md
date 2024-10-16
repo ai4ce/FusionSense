@@ -115,7 +115,7 @@ If the `num_no_detection` is not 0, you need to select the frame again. Then you
 ### Run pipeline
 ```sh
 conda activate fusionsense
-python Initial_Recon.py --data_name {DATASET_NAME} --model_name {MODEL_NAME}
+python scripts/train.py --data_name {DATASET_NAME} --model_name {MODEL_NAME}
 ```
 
 ### Render outputs
@@ -129,7 +129,7 @@ conda install -c conda-forge x264=='1!161.3030' ffmpeg=4.3.2
 To render outputs of pretrained models:
 
 ```sh
-python render_video.py camera-path --load_config your-model-config --camera_path_filename camera_path.json --rendered_output_names rgb depth normal
+python scripts/render_video.py camera-path --load_config your-model-config --camera_path_filename camera_path.json --rendered_output_names rgb depth normal
 ```
 more details in nerfstudio `ns-render`.
 

@@ -1,4 +1,6 @@
 import os
+import sys
+sys.path.insert(0, os.getcwd())
 import json
 import signal
 import subprocess
@@ -13,20 +15,7 @@ from eval_utils.rendering_evaluation import rendering_evaluation
 from eval_utils.chamfer_evaluation import chamfer_eval
 from eval_utils.mask_rendering_eval import mask_rendering_evaluation
 from nerfstudio.utils.rich_utils import CONSOLE
-
-# proc = None
-# def signal_handler(sig, frame):
-#     global proc  # Reference the global 'proc' variable
-#     print("\nCtrl+C detected. Terminating the subprocess...")
-#     if proc:
-#         proc.terminate()  # Terminate the subprocess
-#         proc.wait()  # Wait for the process to clean up
-#         print("Subprocess terminated.")
-#     else:
-#         print("No subprocess to terminate.")
-
-# # Register the signal handler for SIGINT
-# signal.signal(signal.SIGINT, signal_handler)
+from importlib.machinery import SourceFileLoader
 
 @dataclass
 class GSReconstructionConfig:
@@ -237,13 +226,38 @@ if __name__ == "__main__":
     parser.add_argument("--data_name", type=str, default="transparent_bunny")
     parser.add_argument("--prompt_text", type=str, default="transparent bunny statue")
     parser.add_argument("--model_name", type=str, default="9view")
+    parser.add_argument("--configs", type=str, default="configs/config.py")
     args = parser.parse_args()
 
     data_name = args.data_name
     prompt_text = args.prompt_text
     model_name = args.model_name
+
+    experiment = SourceFileLoader(os.sys.path[0], "configs/config.py").load_module()
+    experiment_configs = experiment.config
+
     init_recon = Initial_Reconstruction(data_name, model_name, prompt_text)
-    configs = GSReconstructionConfig(output_dir=init_recon.output_dir, data_path=init_recon.base_path)
+    configs = GSReconstructionConfig(
+        output_dir=init_recon.output_dir,
+        data_path=init_recon.base_path,
+        steps_per_save=experiment_configs["steps_per_save"],
+        iterations=experiment_configs["iterations"],
+        use_depth_loss=experiment_configs["use_depth_loss"],
+        normal_lambda=experiment_configs["normal_lambda"],
+        sensor_depth_lambda=experiment_configs["sensor_depth_lambda"],
+        use_depth_smooth_loss=experiment_configs["use_depth_smooth_loss"],
+        use_binary_opacities=experiment_configs["use_binary_opacities"],
+        use_normal_loss=experiment_configs["use_normal_loss"],
+        normal_supervision=experiment_configs["normal_supervision"],
+        warmup_length=experiment_configs["warmup_length"],
+        add_touch_at=experiment_configs["add_touch_at"],
+        stop_split_at=experiment_configs["stop_split_at"],
+        load_pcd_normals=experiment_configs["load_pcd_normals"],
+        load_3D_points=experiment_configs["load_3D_points"],
+        load_touches=experiment_configs["load_touches"],
+        load_cameras=experiment_configs["load_cameras"],
+        camera_path_filename=experiment_configs["camera_path_filename"]
+    )
 
     CONSOLE.log("Step 1: Selecting Images for training...")
     init_recon.select_frames()
@@ -260,9 +274,9 @@ if __name__ == "__main__":
     CONSOLE.log("Step 7: Setting transforms.json")
     init_recon.set_transforms_and_configs()
 
-    configs.load_touches = False
-    configs.load_cameras = False
-    configs.camera_path_filename = "outputs/transparent_bunny/9view/camera_paths/cam_9v_interpl.json"
+    # configs.load_touches = False
+    # configs.load_cameras = False
+    # configs.camera_path_filename = "outputs/transparent_bunny/9view/camera_paths/cam_9v_interpl.json"
     CONSOLE.log("Step 8: Initialize training")
     init_recon.train_model(configs=configs)
 
