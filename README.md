@@ -17,7 +17,7 @@ FusionSense is a novel 3D reconstruction framework that enables robots to fuse p
 ### Step 0: Install Everything Robotics
 We utilize a depth camera mounted on a robot arm to acquire pictures with accurate pose information. We also need a tactile sensor for <b>Active Touch Selection</b>. For these reasons, we use ROS2 and many associated packages. 
 
-If you have other means to acquire accurate pose information/don't want to play with tactile sensor/etc, you can skip this step and jump into <b>Step 1</b> for the 3D Gaussian pipeline for <b>Robust Global Shape Representation</b> and <b>Local Geometric Optimization</b> .
+If you have other methods to acquire accurate pose information, don't want to play with tactile sensor or a physical robot or whatever reason, feel free to jump into [Step 1](https://github.com/ai4ce/FusionSense/blob/main/README.md#step-1-install-3d-gaussian-dependencies-and-nerfstudio) for the 3D Gaussian pipeline of <b>Robust Global Shape Representation</b> and <b>Local Geometric Optimization</b> .
 
 1. Install ROS2 Humble according to the [official instruction](https://docs.ros.org/en/humble/Installation.html). 
     - Note that while this project is developed under Humble, we do not explicitly use any Humble-specific feature, so other distro should work in principle.
