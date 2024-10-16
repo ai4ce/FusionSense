@@ -1,4 +1,4 @@
-:new: [2024-10-15] *More Documentation Ongoing for VLM Reasoning and Real World Experiment*
+:new: [2024-10-15] *Installation for Everything Robotics Updated. More Documentation Ongoing for VLM Reasoning and Real World Experiment. The README Needs a Lot of Cleaning*
 
 :new: [2024-10-11] *Made Public*
 # FusionSense
@@ -12,9 +12,26 @@ FusionSense is a novel 3D reconstruction framework that enables robots to fuse p
 
 <img src="assets/snapshot.gif" alt="FusionSense Snapshot" width="200"/>
 
-## Installation
+## Preparation 
 
-### Step 1: Install dependencies and Nerfstudio
+### Step 0: Install Everything Robotics
+We utilize a depth camera mounted on a robot arm to acquire pictures with accurate pose information. We also need a tactile sensor for <b>Active Touch Selection</b>. For these reasons, we use ROS2 and many associated packages. 
+
+If you have other means to acquire accurate pose information/don't want to play with tactile sensor/etc, you can skip this step and jump into <b>Step 1</b> for the 3D Gaussian pipeline for <b>Robust Global Shape Representation</b> and <b>Local Geometric Optimization</b> .
+
+1. Install ROS2 Humble according to the [official instruction](https://docs.ros.org/en/humble/Installation.html). 
+    - Note that while this project is developed under Humble, we do not explicitly use any Humble-specific feature, so other distro should work in principle.
+
+2. Install the [RealSense depth camera interface package](https://github.com/ai4ce/realsense_ROS2_interface). This is a custom ROS2 package built upon Intel's official ROS2 wrapper.
+
+3. Install the [GelSight tactile sensor interface package](https://github.com/ai4ce/gelsight_ROS2_interface). 
+    - **Unfortunately**, this package is built upon a codebase that has not been open-source. We will update the link when the dependency is fully-open within a few weeks. Stay tuned!
+    - Note that this is not the same as the official GelSight implementation. We made some tweaks and (hopefully) improvement, so it's strongly encouraged that you use our own package.
+4. Install the [Ufactory xArm6 servoing and teleoperation package](https://github.com/ai4ce/xarm_ros2). This is a custom ROS2 package built upon the official UFactory ROS2 packages.
+    - We also have a [UR10e equivalent](https://github.com/ai4ce/ur_ros2) available. 
+    - If you are using a different robot, while we may not have a ROS2 package readily available, as long as your robot works with MoveIt 2, you should be able to adapt my code fairly easily.
+
+### Step 1: Install 3D Gaussian Dependencies and Nerfstudio
 
 ```sh
 git clone --recursive https://github.com/ai4ce/FusionSense.git
