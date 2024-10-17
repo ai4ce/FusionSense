@@ -15,23 +15,14 @@ FusionSense is a novel 3D reconstruction framework that enables robots to fuse p
 ## Preparation 
 
 ### Step 0: Install Everything Robotics
-We utilize a depth camera mounted on a robot arm to acquire pictures with accurate pose information. We also need a tactile sensor for <b>Active Touch Selection</b>. For these reasons, we use ROS2 and many associated packages. 
+We utilize a depth camera mounted on a robot arm powered by `ROS2` to acquire pictures with accurate pose information. We also used a tactile sensor for <b>Active Touch Selection</b>.
 
-If you have other methods to acquire accurate pose information, don't want to play with tactile sensor or a physical robot or whatever reason, feel free to jump into [Step 1](https://github.com/ai4ce/FusionSense/blob/main/README.md#step-1-install-3d-gaussian-dependencies-and-nerfstudio) for the 3D Gaussian pipeline of <b>Robust Global Shape Representation</b> and <b>Local Geometric Optimization</b> .
+If you have no need for this part, feel free to jump into [Step 1](https://github.com/ai4ce/FusionSense/blob/main/README.md#step-1-install-3d-gaussian-dependencies-and-nerfstudio) for the 3D Gaussian pipeline of <b>Robust Global Shape Representation</b> and <b>Local Geometric Optimization</b>.
 
-1. Install ROS2 Humble according to the [official instruction](https://docs.ros.org/en/humble/Installation.html). 
-    - Note that while this project is developed under Humble, we do not explicitly use any Humble-specific feature, so other distro should work in principle.
-
-2. Install the [RealSense depth camera interface package](https://github.com/ai4ce/realsense_ROS2_interface). This is a custom ROS2 package built upon Intel's official ROS2 wrapper.
-
-3. Install the [GelSight tactile sensor interface package](https://github.com/ai4ce/gelsight_ROS2_interface). 
-    - **Unfortunately**, this package is built upon a codebase that has not been open-source. We will update the link when the dependency is fully-open within a few weeks. Stay tuned!
-    - Note that this is not the same as the official GelSight implementation. We made some tweaks and (hopefully) improvement, so it's strongly encouraged that you use our own package.
-4. Install the [Ufactory xArm6 servoing and teleoperation package](https://github.com/ai4ce/xarm_ros2). This is a custom ROS2 package built upon the official UFactory ROS2 packages.
-    - We also have a [UR10e equivalent](https://github.com/ai4ce/ur_ros2) available. 
-    - If you are using a different robot, while we may not have a ROS2 package readily available, as long as your robot works with MoveIt 2, you should be able to adapt my code fairly easily.
+For installing everything robotics, please see this [documentation](./instructions/install_robotics.md).
 
 ### Step 1: Install 3D Gaussian Dependencies and Nerfstudio
+**Note:** Because our major dependencies, `Nerfstudio` and `Grounded-SAM-2`, officially support two different CUDA version (11.8 vs. 12.1), we will have to create two separate environments. We hope to resolve this in the future when `Nerfstudio` bump its official CUDA support version.
 
 ```sh
 git clone --recursive https://github.com/ai4ce/FusionSense.git
@@ -53,16 +44,16 @@ Install **tinycudann**:
 pip install ninja git+https://github.com/NVlabs/tiny-cuda-nn/#subdirectory=bindings/torch
 ```
 
-### Step 2: Build Fusionsense
-
+Build the environment
 ```sh
 pip install -e .
 ```
 
-### Step 3: Install and Run Grounded SAM (Need to switch virtual env)
+### Step 3: Install Grounded-SAM-2
 
-We use Grounded-SAM2 for segmenting the foreground and background. For each 
+We use `Grounded-SAM-2` for segmenting the foreground and background. Please make sure to use our modified submodule. 
 
+We recommend starting a separate Conda environment, since `Grounded-SAM-2` requires CUDA 12.1, which is not yet officially supported by `Nerfstudio`.
 ```sh
 cd Grounded-SAM2-for-masking
 cd checkpoints
@@ -71,7 +62,7 @@ cd ../gdino_checkpoints
 bash download_ckpts.sh
 ```
 
-We recommend starting a separate Conda environment for Grounded-SAM2, since Grounded-SAM2 requires cuda=12.1
+
 
 ```sh
 conda create -n G-SAM-2
