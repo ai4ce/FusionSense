@@ -1,5 +1,7 @@
-:new: [2024-10-15] *Installation for Everything Robotics Updated. More Documentation Ongoing for VLM Reasoning and Real World Experiment. The README Needs a Lot of Cleaning*
+**More Documentation Ongoing for VLM Reasoning and Real World Experiment. The README Needs a Lot of Cleaning and Update**
 
+:new: [2024-10-17] *Installation for Hardware Integration/3D Printing Updated.*
+:new: [2024-10-15] *Installation for Robotics Software Updated.*
 :new: [2024-10-11] *Made Public*
 # FusionSense
 ### [[Page](https://ai4ce.github.io/FusionSense/)] | [[Paper](https://arxiv.org/abs/2410.08282)] | [[Video](https://youtu.be/thC0PeAQxe0)]
@@ -15,11 +17,12 @@ FusionSense is a novel 3D reconstruction framework that enables robots to fuse p
 ## Preparation 
 
 ### Step 0: Install Everything Robotics
-We utilize a depth camera mounted on a robot arm powered by `ROS2` to acquire pictures with accurate pose information. We also used a tactile sensor for <b>Active Touch Selection</b>.
+We used a depth camera mounted on a robot arm powered by `ROS2` to acquire pictures with accurate pose information. We also used a tactile sensor for <b>Active Touch Selection</b>.
 
 If you have no need for this part, feel free to jump into [Step 1](https://github.com/ai4ce/FusionSense/blob/main/README.md#step-1-install-3d-gaussian-dependencies-and-nerfstudio) for the 3D Gaussian pipeline of <b>Robust Global Shape Representation</b> and <b>Local Geometric Optimization</b>.
 
-For installing everything robotics, please see this [documentation](./instructions/install_robotics.md).
+- For installing robotics software, please see [Robotics Software Installation](./instructions/install_robotics.md). 
+- For hardware integration, please see [3D Printing Instructions](./instructions/3d_printing.md).
 
 ### Step 1: Install 3D Gaussian Dependencies and Nerfstudio
 **Note:** Because our major dependencies, `Nerfstudio` and `Grounded-SAM-2`, officially support two different CUDA version (11.8 vs. 12.1), we will have to create two separate environments. We hope to resolve this in the future when `Nerfstudio` bump its official CUDA support version.
