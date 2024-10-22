@@ -22,7 +22,8 @@
     - This can be used for visualization in RViz or collision avoidance. For collision avoidance, I recommend downsampling the assembly stl to reduce the face number. There is a sample in the provided xArm ROS2 package
 - Two M2 screws to connect the GelSight Mini tactile sensor. Two M3 screws to connect the Intel RealSense D405 camera.
 - **Important:** The dimension of the mount is measured in Solidworks and put to the configuration file in the [RealSense interface package](https://github.com/ai4ce/realsense_ROS2_interface) and the [GelSight tactile sensor interface package](https://github.com/ai4ce/gelsight_ROS2_interface) so that we can accurately acquire the pose of camera and the sensor in the world coordinate by adding offsets to the EEF's coordinate.
-    - Therefore, if you modify the parts' dimensions, please update the configuration in the ROS2 packages accordingly. Specifically, the `realsense_ROS2_interface/realsense_capture/config/calibration.yaml` and `gelsight_ROS2_interface/gelsight_capture/config/gsmini.yaml`.
+    - To acquire accurate transformation between the camera and the robot base (and therefore the world coordinate), it's recommanded to perform hand-eye calibration to cross-verify. You can use this [custom package](https://github.com/ai4ce/joy_hand_eye_ROS2), or any similar package online. 
+    - Therefore, if you modify the parts' dimensions, please update the configuration in the ROS2 packages accordingly. Specifically, the only `realsense_ROS2_interface/realsense_capture/config/calibration.yaml` and `gelsight_ROS2_interface/gelsight_capture/config/gsmini.yaml`.
 
 ## Object Mounting Platform
 - The `.stl` file for the mounting platform that connects the object to the tripod can be found at:
