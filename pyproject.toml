@@ -13,7 +13,6 @@ dependencies = [
     "vdbfusion",
     "PyMCubes==0.1.4",
     "omnidata-tools",
-    "pytorch-lightning",
     "torch",
     # required for dsine normal network
     "geffnet",
