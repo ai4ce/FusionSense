@@ -27,117 +27,16 @@ If you have no need for this part, feel free to jump into [Step 1](https://githu
 - For installing robotics software, please see [Robotics Software Installation](./instructions/install_robotics.md). 
 - For hardware integration, please see [3D Printing Instructions](./instructions/3d_printing.md).
 
+**Note:** `ROS2` doesn't play well with Conda in general. See [official doc](https://docs.ros.org/en/jazzy/How-To-Guides/Using-Python-Packages.html) and [this issue in the ROS2 repo](https://github.com/ros2/ros2/issues/1094). As a result, in this project we limited the direct interaction between `ROS2` and Python perception modules.
+
 ### Step 1: Install 3D Gaussian Dependencies
-
+We will need two independent virtual environments due to some compatibility issue. 
 #### Step 1.1: DN-Splatter and Metric3D
-**Note 1:** Because our major dependencies, `Nerfstudio` and `Grounded-SAM-2`, officially support two different CUDA versions (11.8 vs. 12.1), we will have to create two separate environments. We hope to resolve this in the future when `Nerfstudio` bumps its official CUDA support version.
-
-
-Clone our repo. Make sure to clone the submodule as well by using `--recursive`.
-```sh
-git clone --recursive https://github.com/ai4ce/FusionSense.git
-```
-
-Create the environment.
-```sh
-cd FusionSense
-```
-```sh
-conda env create -f config.yml
-```
-```sh
-conda activate fusionsense
-```
-
-Install compatible **PyTorch** and **cuda-toolkit** version:
-
-```sh
-pip install torch==2.1.2+cu118 torchvision==0.16.2+cu118 --extra-index-url https://download.pytorch.org/whl/cu118
-```
-```sh
-conda install -c "nvidia/label/cuda-11.8.0" cuda-toolkit
-```
-
-Install **mmcv**:
-
-```sh
-pip install mmcv
-```
-
-Install **tinycudann**:
-
-```sh
-pip install ninja git+https://github.com/NVlabs/tiny-cuda-nn/#subdirectory=bindings/torch
-```
-
-Build the environment
-```sh
-pip install -e .
-```
-Note that this part of our codebase is largely modified from `dn-splatter`, so we did not modify their project name out of respect.
-
-This environment is largely a mix of `dn-splatter`([doc](https://github.com/maturk/dn-splatter?tab=readme-ov-file#installation)) and `Metric3D`([doc](https://github.com/YvanYin/Metric3D/tree/main)). If you encounter any installation problem, in addition to posting an issue in this repo, you are welcome to checkout their repos as well.
+Please see [DN-Splatter and Metric3D Installation](./instructions/dn_splatter_metric_3d.md)
 
 #### Step 1.2: Grounded-SAM-2
+Please see [Grounded-SAM-2](./instructions/grounded_sam_2.md)
 
-We use `Grounded-SAM-2` for segmenting the foreground and background. Please make sure to use our modified submodule. 
-
-We recommend starting a separate Conda environment since `Grounded-SAM-2` requires CUDA 12.1, which is not yet officially supported by `Nerfstudio`.
-
-First download the checkpoints needed.
-```sh
-cd Grounded-SAM2-for-masking
-```
-```sh
-cd checkpoints
-```
-```sh
-bash download_ckpts.sh
-```
-```sh
-cd ../gdino_checkpoints
-```
-```sh
-bash download_ckpts.sh
-```
-
-Then we create an environment for this part.
-```sh
-conda create -n G-SAM-2 python=3.10
-```
-```sh
-conda activate G-SAM-2
-```
-
-We then install `PyTorch 2.3.1` and its friends
-```sh
-conda install pytorch==2.3.1 torchvision==0.18.1 pytorch-cuda=12.1 -c pytorch -c nvidia
-```
-```sh
-pip install opencv-python supervision transformers
-```
-and then `CUDA 12.1` development kit as we will need it to compile `Deformable Attention` operator used in `Grounded-SAM-2`.
-```sh
-conda install -c "nvidia/label/cuda-12.1.0" cuda-toolkit
-```
-Use `which nvcc`to check that the installation is successful. The result should look like
-```
-/home/irving/miniconda3/envs/G-SAM-2/bin/nvcc
-```
-Then, the `CUDA_HOME` should be set to
-```sh
-export CUDA_HOME=/home/irving/miniconda3/envs/G-SAM-2/
-```
-Install Segment Anything 2
-```sh
-pip install -e . 
-```
-Install Grounding DINO. Yes this is not a typo. Grounding DINO is needed to run `Grounded-SAM-2`.
-```sh
-pip install --no-build-isolation -e grounding_dino
-```
-
-If you encounter any problem, you can check out `Grounded-SAM2-for-masking`'s official [installation guide](https://github.com/IDEA-Research/Grounded-SAM-2#installation).
 
 ## Usage
 ### Select Frames
