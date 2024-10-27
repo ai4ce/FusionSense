@@ -27,7 +27,7 @@ If you have no need for this part, feel free to jump into [Step 1](https://githu
 - For installing robotics software, please see [Robotics Software Installation](./instructions/install_robotics.md). 
 - For hardware integration, please see [3D Printing Instructions](./instructions/3d_printing.md).
 
-**Note:** `ROS2` doesn't play well with Conda in general. See [official doc](https://docs.ros.org/en/jazzy/How-To-Guides/Using-Python-Packages.html) and [this issue in the ROS2 repo](https://github.com/ros2/ros2/issues/1094). As a result, in this project we limited the direct interaction between `ROS2` and Python perception modules.
+**Note:** `ROS2` doesn't play well with Conda in general. See [official doc](https://docs.ros.org/en/jazzy/How-To-Guides/Using-Python-Packages.html) and [this issue in the ROS2 repo](https://github.com/ros2/ros2/issues/1094). As a result, in this project, `ROS2` uses the minimal system Python environment and have limited direct interaction with the Python perception modules.
 
 ### Step 1: Install 3D Gaussian Dependencies
 We will need two independent virtual environments due to some compatibility issue. 
