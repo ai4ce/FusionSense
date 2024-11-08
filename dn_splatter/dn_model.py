@@ -99,7 +99,7 @@ class DNSplatterModelConfig(SplatfactoModelConfig):
     """Encourage 2D Gaussians"""
 
     ### SuGaR style sdf loss settings ###
-    use_sdf_loss: bool = True
+    use_sdf_loss: bool = False
     """Enable sdf loss during training"""
     sdf_loss_lambda: float = 0.1
     """Regularizer for sdf loss"""
@@ -1260,7 +1260,8 @@ class DNSplatterModel(SplatfactoModel):
             filtered_means = self.means[close_mask]
             distances = torch.cdist(filtered_means, visual_hull)
             min_distances = distances.min(dim=-1).values
-            filtered_hull_mask  = (min_distances > 0.01 * self.kwargs["metadata"]['scale_factor']) & (min_distances <= 0.05 * self.kwargs["metadata"]['scale_factor'])
+            filtered_hull_mask  = (min_distances > 0.005 * self.kwargs["metadata"]['scale_factor']) & (min_distances <= 0.02 * self.kwargs["metadata"]['scale_factor'])
+            # filtered_hull_mask  = (min_distances > 0.01 * self.kwargs["metadata"]['scale_factor']) & (min_distances <= 0.05 * self.kwargs["metadata"]['scale_factor'])
             # hull_mask = (min_distances > 0.02) & (min_distances <= 0.1)
             hull_mask = torch.zeros(self.means.shape[0], dtype=torch.bool, device=self.device)
             hull_mask[close_mask] = filtered_hull_mask
