@@ -39,33 +39,42 @@ Please see [Grounded-SAM-2](./instructions/grounded_sam_2.md)
 
 
 ## Usage
-### Select Frames
-set `train.txt` with images id.
+### 0. Prepare Data
+You can see [here](https://huggingface.co/datasets/ai4ce/FusionSense) for an example dataset structure.
 
-### Extract Mask
-**Switch your conda env first**  
-Set your scene path and prompt text with an '.' at the end.   
-`eg. 'transparent white statue.'`   
+Note that a lot of the folders are generated during the pipeline. The data needed to start this projects are: `images`, `realsense_depth`, `tactile`, `gelsight_transform.json` and `transforms.json`.
 
+The ROS2 packages I shared can be used to acquire them. Or you can manually format your dataset this way.
+
+In the following documentation, I will assume that the dataset is put under `/home/irving/`.
+### 1. Extract Mask
+Switch your conda env first
 ```bash
 conda activate G-SAM-2
+```
+Inside the submodule of our Grounded-SAM2
+```bash
 cd Grounded-SAM2-for-masking
+```
+Run the script to extract masks by setting your scene path and prompt text with an '.' at the end.   
+`eg. --path /home/irving/FusionSense_data/transparent_bunny --text 'transparent bunny statue.'`   
+```bash
 python grounded_sam2_hf_model_imgs_MaskExtract.py  --path {ABSOLUTE_PATH} --text {TEXT_PROMPT_FOR_TARGET_OBJ}
-cd ..
 ```
 
-run the script to extract masks.   
+You will see mask_imgs in the newly created `/masks` folder, and you can check `/annotated` folder to see the results more directly.
 
-If the `num_no_detection` is not 0, you need to select the frame again. Then you will see mask_imgs in `/masks`, and you can check `/annotated` frames to see the results more directly.  
+### 2. Select Frames
+set `train.txt` with images id.
 
-### Run pipeline
+### 3. Run pipeline
 You can change configs here: `configs/config.py`
 ```sh
 conda activate fusionsense
 python scripts/train.py --data_name {DATASET_NAME} --model_name {MODEL_NAME} --configs {CONFIG_PATH}
 ```
 
-### Render outputs
+### 4. Render outputs
 
 For render jpeg or mp4 outputs using nerfstudio, we recommend install ffmpeg in conda environment:
 

@@ -44,7 +44,7 @@ Use `which nvcc`to check that the installation is successful. The result should 
 ```
 /home/irving/miniconda3/envs/G-SAM-2/bin/nvcc
 ```
-Then, the `CUDA_HOME` should be set to
+Then, the `CUDA_HOME` should be set to the following. (Modify according to your output from the last step)
 ```sh
 export CUDA_HOME=/home/irving/miniconda3/envs/G-SAM-2/
 ```
