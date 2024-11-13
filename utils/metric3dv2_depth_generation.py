@@ -2,10 +2,7 @@ import os
 from PIL import Image
 import cv2
 import numpy as np
-from transformers import pipeline
-# from metric3d import get_metric3d_model
 import matplotlib.pyplot as plt
-import argparse
 import torch
 
 
@@ -203,9 +200,11 @@ class VisualPipeline:
             if visualize:
                 plt.imshow(final_depth_int, cmap='viridis')
                 plt.show()
-                    
-            cv2.imwrite(f'{self.output_depth_path}/{depth_valid_selected}', final_depth_int)
-            print(f'Saved depth image {self.output_depth_path}/{depth_valid_selected}')
+            
+            depth_img_path = f'{self.output_depth_path}/{depth_valid_selected}'
+            print(depth_img_path)
+            cv2.imwrite(depth_img_path, final_depth_int)
+            print(f'Saved depth image {depth_img_path}')
 
             #### normal are also available
             pred_normal = output_dict['prediction_normal'][:, :3, :, :]
@@ -227,13 +226,13 @@ class VisualPipeline:
             normal_valid_selected = normal_paths_sorted[i]
             normal_valid_selected.replace('c_', 'n_')
             
-            # if visualize:
-            #     plt.imshow(final_depth_int, cmap='viridis')
-            #     plt.show()
+            if visualize:
+                plt.imshow(final_depth_int, cmap='viridis')
+                plt.show()
 
-            cv2.imwrite(f'{self.output_normal_path}/{normal_valid_selected}', (pred_normal_vis * 255).astype(np.uint8))
-            print(f'Saved normal image {self.output_normal_path}/{normal_valid_selected}')
-            # cv2.imwrite('normal_vis.png', (pred_normal_vis * 255).astype(np.uint8))
+            normal_img_path = f'{self.output_normal_path}/{normal_valid_selected}'
+            cv2.imwrite(normal_img_path, (pred_normal_vis * 255).astype(np.uint8))
+            print(f'Saved normal image {normal_img_path}')
         
                 
     def visualize(self, colmap_depth, predicted_depth, refined_depth, labels=['Colmap Depth', 'Predicted Depth', 'Refined Depth']):

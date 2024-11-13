@@ -46,7 +46,7 @@ Note that a lot of the folders are generated during the pipeline. The data neede
 
 The ROS2 packages I shared can be used to acquire them. Or you can manually format your dataset this way.
 
-In the following documentation, I will assume that the dataset is put under `/home/irving/`.
+The project assume that all the folders in the HuggingFace repo is put under `FusionSense/datasets/`.
 ### 1. Extract Mask
 Switch your conda env first
 ```bash
@@ -56,8 +56,9 @@ Inside the submodule of our Grounded-SAM2
 ```bash
 cd Grounded-SAM2-for-masking
 ```
-Run the script to extract masks by setting your scene path and prompt text with an '.' at the end.   
-`eg. --path /home/irving/FusionSense_data/transparent_bunny --text 'transparent bunny statue.'`   
+Run the script to extract masks by setting your dataset path and prompt text. The prompt text ends with an '.' at the end.
+
+`eg. --path /home/irving/FusionSense/dataset/transparent_bunny --text 'transparent bunny statue.'`   
 ```bash
 python grounded_sam2_hf_model_imgs_MaskExtract.py  --path {ABSOLUTE_PATH} --text {TEXT_PROMPT_FOR_TARGET_OBJ}
 ```

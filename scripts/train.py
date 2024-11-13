@@ -1,21 +1,36 @@
 import os
 import sys
+from tabnanny import verbose
 sys.path.insert(0, os.getcwd())
 import json
-import signal
+import torch
 import subprocess
+import contextlib
+from io import StringIO
 from pathlib import Path
-from datetime import datetime
+
 from dataclasses import dataclass
 from utils.imgs_selection import select_imgs, filter_transform_json
 from utils.VisualHull import VisualHull
 from utils.metric3dv2_depth_generation import metric3d_depth_generation
-from utils.generate_pcd import Init_pcd_generate
+from utils.generate_pcd import init_pcd_generate
 from eval_utils.rendering_evaluation import rendering_evaluation
 from eval_utils.chamfer_evaluation import chamfer_eval
 from eval_utils.mask_rendering_eval import mask_rendering_evaluation
 from nerfstudio.utils.rich_utils import CONSOLE
 from importlib.machinery import SourceFileLoader
+
+@contextlib.contextmanager
+def suppress_output(verbose=False):
+    # If verbose is False, suppress output
+    if not verbose:
+        original_stdout = sys.stdout
+        sys.stdout = StringIO()  # Redirect stdout to an in-memory object
+    try:
+        yield
+    finally:
+        if not verbose:
+            sys.stdout = original_stdout  # Restore stdout if it was suppressed
 
 @dataclass
 class GSReconstructionConfig:
@@ -85,8 +100,8 @@ class Initial_Reconstruction:
         frame_size = [W, H]
         metric3d_depth_generation(self.base_path, intrinsics, frame_size, img_dir=img_dir)
     
-    def Init_pcd_generation(self):
-        Init_pcd_generate(self.base_path)
+    def init_pcd_generation(self):
+        init_pcd_generate(self.base_path)
     
     def generate_normals(self):
         """Step 6: Generate normals"""
@@ -125,6 +140,7 @@ class Initial_Reconstruction:
             "--pipeline.model.add-touch-at", str(configs.add_touch_at),
             "--pipeline.model.stop-split-at", str(configs.stop_split_at),
             "--pipeline.model.base-dir", str(configs.output_dir),
+            "--viewer.quit-on-train-completion", 'True',
             str(configs.model_type),
             "--data", configs.data_path,
             "--load-pcd-normals", str(configs.load_pcd_normals),
@@ -132,7 +148,7 @@ class Initial_Reconstruction:
             "--normal-format", configs.normal_format,
             "--load-touches", str(configs.load_touches),
             "--load-cameras", str(configs.load_cameras),
-            "--camera-path-filename", configs.camera_path_filename
+            "--camera-path-filename", configs.camera_path_filename,
         ]
 
         # command = "CUDA_VISIBLE_DEVICES=0 ns-train dn-splatter --steps-per-save 30000 --max_num_iterations 30001 --pipeline.model.use-depth-loss True --pipeline.model.normal-lambda 0.4 --pipeline.model.sensor-depth-lambda 0.2 --pipeline.model.use-depth-smooth-loss True  --pipeline.model.use-binary-opacities True  --pipeline.model.use-normal-loss True  --pipeline.model.normal-supervision mono  --pipeline.model.random_init False normal-nerfstudio  --data datasets/touchgs  --load-pcd-normals True --load-3D-points True  --normal-format opencv"
@@ -227,11 +243,13 @@ if __name__ == "__main__":
     parser.add_argument("--prompt_text", type=str, default="transparent bunny statue")
     parser.add_argument("--model_name", type=str, default="9view")
     parser.add_argument("--configs", type=str, default="configs/config.py")
+    parser.add_argument("--verbose", type=bool, default=False)
     args = parser.parse_args()
 
     data_name = args.data_name
     prompt_text = args.prompt_text
     model_name = args.model_name
+    verbose = args.verbose
 
     experiment = SourceFileLoader(os.sys.path[0], "configs/config.py").load_module()
     experiment_configs = experiment.config
@@ -259,29 +277,38 @@ if __name__ == "__main__":
         camera_path_filename=experiment_configs["camera_path_filename"]
     )
 
-    CONSOLE.log("Step 1: Selecting Images for training...")
-    init_recon.select_frames()
+    CONSOLE.log("Step 1: Selecte Images for training...")
+    with suppress_output(verbose):
+        init_recon.select_frames()
     # CONSOLE.log("Step 2: Generate Mask Images using Grounded SAM...")
     # init_recon.generate_mask_images()
-    CONSOLE.log("Step 3: Generating visual hull...")
-    init_recon.generate_visual_hull(error=5)
-    CONSOLE.log("Step 4: Running metric3d depth for ")
-    init_recon.run_metric3d_depth()
-    CONSOLE.log("Step 5: Initialize pcd")
-    init_recon.Init_pcd_generation()
-    CONSOLE.log("Step 6: Generate normals")
-    init_recon.generate_normals()
-    CONSOLE.log("Step 7: Setting transforms.json")
-    init_recon.set_transforms_and_configs()
+    CONSOLE.log("Step 2: Generate visual hull...")
+    with suppress_output(verbose):
+        init_recon.generate_visual_hull(error=5)
+    CONSOLE.log("Step 3: Running metric3d depth for ")
+    with suppress_output(verbose):
+        init_recon.run_metric3d_depth()
+    CONSOLE.log("Step 4: Initialize pcd")
+    with suppress_output(verbose):
+        init_recon.init_pcd_generation()
+    CONSOLE.log("Step 5: Generate normals")
+    with suppress_output(verbose):
+        init_recon.generate_normals()
+    CONSOLE.log("Step 6: Set transforms.json")
+    with suppress_output(verbose):
+        init_recon.set_transforms_and_configs()
 
     # configs.load_touches = False
     # configs.load_cameras = False
     # configs.camera_path_filename = "outputs/transparent_bunny/9view/camera_paths/cam_9v_interpl.json"
-    CONSOLE.log("Step 8: Initialize training")
+    CONSOLE.log("Step 7: Initialize training")
     init_recon.train_model(configs=configs)
+    torch.cuda.empty_cache() # Clear GPU memory so we can do extraction.
 
-    CONSOLE.log("Step 9: Extracting mesh")
-    init_recon.extract_mesh(config_path=os.path.join(configs.output_dir, "config.yml"))
+    CONSOLE.log("Step 8: Extract mesh")
+    with suppress_output(verbose):
+        init_recon.extract_mesh(config_path=os.path.join(configs.output_dir, "config.yml"))
 
-    CONSOLE.log("Step 10: Evaluating rendering")
-    init_recon.evaluation(rendering_eval=True, mask_rendering=True, chamfer=True)
+    CONSOLE.log("Step 9: Evaluate rendering")
+    with suppress_output(verbose):
+        init_recon.evaluation(rendering_eval=True, mask_rendering=True, chamfer=True)
