@@ -39,15 +39,16 @@ Please see [Grounded-SAM-2](./instructions/grounded_sam_2.md)
 
 
 ## Usage
-### 0. Prepare Data
+### 1. Robust Global Shape Representation
+#### a. Prepare Data
 You can see [here](https://huggingface.co/datasets/ai4ce/FusionSense) for an example dataset structure.
 
 Note that a lot of the folders are generated during the pipeline. The data needed to start this projects are: `images`, `realsense_depth`, `tactile`, `gelsight_transform.json` and `transforms.json`.
 
 The ROS2 packages I shared can be used to acquire them. Or you can manually format your dataset this way.
 
-The project assume that all the folders in the HuggingFace repo is put under `FusionSense/datasets/`.
-### 1. Extract Mask
+The project assume that all the folders in the HuggingFace repo are put under `FusionSense/datasets/`.
+#### b. Extract Mask
 Switch your conda env first
 ```bash
 conda activate G-SAM-2
@@ -65,17 +66,35 @@ python grounded_sam2_hf_model_imgs_MaskExtract.py  --path {ABSOLUTE_PATH} --tex
 
 You will see mask_imgs in the newly created `/masks` folder, and you can check `/annotated` folder to see the results more directly.
 
-### 2. Select Frames
+#### c. Select Frames
 set `train.txt` with images id.
+You can pick images that have better masking for better final result. Although in our experiment we didn't cherrypick which images to use except that we want images to be relatively evenly spread out.
 
-### 3. Run pipeline
-You can change configs here: `configs/config.py`
+#### d. Run Pipeline
+This pipeline is mostly run in `Nerfstudio`.
+You can change configs at `configs/config.py`
+First go back to our main conda environment and main folder
 ```sh
 conda activate fusionsense
-python scripts/train.py --data_name {DATASET_NAME} --model_name {MODEL_NAME} --configs {CONFIG_PATH}
 ```
+```sh
+cd ..
+```
+Then we run
+```sh
+python scripts/train.py --data_name {DATASET_NAME} --model_name {MODEL_NAME} --configs {CONFIG_PATH} --verbose {True, False} --vram_size {"large", "small"}
+```
+- `data_name`: Name of the dataset folder
+- `model_name`: Name of the model you train. It will impact the output and eval folder name. You can technically name this whatever you want.`
+- `configs`: Path to the Nerfstudio config file
+- `verbose`: False: Only show important logs. True: Show all logs. Default=False
+- `vram_size`: "large" or "small". Decides the foundation models variants used in the pipeline. Default="large"
 
-### 4. Render outputs
+An example using the provided data would be:
+```sh
+python scripts/train.py --data_name transparent_bunny --model_name 9view --configs configs/config.py --vram_size small
+```
+### Render outputs
 
 For render jpeg or mp4 outputs using nerfstudio, we recommend install ffmpeg in conda environment:
 

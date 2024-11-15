@@ -1,6 +1,5 @@
 import os
 import sys
-from tabnanny import verbose
 sys.path.insert(0, os.getcwd())
 import json
 import torch
@@ -67,7 +66,7 @@ class Initial_Reconstruction:
         self.base_path = os.path.join("datasets", self.data_name)
         self.output_dir = os.path.join("outputs", self.data_name, self.model_name)
         self.eval_dir = os.path.join("eval", self.data_name, self.model_name)
-        self.prompt_text = prompt_text
+        # self.prompt_text = prompt_text
         self.grounded_sam_path = "Grounded-SAM2-for-masking"
         with open(os.path.join(self.base_path, 'transforms.json'), 'r') as f:
             self.transforms = json.load(f)
@@ -76,19 +75,19 @@ class Initial_Reconstruction:
         select_imgs(self.base_path)
         filter_transform_json(self.base_path)
     
-    def generate_mask_images(self):
-        os.chdir(self.grounded_sam_path)
-        command = (
-            f'conda run python grounded_sam2_hf_model_imgs_MaskExtract.py --path {os.path.abspath(self.base_path)} --prompt {self.prompt_text}'
-        )
-        subprocess.run(command, shell=True)
-        os.chdir('..')
-        print("Mask images generated.")
+    # def generate_mask_images(self):
+    #     os.chdir(self.grounded_sam_path)
+    #     command = (
+    #         f'conda run python grounded_sam2_hf_model_imgs_MaskExtract.py --path {os.path.abspath(self.base_path)} --prompt {self.prompt_text}'
+    #     )
+    #     subprocess.run(command, shell=True)
+    #     os.chdir('..')
+    #     print("Mask images generated.")
     
     def generate_visual_hull(self, error):
         VisualHull(self.base_path, error)
     
-    def run_metric3d_depth(self):
+    def run_metric3d_depth(self, vram_size="large"):
         fl_x = self.transforms['fl_x']
         fl_y = self.transforms['fl_y']
         cx = self.transforms['cx']
@@ -98,7 +97,7 @@ class Initial_Reconstruction:
         img_dir = self.transforms['frames'][0]['file_path'].split('/')[0]
         intrinsics = [fl_x, 0, cx, 0, fl_y, cy, 0, 0, 1]
         frame_size = [W, H]
-        metric3d_depth_generation(self.base_path, intrinsics, frame_size, img_dir=img_dir)
+        metric3d_depth_generation(self.base_path, intrinsics, frame_size, img_dir=img_dir, vram_size=vram_size)
     
     def init_pcd_generation(self):
         init_pcd_generate(self.base_path)
@@ -239,22 +238,24 @@ class Initial_Reconstruction:
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument("--data_name", type=str, default="transparent_bunny")
-    parser.add_argument("--prompt_text", type=str, default="transparent bunny statue")
-    parser.add_argument("--model_name", type=str, default="9view")
-    parser.add_argument("--configs", type=str, default="configs/config.py")
-    parser.add_argument("--verbose", type=bool, default=False)
+    parser.add_argument("--data_name", type=str, default="transparent_bunny", help="Name of the dataset folder")
+    # parser.add_argument("--prompt_text", type=str, default="transparent bunny statue")
+    parser.add_argument("--model_name", type=str, default="9view", help="Name of the model. It will impact the output and eval folder name. You can technically name this whatever you want.")
+    parser.add_argument("--configs", type=str, default="configs/config.py", help="Path to the Nerfstudio config file")
+    parser.add_argument("--verbose", type=bool, default=False, help="False: Only show important logs. True: Show all logs.")
+    parser.add_argument("--vram_size", type=str, default="large", help="Size of VRAM. Decides the foundation models variants used in the pipeline")
     args = parser.parse_args()
 
     data_name = args.data_name
-    prompt_text = args.prompt_text
+    # prompt_text = args.prompt_text
     model_name = args.model_name
     verbose = args.verbose
+    vram_size = args.vram_size
 
     experiment = SourceFileLoader(os.sys.path[0], "configs/config.py").load_module()
     experiment_configs = experiment.config
 
-    init_recon = Initial_Reconstruction(data_name, model_name, prompt_text)
+    init_recon = Initial_Reconstruction(data_name, model_name)
     configs = GSReconstructionConfig(
         output_dir=init_recon.output_dir,
         data_path=init_recon.base_path,
@@ -277,17 +278,16 @@ if __name__ == "__main__":
         camera_path_filename=experiment_configs["camera_path_filename"]
     )
 
-    CONSOLE.log("Step 1: Selecte Images for training...")
+    CONSOLE.log("Step 1: Selecte images for training...")
     with suppress_output(verbose):
         init_recon.select_frames()
     # CONSOLE.log("Step 2: Generate Mask Images using Grounded SAM...")
-    # init_recon.generate_mask_images()
     CONSOLE.log("Step 2: Generate visual hull...")
     with suppress_output(verbose):
         init_recon.generate_visual_hull(error=5)
     CONSOLE.log("Step 3: Running metric3d depth for ")
     with suppress_output(verbose):
-        init_recon.run_metric3d_depth()
+        init_recon.run_metric3d_depth(vram_size=vram_size)
     CONSOLE.log("Step 4: Initialize pcd")
     with suppress_output(verbose):
         init_recon.init_pcd_generation()
