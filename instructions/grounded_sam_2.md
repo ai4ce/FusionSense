@@ -1,3 +1,5 @@
+# Grounded-SAM-2 Installation
+
 **Note 1:** Because our major dependencies, `Nerfstudio` and `Grounded-SAM-2`, officially support two different CUDA versions (11.8 vs. 12.1), we will have to create two separate environments. We hope to resolve this in the future when `Nerfstudio` bumps its official CUDA support version.
 
 **Note 2:** We use `Grounded-SAM-2` for segmenting the foreground and background. Please make sure to use our modified submodule. 

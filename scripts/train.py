@@ -243,7 +243,7 @@ if __name__ == "__main__":
     parser.add_argument("--model_name", type=str, default="9view", help="Name of the model. It will impact the output and eval folder name. You can technically name this whatever you want.")
     parser.add_argument("--configs", type=str, default="configs/config.py", help="Path to the Nerfstudio config file")
     parser.add_argument("--verbose", type=bool, default=False, help="False: Only show important logs. True: Show all logs.")
-    parser.add_argument("--vram_size", type=str, default="large", help="Size of VRAM. Decides the foundation models variants used in the pipeline")
+    parser.add_argument("--vram_size", type=str, default="large", help="large or small. Decides the foundation models variants used in the pipeline")
     args = parser.parse_args()
 
     data_name = args.data_name

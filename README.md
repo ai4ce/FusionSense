@@ -1,4 +1,6 @@
-**More Documentation Ongoing for VLM Reasoning and Real World Experiments. The README Needs a Lot of Cleaning and Update**
+**More Documentation Ongoing for VLM Reasoning and Real World Experiments. This README is Still Being Actively Updated**
+
+:new: [2024-11-15] *Installation for VLM Reasoning & Active Touch Selection Updated.*
 
 :new: [2024-10-17] *Installation for Hardware Integration/3D Printing Updated.*
 
@@ -35,8 +37,11 @@ We will need two independent virtual environments due to some compatibility issu
 Please see [DN-Splatter and Metric3D Installation](./instructions/dn_splatter_metric_3d.md)
 
 #### Step 1.2: Grounded-SAM-2
-Please see [Grounded-SAM-2](./instructions/grounded_sam_2.md)
+Please see [Grounded-SAM-2 Installation](./instructions/grounded_sam_2.md)
 
+### Step 2: Install VLM Dependencies for Active Touch Selection
+
+Please see [Active Touch Selection Installation](instructions/active_touch.md)
 
 ## Usage
 ### 1. Robust Global Shape Representation
