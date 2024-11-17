@@ -50,10 +50,29 @@ You can see [here](https://huggingface.co/datasets/ai4ce/FusionSense) for an exa
 
 Note that a lot of the folders are generated during the pipeline. The data needed to start this projects are: `images`, `realsense_depth`, `tactile`, `gelsight_transform.json` and `transforms.json`.
 
-The ROS2 packages I shared can be used to acquire them. Or you can manually format your dataset this way.
+The ROS2 packages I shared can be used to acquire the aforementioned data. Or you can manually format your own dataset this way.
 
 The project assume that all the folders in the HuggingFace repo are put under `FusionSense/datasets/`.
 #### b. Extract Mask
+
+<details>
+<summary>If you want to let VLM classify the object, click here. If you want to manually specify the name, please read ahead.</summary>
+
+Inside our main conda env
+```bash
+conda activate fusionsense
+```
+Run this script.
+```bash
+python scripts/VLM.py --mode partname --data_name {DATASET_NAME}
+```
+- `data_name`: Name of the specific dataset folder. Example: transparent_bunny
+</details>
+
+<br>
+
+Whether you got the name from VLM or not, we can proceed.
+
 Switch your conda env first
 ```bash
 conda activate G-SAM-2
@@ -62,7 +81,9 @@ Inside the submodule of our Grounded-SAM2
 ```bash
 cd Grounded-SAM2-for-masking
 ```
-Run the script to extract masks by setting your dataset path and prompt text. The prompt text ends with an '.' at the end.
+Run the script to extract masks by setting your dataset path and object name prompt text. The prompt text ends with an '.' at the end. 
+
+You can use something you came up with, or one proposed by the VLM. In our experience, both works fine.
 
 `eg. --path /home/irving/FusionSense/dataset/transparent_bunny --text 'transparent bunny statue.'`   
 ```bash

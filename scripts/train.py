@@ -4,6 +4,7 @@ sys.path.insert(0, os.getcwd())
 import json
 import torch
 import subprocess
+import argparse
 import contextlib
 from io import StringIO
 from pathlib import Path
@@ -74,15 +75,6 @@ class Initial_Reconstruction:
     def select_frames(self):
         select_imgs(self.base_path)
         filter_transform_json(self.base_path)
-    
-    # def generate_mask_images(self):
-    #     os.chdir(self.grounded_sam_path)
-    #     command = (
-    #         f'conda run python grounded_sam2_hf_model_imgs_MaskExtract.py --path {os.path.abspath(self.base_path)} --prompt {self.prompt_text}'
-    #     )
-    #     subprocess.run(command, shell=True)
-    #     os.chdir('..')
-    #     print("Mask images generated.")
     
     def generate_visual_hull(self, error):
         VisualHull(self.base_path, error)
@@ -236,10 +228,8 @@ class Initial_Reconstruction:
         print("Evaluation complete.")
 
 if __name__ == "__main__":
-    import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument("--data_name", type=str, default="transparent_bunny", help="Name of the dataset folder")
-    # parser.add_argument("--prompt_text", type=str, default="transparent bunny statue")
     parser.add_argument("--model_name", type=str, default="9view", help="Name of the model. It will impact the output and eval folder name. You can technically name this whatever you want.")
     parser.add_argument("--configs", type=str, default="configs/config.py", help="Path to the Nerfstudio config file")
     parser.add_argument("--verbose", type=bool, default=False, help="False: Only show important logs. True: Show all logs.")
@@ -247,7 +237,6 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     data_name = args.data_name
-    # prompt_text = args.prompt_text
     model_name = args.model_name
     verbose = args.verbose
     vram_size = args.vram_size
