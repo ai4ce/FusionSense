@@ -261,24 +261,24 @@ if __name__ == "__main__":
 
     CONSOLE.log("Step 1: Selecting Images for training...")
     init_recon.select_frames()
-    # CONSOLE.log("Step 2: Generate Mask Images using Grounded SAM...")
-    # init_recon.generate_mask_images()
-    CONSOLE.log("Step 3: Generating visual hull...")
-    init_recon.generate_visual_hull(error=5)
-    CONSOLE.log("Step 4: Running metric3d depth for ")
-    init_recon.run_metric3d_depth()
-    CONSOLE.log("Step 5: Initialize pcd")
-    init_recon.Init_pcd_generation()
-    CONSOLE.log("Step 6: Generate normals")
-    init_recon.generate_normals()
+    # # CONSOLE.log("Step 2: Generate Mask Images using Grounded SAM...")
+    # # init_recon.generate_mask_images()
+    # CONSOLE.log("Step 3: Generating visual hull...")
+    # init_recon.generate_visual_hull(error=5)
+    # CONSOLE.log("Step 4: Running metric3d depth for ")
+    # init_recon.run_metric3d_depth()
+    # CONSOLE.log("Step 5: Initialize pcd")
+    # init_recon.Init_pcd_generation()
+    # CONSOLE.log("Step 6: Generate normals")
+    # init_recon.generate_normals()
     CONSOLE.log("Step 7: Setting transforms.json")
     init_recon.set_transforms_and_configs()
 
     # configs.load_touches = False
     # configs.load_cameras = False
     # configs.camera_path_filename = "outputs/transparent_bunny/9view/camera_paths/cam_9v_interpl.json"
-    CONSOLE.log("Step 8: Initialize training")
-    init_recon.train_model(configs=configs)
+    # CONSOLE.log("Step 8: Initialize training")
+    # init_recon.train_model(configs=configs)
 
     CONSOLE.log("Step 9: Extracting mesh")
     init_recon.extract_mesh(config_path=os.path.join(configs.output_dir, "config.yml"))
