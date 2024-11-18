@@ -1,4 +1,6 @@
-**More Documentation Ongoing for VLM Reasoning and Real World Experiments. The README Needs a Lot of Cleaning and Update**
+**More Documentation Ongoing for VLM Reasoning and Real World Experiments. This README is Still Being Actively Updated**
+
+:new: [2024-11-15] *Installation for VLM Reasoning & Active Touch Selection Updated.*
 
 :new: [2024-10-17] *Installation for Hardware Integration/3D Printing Updated.*
 
@@ -35,36 +37,89 @@ We will need two independent virtual environments due to some compatibility issu
 Please see [DN-Splatter and Metric3D Installation](./instructions/dn_splatter_metric_3d.md)
 
 #### Step 1.2: Grounded-SAM-2
-Please see [Grounded-SAM-2](./instructions/grounded_sam_2.md)
+Please see [Grounded-SAM-2 Installation](./instructions/grounded_sam_2.md)
 
+### Step 2: Install VLM Dependencies for Active Touch Selection
+
+Please see [Active Touch Selection Installation](instructions/active_touch.md)
 
 ## Usage
-### Select Frames
-set `train.txt` with images id.
+### 1. Robust Global Shape Representation
+#### a. Prepare Data
+You can see [here](https://huggingface.co/datasets/ai4ce/FusionSense) for an example dataset structure.
 
-### Extract Mask
-**Switch your conda env first**  
-Set your scene path and prompt text with an '.' at the end.   
-`eg. 'transparent white statue.'`   
+Note that a lot of the folders are generated during the pipeline. The data needed to start this projects are: `images`, `realsense_depth`, `tactile`, `gelsight_transform.json` and `transforms.json`.
 
+The ROS2 packages I shared can be used to acquire the aforementioned data. Or you can manually format your own dataset this way.
+
+The project assume that all the folders in the HuggingFace repo are put under `FusionSense/datasets/`.
+#### b. Extract Mask
+
+<details>
+<summary>If you want to let VLM classify the object, click here. If you want to manually specify the name, please read ahead.</summary>
+
+Inside our main conda env
+```bash
+conda activate fusionsense
+```
+Run this script.
+```bash
+python scripts/VLM.py --mode partname --data_name {DATASET_NAME}
+```
+- `data_name`: Name of the specific dataset folder. Example: transparent_bunny
+</details>
+
+<br>
+
+Whether you got the name from VLM or not, we can proceed.
+
+Switch your conda env first
 ```bash
 conda activate G-SAM-2
+```
+Inside the submodule of our Grounded-SAM2
+```bash
 cd Grounded-SAM2-for-masking
+```
+Run the script to extract masks by setting your dataset path and object name prompt text. The prompt text ends with an '.' at the end. 
+
+You can use something you came up with, or one proposed by the VLM. In our experience, both works fine.
+
+`eg. --path /home/irving/FusionSense/dataset/transparent_bunny --text 'transparent bunny statue.'`   
+```bash
 python grounded_sam2_hf_model_imgs_MaskExtract.py  --path {ABSOLUTE_PATH} --text {TEXT_PROMPT_FOR_TARGET_OBJ}
-cd ..
 ```
 
-run the script to extract masks.   
+You will see mask_imgs in the newly created `/masks` folder, and you can check `/annotated` folder to see the results more directly.
 
-If the `num_no_detection` is not 0, you need to select the frame again. Then you will see mask_imgs in `/masks`, and you can check `/annotated` frames to see the results more directly.  
+#### c. Select Frames
+set `train.txt` with images id.
+You can pick images that have better masking for better final result. Although in our experiment we didn't cherrypick which images to use except that we want images to be relatively evenly spread out.
 
-### Run pipeline
-You can change configs here: `configs/config.py`
+#### d. Run Pipeline
+This pipeline is mostly run in `Nerfstudio`.
+You can change configs at `configs/config.py`
+First go back to our main conda environment and main folder
 ```sh
 conda activate fusionsense
-python scripts/train.py --data_name {DATASET_NAME} --model_name {MODEL_NAME} --configs {CONFIG_PATH}
 ```
+```sh
+cd ..
+```
+Then we run
+```sh
+python scripts/train.py --data_name {DATASET_NAME} --model_name {MODEL_NAME} --configs {CONFIG_PATH} --verbose {True, False} --vram_size {"large", "small"}
+```
+- `data_name`: Name of the dataset folder
+- `model_name`: Name of the model you train. It will impact the output and eval folder name. You can technically name this whatever you want.`
+- `configs`: Path to the Nerfstudio config file
+- `verbose`: False: Only show important logs. True: Show all logs. Default=False
+- `vram_size`: "large" or "small". Decides the foundation models variants used in the pipeline. Default="large"
 
+An example using the provided data would be:
+```sh
+python scripts/train.py --data_name transparent_bunny --model_name 9view --configs configs/config.py --vram_size small
+```
 ### Render outputs
 
 For render jpeg or mp4 outputs using nerfstudio, we recommend install ffmpeg in conda environment:

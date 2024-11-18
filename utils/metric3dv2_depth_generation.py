@@ -2,10 +2,7 @@ import os
 from PIL import Image
 import cv2
 import numpy as np
-from transformers import pipeline
-# from metric3d import get_metric3d_model
 import matplotlib.pyplot as plt
-import argparse
 import torch
 
 
@@ -55,18 +52,12 @@ def compute_scale_and_offset(sparse_depth, dense_depth, weights=None):
 
 
 class VisualPipeline:
-    def __init__(self, root_img_dir, output_depth_path='output', output_normal_path='output_normal', scale_factor=1000, new_intrinsics = (641.299, 641.299, 636.707, 362.299), new_size=(1280, 720)):
+    def __init__(self, root_img_dir, output_depth_path='output', output_normal_path='output_normal', scale_factor=1000, new_intrinsics = (641.299, 641.299, 636.707, 362.299), new_size=(1280, 720), vram_size='large'):
         """Initializes the visual pipeline
 
         Args:
             root_img_dir (_type_): _description_
         """
-        # self.dpt_model = DPT()
-        # self.zoe_model = get_zoe_model()
-        # self.depth_anything_model = pipeline(task="depth-estimation", model="LiheYoung/depth-anything-base-hf")
-        # # self.depth_anything_model = None
-        # self.metric3d_model = get_metric3d_model()
-        
         self.root_img_dir = root_img_dir
         
         self.img_paths = sorted(os.listdir(self.root_img_dir))
@@ -82,7 +73,14 @@ class VisualPipeline:
         self.scale_factor = scale_factor
 
         self.intrinsics = new_intrinsics
-        
+
+        # load Metric3d based on vram size
+        if vram_size == 'large':
+            self.model = torch.hub.load('yvanyin/metric3d', 'metric3d_vit_giant2', pretrain=True)
+        elif vram_size == 'small':
+            self.model = torch.hub.load('yvanyin/metric3d', 'metric3d_vit_small', pretrain=True)
+        self.model.cuda().eval()
+
         if not os.path.exists(self.output_depth_path):
             os.mkdir(self.output_depth_path)
         if not os.path.exists(self.output_normal_path):
@@ -147,10 +145,9 @@ class VisualPipeline:
 
             ###################### canonical camera space ######################
             # inference
-            model = torch.hub.load('yvanyin/metric3d', 'metric3d_vit_giant2', pretrain=True)
-            model.cuda().eval()
+
             with torch.no_grad():
-                pred_depth, confidence, output_dict = model.inference({'input': rgb})
+                pred_depth, confidence, output_dict = self.model.inference({'input': rgb})
 
             # un pad
             pred_depth = pred_depth.squeeze()
@@ -164,33 +161,6 @@ class VisualPipeline:
             canonical_to_real_scale = intrinsic[0] / 1000.0 # 1000.0 is the focal length of canonical camera
             pred_depth = pred_depth * canonical_to_real_scale # now the depth is metric
             pred_depth = torch.clamp(pred_depth, 0, 300)
-
-
-            # #### you can now do anything with the metric depth 
-            # # such as evaluate predicted depth
-            # # gt_depth = cv2.imread(depth_file, -1)
-            # gt_depth_scale = 1000.0
-            # gt_depth_np = np.array(self.real_depth_images[i])
-            # gt_depth = gt_depth_np / gt_depth_scale
-            # gt_depth = torch.from_numpy(gt_depth).float().cuda()
-            # assert gt_depth.shape == pred_depth.shape
-    
-            # mask = (gt_depth > 1e-8)
-            # abs_rel_err = (torch.abs(pred_depth[mask] - gt_depth[mask]) / gt_depth[mask]).mean()
-            # print('abs_rel_err:', abs_rel_err.item())
-
-            # zoe_depth_np = np.array(self.zoe_depth_images[i])
-            # zoe_depth = zoe_depth_np / gt_depth_scale
-            # zoe_depth = torch.from_numpy(zoe_depth).float().cuda()
-            # assert zoe_depth.shape == pred_depth.shape
-    
-            # abs_zoe_rel_err = (torch.abs(zoe_depth[mask] - gt_depth[mask]) / gt_depth[mask]).mean()
-            # print('abs_zoe_rel_err:', abs_zoe_rel_err.item())
-
-            # abs_pred_zoe_err = (torch.abs(pred_depth[mask] - zoe_depth[mask]) / zoe_depth[mask]).mean()
-            # print('abs_pred_zoe_err:', abs_pred_zoe_err.item())
-
-            # predicted_depth = self.predict_depth_from_image(self.images[i], model_type='metric3d')
             
             final_depth_int = (self.scale_factor * pred_depth).cpu().numpy().astype(np.uint16)
             depth_paths = os.listdir(self.root_img_dir)
@@ -203,9 +173,11 @@ class VisualPipeline:
             if visualize:
                 plt.imshow(final_depth_int, cmap='viridis')
                 plt.show()
-                    
-            cv2.imwrite(f'{self.output_depth_path}/{depth_valid_selected}', final_depth_int)
-            print(f'Saved depth image {self.output_depth_path}/{depth_valid_selected}')
+            
+            depth_img_path = f'{self.output_depth_path}/{depth_valid_selected}'
+            print(depth_img_path)
+            cv2.imwrite(depth_img_path, final_depth_int)
+            print(f'Saved depth image {depth_img_path}')
 
             #### normal are also available
             pred_normal = output_dict['prediction_normal'][:, :3, :, :]
@@ -227,13 +199,13 @@ class VisualPipeline:
             normal_valid_selected = normal_paths_sorted[i]
             normal_valid_selected.replace('c_', 'n_')
             
-            # if visualize:
-            #     plt.imshow(final_depth_int, cmap='viridis')
-            #     plt.show()
+            if visualize:
+                plt.imshow(final_depth_int, cmap='viridis')
+                plt.show()
 
-            cv2.imwrite(f'{self.output_normal_path}/{normal_valid_selected}', (pred_normal_vis * 255).astype(np.uint8))
-            print(f'Saved normal image {self.output_normal_path}/{normal_valid_selected}')
-            # cv2.imwrite('normal_vis.png', (pred_normal_vis * 255).astype(np.uint8))
+            normal_img_path = f'{self.output_normal_path}/{normal_valid_selected}'
+            cv2.imwrite(normal_img_path, (pred_normal_vis * 255).astype(np.uint8))
+            print(f'Saved normal image {normal_img_path}')
         
                 
     def visualize(self, colmap_depth, predicted_depth, refined_depth, labels=['Colmap Depth', 'Predicted Depth', 'Refined Depth']):
@@ -262,39 +234,14 @@ class VisualPipeline:
         # Show the plot
         plt.show()
         
-        
-    # def predict_depth_from_image(self, image, model_type='metric3d'):
-    #     if model_type == 'metric3d':
-    #         depth = self.metric3d_model(image)
-    #     elif model_type == 'zoe':
-    #         depth = self.zoe_model.infer_pil(image)
-    #     elif model_type == 'depth_anything':
-    #         depth = self.depth_anything_model(image)
-    #         depth_tensor = depth['predicted_depth'].numpy().squeeze(axis=0) / 255
-            
-    #         depth = depth_tensor / np.max(depth_tensor)
-            
-    #         depth = 1 - depth_tensor
-    #     else:
-    #         depth = self.dpt_model(image)
-            
-    #     return depth
-    
-    # def predict_normal_from_image(self, image, model_type='metric3d'):
-    #     if model_type == 'metric3d':
-    #         depth = self.metric3d_model(image)
-            
-    #     return depth
 
-def metric3d_depth_generation(root_dir, intrinsics, frame_size, output_depth_path='metric3d_depth_result', output_normal_path='metric3d_normal_result', img_dir='images', viz=False):
+def metric3d_depth_generation(root_dir, intrinsics, frame_size, output_depth_path='metric3d_depth_result', output_normal_path='metric3d_normal_result', img_dir='images', viz=False, vram_size='large'):
     
     imgs_path = os.path.join(root_dir, img_dir)
-    # real_depth_path = os.path.join(args.root_dir, args.realsense_depth_image_dir)
-    # zoe_depth_path = os.path.join(args.root_dir, args.zoe_depth_image_dir)
     
     output_depth_path = os.path.join(root_dir, output_depth_path)
     output_normal_path = os.path.join(root_dir, output_normal_path)
     
-    visual_pipeline = VisualPipeline(root_img_dir=imgs_path, output_depth_path=output_depth_path, output_normal_path=output_normal_path, new_intrinsics=intrinsics, new_size=frame_size)
+    visual_pipeline = VisualPipeline(root_img_dir=imgs_path, output_depth_path=output_depth_path, output_normal_path=output_normal_path, new_intrinsics=intrinsics, new_size=frame_size, vram_size=vram_size)
     
     visual_pipeline.predict(visualize=viz)

@@ -48,7 +48,7 @@ def get_pointcloud(color, depth, w2c, FX, FY, CX, CY, transform_pts=True, mask=N
     return fore_pcd, back_pcd # [num_points, 6]
 
 
-def Init_pcd_generate(path):
+def init_pcd_generate(path):
     # create cam_info
     cam_info = readCamerasFromTransforms(path, "transforms.json", white_background=False)
 
@@ -65,7 +65,7 @@ def Init_pcd_generate(path):
     # file_name = 'realsense_depths'
     # file_name = 'depth'
     depth_path = os.path.join(path, file_name)
-    # 使用自然排序
+    # natural sorting
     file_list = sorted(os.listdir(depth_path), key=lambda x: int(x.split('_')[1].split('.')[0]))
 
     for i, filename in enumerate(file_list):
