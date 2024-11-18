@@ -108,10 +108,11 @@ cd ..
 ```
 Then we run
 ```sh
-python scripts/train.py --data_name {DATASET_NAME} --model_name {MODEL_NAME} --configs {CONFIG_PATH} --verbose {True, False} --vram_size {"large", "small"}
+python scripts/train.py --data_name {DATASET_NAME} --model_name {MODEL_NAME} --load_touches {True, False} --configs {CONFIG_PATH} --verbose {True, False} --vram_size {"large", "small"}
 ```
 - `data_name`: Name of the dataset folder
 - `model_name`: Name of the model you train. It will impact the output and eval folder name. You can technically name this whatever you want.`
+- `load_touches`: Whether to load tactile data. Default=False
 - `configs`: Path to the Nerfstudio config file
 - `verbose`: False: Only show important logs. True: Show all logs. Default=False
 - `vram_size`: "large" or "small". Decides the foundation models variants used in the pipeline. Default="large"

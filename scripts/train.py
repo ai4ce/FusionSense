@@ -231,6 +231,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--data_name", type=str, default="transparent_bunny", help="Name of the dataset folder")
     parser.add_argument("--model_name", type=str, default="9view", help="Name of the model. It will impact the output and eval folder name. You can technically name this whatever you want.")
+    parser.add_argument("--load_touches", type=bool, default=False, help="Whether to load tactile data")
     parser.add_argument("--configs", type=str, default="configs/config.py", help="Path to the Nerfstudio config file")
     parser.add_argument("--verbose", type=bool, default=False, help="False: Only show important logs. True: Show all logs.")
     parser.add_argument("--vram_size", type=str, default="large", help="large or small. Decides the foundation models variants used in the pipeline")
@@ -238,6 +239,7 @@ if __name__ == "__main__":
 
     data_name = args.data_name
     model_name = args.model_name
+    load_touches_set = args.load_touches
     verbose = args.verbose
     vram_size = args.vram_size
 
@@ -287,7 +289,7 @@ if __name__ == "__main__":
     with suppress_output(verbose):
         init_recon.set_transforms_and_configs()
 
-    # configs.load_touches = False
+    configs.load_touches = load_touches_set
     # configs.load_cameras = False
     # configs.camera_path_filename = "outputs/transparent_bunny/9view/camera_paths/cam_9v_interpl.json"
     CONSOLE.log("Step 7: Initialize training")

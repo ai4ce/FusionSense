@@ -1303,6 +1303,8 @@ class DNSplatterModel(SplatfactoModel):
     
     def high_grad_saving(self, optimizers: Optimizers, step):
         assert step == self.step
+        if ("touch_patches" in self.kwargs["metadata"]):
+            return
         if self.step == (self.config.stop_split_at - 5e2):
             assert (
                 self.xys_grad_norm is not None
@@ -1385,14 +1387,15 @@ class DNSplatterModel(SplatfactoModel):
                 [TrainingCallbackLocation.AFTER_TRAIN_ITERATION], self.after_train
             )
         )
-        # # High grad saving
-        # cbs.append(
-        #     TrainingCallback(
-        #         [TrainingCallbackLocation.AFTER_TRAIN_ITERATION],
-        #         self.high_grad_saving,
-        #         args=[training_callback_attributes.optimizers],
-        #     )
-        # )
+        # High grad saving
+        cbs.append(
+            TrainingCallback(
+                [TrainingCallbackLocation.AFTER_TRAIN_ITERATION],
+                self.high_grad_saving,
+                update_every_num_iters=self.config.refine_every,
+                args=[training_callback_attributes.optimizers],
+            )
+        )
         cbs.append(
             TrainingCallback(
                 [TrainingCallbackLocation.AFTER_TRAIN_ITERATION],
