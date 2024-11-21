@@ -48,7 +48,7 @@ Please see [Active Touch Selection Installation](instructions/active_touch.md)
 #### a. Prepare Data
 You can see [here](https://huggingface.co/datasets/ai4ce/FusionSense) for an example dataset structure.
 
-Note that a lot of the folders are generated during the pipeline. The data needed to start this projects are: `images`, `realsense_depth`, `tactile`, `gelsight_transform.json` and `transforms.json`.
+Note that a lot of the folders are generated during the pipeline. The data needed to start this projects are: `images`, `realsense_depth`, and `transforms.json`.
 
 The ROS2 packages I shared can be used to acquire the aforementioned data. Or you can manually format your own dataset this way.
 
@@ -69,7 +69,6 @@ python scripts/VLM.py --mode partname --data_name {DATASET_NAME}
 - `data_name`: Name of the specific dataset folder. Example: transparent_bunny
 </details>
 
-<br>
 
 Whether you got the name from VLM or not, we can proceed.
 
