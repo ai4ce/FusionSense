@@ -1,4 +1,6 @@
-**More Documentation Ongoing for VLM Reasoning and Real World Experiments. This README is Still Being Actively Updated**
+**This Documentation is functionally complete as of 12/1/2024. More minor details will be added from time to time.**
+
+:new: [2024-12-1] *Tutorial on Module 2 Active Touch Selection and Module 3 Local Geometric Optimization Updated.*
 
 :new: [2024-11-15] *Installation for VLM Reasoning & Active Touch Selection Updated.*
 
@@ -8,7 +10,7 @@
 
 :new: [2024-10-11] *Made Public*
 # FusionSense
-### [[Page](https://ai4ce.github.io/FusionSense/)] | [[Paper](https://arxiv.org/abs/2410.08282)] | [[Video](https://youtu.be/thC0PeAQxe0)]
+### [[Page](https://ai4ce.github.io/FusionSense/)] | [[Paper](https://arxiv.org/abs/2410.08282)] | [[Video](https://youtu.be/thC0PeAQxe0)] | [[Data](https://huggingface.co/datasets/ai4ce/FusionSense)]
 This is the official implementation of [FusionSense: Bridging Common Sense, Vision, and Touch for Robust Sparse-View Reconstruction](https://ai4ce.github.io/FusionSense/)
 
 
@@ -115,10 +117,10 @@ cd ..
 ```
 Then we run
 ```sh
-python scripts/train.py --data_name {DATASET_NAME} --model_name {MODEL_NAME} --load_touches {True, False} --configs {CONFIG_PATH} --verbose {True, False} --vram_size {"large", "small"}
+python scripts/train.py --data_name {DATASET_NAME} --model_name {MODEL_NAME} --load_touches False --configs {CONFIG_PATH} --verbose {True, False} --vram_size {"large", "small"}
 ```
 - `data_name`: Name of the dataset folder
-- `model_name`: Name of the model you train. It will impact the output and eval folder name. You can technically name this whatever you want.`
+- `model_name`: Name of the model you train. It will impact the output and eval folder name. You can technically name this whatever you want.
 - `load_touches`: Whether to load tactile data. Default=False
 - `configs`: Path to the Nerfstudio config file
 - `verbose`: False: Only show important logs. True: Show all logs. Default=False
@@ -126,11 +128,53 @@ python scripts/train.py --data_name {DATASET_NAME} --model_name {MODEL_NAME} --l
 
 An example using the provided data would be:
 ```sh
-python scripts/train.py --data_name transparent_bunny --model_name 9view --configs configs/config.py --vram_size small
+python scripts/train.py --data_name transparent_bunny --model_name 9view --configs configs/config.py --vram_size large
 ```
-### Render outputs
 
-For render jpeg or mp4 outputs using nerfstudio, we recommend install ffmpeg in conda environment:
+### 2. Active Touch Selection
+The previous step should produce output in the `outputs/{DATASET_NAME}/{MODEL_NAME}` folder.
+
+In the same `fusionsense` conda environment, we run
+```sh
+python scripts/VLM.py --mode touch --data_name [DATASET_NAME] --model_name [MODEL_NAME] --mesh_name [MESH_NAME]
+```
+- `data_name`: Name of the dataset folder. Should be the same as the one in the last module.
+- `model_name`: Name of the model you just trained. 
+- `mesh_name`: Name of the mesh you want to use. We recommand `poisson_mesh_surface_level_0.3_closest_gaussian` as it strikes a good balance between details and smoothness. But you can use whatever you want in the `outputs` folder.
+
+Optionally, you can use the following parameters
+- `object_name`: The name of the object you come up with. Should be a string. Default: `None`, a VLM will be called to classify the object.
+- `part_name`: The name of the parts of this object. Should be a list of string. Example: `--part_name ear head body base`. Default: `None`, a VLM will be called to come up with the part names.
+`--vlm_name`: Name of the specific VLM model. Currently, only OpenAI API is supported. Default: `gpt-4o`
+
+An example using the provided data would be:
+```sh
+python scripts/VLM.py --mode touch --data_name transparent_bunny --model_name 9view --mesh_name poisson_mesh_surface_level_0.3_closest_gaussian
+```
+
+We will have a few proposed points for touching. After collecting tactile reading on these points with teleoperating or other methods provided by my ROS2 packages, we can proceed to the next module.
+
+
+### 3. Local Geometric Optimization
+After acquiring the tactile data, we should make sure it's put in `datasets/{DATASET_NAME}/tactile`, along with a `datasets/{DATASET_NAME}/gelsight_transform.json`.
+
+
+Then, in the `fusionsense` conda environment, we run
+```sh
+python scripts/train.py --data_name {DATASET_NAME} --model_name {MODEL_NAME} --load_touches True --configs {CONFIG_PATH} --verbose {True, False} --vram_size {"large", "small"}
+```
+Note that, this time we want to modify the `MODEL_NAME` so that we do not overwrite the results from the first module.
+
+An example using the provided data would be:
+```sh
+python scripts/train.py --data_name transparent_bunny --model_name 9view_touch --load_touches True --configs configs/config.py --vram_size large
+```
+
+Congrats! You have run through the entire pipeline!
+
+### (Optional) Render Outputs
+
+For render jpeg or mp4 outputs using nerfstudio, we recommend install ffmpeg in the conda environment:
 
 ```sh
 conda install -c conda-forge x264=='1!161.3030' ffmpeg=4.3.2

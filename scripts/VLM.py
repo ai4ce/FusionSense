@@ -71,7 +71,7 @@ class VLM:
 
         self.segmentation_folder = os.path.join(self.output_folder, "segmentation") # folder to hold all segmentation resource and results
         
-    def touch_selection(self, mesh_path, object_name=None, part_name=None):
+    def touch_selection(self, mesh_path, object_name=None, part_name=None, vlm_name="gpt-4o"):
         
         self.point_cloud_path = self.pointcloud_extraction(mesh_path)
 
@@ -79,7 +79,7 @@ class VLM:
             classification = object_name
             parts = part_name
         else:
-            classification, parts = self.partname_extraction()
+            classification, parts = self.partname_extraction(vlm_name=vlm_name, mode="touch")
 
         self._create_rank_dict(parts) # Create a dictionary to rank the parts in terms of which one to touch first
 
@@ -129,14 +129,14 @@ class VLM:
 
         return output_ply_file
 
-    def partname_extraction(self, model_name="gpt-4o", mode="partname"):
+    def partname_extraction(self, vlm_name="gpt-4o", mode="partname"):
         if mode == "partname":
             print('Getting part names with VLM...')
         elif mode == "touch":
             print('[Module 2] 2/11 Getting part names...')
         images = glob.glob(os.path.join(self.image_folder, "*"))
         for image in images:
-            classification, parts = self._partname_extraction_call(image, model_name)
+            classification, parts = self._partname_extraction_call(image, vlm_name)
 
             if classification is None:
                 continue
@@ -392,13 +392,12 @@ def main():
     parser.add_argument("--mesh_name", type=str, default="bunny", help="Name of the mesh file")
     parser.add_argument("--object_name", type=str, default=None, help="Name of the object")
     parser.add_argument("--part_name", type=str, nargs='+', default=None, help="List of part names")
-    parser.add_argument("--llm_name", type=str, default='gpt-4o', help="Name of the LLM model. Currently, only OpenAI API is supported.")
-    parser.add_argument("--verbose", type=bool, default=False, help="False: Only show important logs. True: Show all logs.")
-    
+    parser.add_argument("--vlm_name", type=str, default='gpt-4o', help="Name of the specific LLM model. Currently, only OpenAI API is supported.")
+
     args = parser.parse_args()
     mode = args.mode
     data_name = args.data_name
-    verbose = args.verbose
+    vlm_name = args.vlm_name
     img_folder_path = Path(f"datasets/{data_name}/images/")
     vlm = VLM(img_folder_path)
 
@@ -416,7 +415,7 @@ def main():
             
     elif mode == "partname":
         model_name = args.model_name
-        vlm.partname_extraction()
+        vlm.partname_extraction(vlm_name=vlm_name, mode="partname")
 
 if __name__ == "__main__":
     main()

@@ -303,7 +303,7 @@ if __name__ == "__main__":
 
     configs.load_touches = load_touches_set
 
-    if load_touches_set:
+    if not load_touches_set:
         CONSOLE.log("[Module 1] 7/9 Initialize training...")
     else:
         CONSOLE.log("[Module 3] 2/4 Add tactile data...")
