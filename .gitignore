@@ -16,6 +16,9 @@ tr-rabbit/
 tr-rabbit2/
 eval/
 *.pyc
+PartSlip/examples/*
+PartSlip/demo.py
+PartSlip/models/*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
