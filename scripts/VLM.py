@@ -69,8 +69,6 @@ class VLM:
     def update_output_folder(self, output_folder_path):
         self.output_folder = output_folder_path 
 
-        self.gaussian_folder = os.path.join(self.output_folder, "gaussian") # folder to hold all gaussian results
-
         self.segmentation_folder = os.path.join(self.output_folder, "segmentation") # folder to hold all segmentation resource and results
         
     def touch_selection(self, mesh_path, object_name=None, part_name=None):
@@ -103,7 +101,7 @@ class VLM:
                 Number of points to sample from the mesh
         '''
 
-        print('[2. Generating dense point cloud from the mesh...]')
+        print('[Module 2] 1/11 Generating dense point cloud from the mesh...')
         mesh_name = Path(path_to_mesh).stem
         self.object_name = mesh_name
         mesh = trimesh.load(path_to_mesh, process=False)
@@ -131,15 +129,19 @@ class VLM:
 
         return output_ply_file
 
-    def partname_extraction(self):
+    def partname_extraction(self, model_name="gpt-4o", mode="partname"):
+        if mode == "partname":
+            print('Getting part names with VLM...')
+        elif mode == "touch":
+            print('[Module 2] 2/11 Getting part names...')
         images = glob.glob(os.path.join(self.image_folder, "*"))
         for image in images:
-            classification, parts = self._partname_extraction_call(image)
+            classification, parts = self._partname_extraction_call(image, model_name)
 
             if classification is None:
                 continue
             else:
-                print(f'[2. The object is classified as: {classification}, and the parts are: {parts}]')
+                print(f'The object is: {classification}, and the parts are: {parts}]')
                 break
         return classification, parts
 
@@ -148,10 +150,10 @@ class VLM:
         Segment the point cloud into parts using the PartSlip pipeline
         '''
 
-        config = os.path.join(self.segmentation_folder, "glip_Swin_L.yaml")
-        weight_path = os.path.join(self.segmentation_folder, "glip_large_model.pth")
+        config = "./PartSlip/GLIP/configs/glip_Swin_L.yaml"
+        weight_path = "./PartSlip/models/glip_large_model.pth"
         
-        print("[2. Loading GLIP model...]")
+        print("[Module 2] 3/11. Loading GLIP model...")
         glip_demo = load_model(config, weight_path)
 
         if torch.cuda.is_available():
@@ -162,19 +164,19 @@ class VLM:
         io = IO()
         os.makedirs(save_dir, exist_ok=True)
         
-        print("[2. Normalizing input point cloud...]")
+        print("[Module 2] 4/11 Normalizing input point cloud...")
         xyz, rgb = normalize_pc(input_pc_file, save_dir, io, device)
         
-        print("[2. Rendering input point cloud...]")
+        print("[Module 2] 5/11 Rendering input point cloud...")
         img_dir, pc_idx, screen_coords = render_pc(xyz, rgb, save_dir, device)
         
-        print("[2. Glip infrence...]")
+        print("[Module 2] 6/11 Glip infrence...")
         preds = glip_inference(glip_demo, save_dir, part_names)
         
-        print('[2. Generating superpoints...]')
+        print('[Module 2] 7/11 Generating superpoints...')
         superpoint = gen_superpoint(xyz, rgb, visualize=True, save_dir=save_dir)
         
-        print('[2. Generating 3D part segmentation...]')
+        print('[Module 2] 8/11 Generating 3D part segmentations...')
         sem_seg, ins_seg = bbox2seg(xyz, superpoint, preds, screen_coords, pc_idx, part_names, save_dir, solve_instance_seg=True)
     
     def grounding_segmentation(self):
@@ -183,7 +185,7 @@ class VLM:
 
         Returns: No return value, but create a self.grounded_seg_pcd
         '''
-        print("[2. Grounding the segmentation results...]")
+        print("[Module 2] 9/11 Grounding the segmentation results...")
         # Load the original point cloud as the base for the grounding
         original_pcd = o3d.io.read_point_cloud(self.point_cloud_path) # note that this is not a o3d.t
         original_points = np.asarray(original_pcd.points)
@@ -225,9 +227,9 @@ class VLM:
 
     def fuse_gaussian_and_segmentation(self):
 
-        print("[2. Fusing the segmentation results with the high gaussian gradient points...]")
+        print("[Module 2] 10/11 Fusing the segmentation results with the high gaussian gradient points...")
 
-        gaussian_pcd = o3d.t.io.read_point_cloud(os.path.join(self.gaussian_folder, "high_grad_pts.pcd"))
+        gaussian_pcd = o3d.t.io.read_point_cloud(os.path.join(self.output_folder, "high_grad_pts.pcd"))
         gaussian_points = gaussian_pcd.point.positions.numpy()
 
 
@@ -249,14 +251,14 @@ class VLM:
         gaussian_pcd.point.part_rank = o3c.Tensor(gaussian_part_rank, dtype=o3c.Dtype.Int32)
         gaussian_pcd.point.colors = o3c.Tensor(gaussian_color, dtype=o3c.Dtype.Float32)
         
-        o3d.t.io.write_point_cloud(os.path.join(self.gaussian_folder, "fused_gaussian_segmentation.ply"), gaussian_pcd)
+        o3d.t.io.write_point_cloud(os.path.join(self.output_folder, "fused_gaussian_segmentation.ply"), gaussian_pcd)
         self.fused_pcd = gaussian_pcd
 
     def propose_next_best_touch(self):
         '''
         Propose the next best touch based on the fused point cloud
         '''
-        print("[2. Proposing the next best touch...]")
+        print("[Module 2] Proposing the next best touch...")
         positions = self.fused_pcd.point.positions.numpy()
         part_rank = self.fused_pcd.point.part_rank.numpy().squeeze()
         rank = self.fused_pcd.point.ranks.numpy().squeeze()
@@ -305,13 +307,14 @@ class VLM:
 
         # Combine the selections
         final_selection = selected_coor + additional_selection
-        print(final_selection)
+        print("The next best touch points are:")
+        for points in final_selection:
+            print(points)
     
-    def _partname_extraction_call(self, image_path):
+    def _partname_extraction_call(self, image_path, model_name="gpt-4o"):
         '''
         Extract the part names from the image using the VLM model, and rank them in terms of which one to touch first
         '''
-        print('[2. Querying VLM model for part names...]')
 
         # Getting the base64 string
         base64_image = self._encode_image(image_path)
@@ -337,7 +340,7 @@ class VLM:
             },
         ]
         
-        response = self._call_openai_api(PROMPT_MESSAGES)
+        response = self._call_openai_api(PROMPT_MESSAGES, model_name)
 
         if response is None:
             print("Failed to get a response from OpenAI API")
@@ -352,12 +355,12 @@ class VLM:
         with open(image_path, "rb") as image_file:
             return base64.b64encode(image_file.read()).decode('utf-8')
 
-    def _call_openai_api(self, prompt_messages) -> Union[PartResponse, None]:
+    def _call_openai_api(self, prompt_messages, model_name) -> Union[PartResponse, None]:
         '''
         Wrapper function to call OpenAI API
         '''
         params = {
-            "model": "gpt-4o-2024-08-06",
+            "model": model_name,
             "messages": prompt_messages,
             "max_tokens": 400,
             "temperature": 0,
@@ -389,6 +392,7 @@ def main():
     parser.add_argument("--mesh_name", type=str, default="bunny", help="Name of the mesh file")
     parser.add_argument("--object_name", type=str, default=None, help="Name of the object")
     parser.add_argument("--part_name", type=str, nargs='+', default=None, help="List of part names")
+    parser.add_argument("--llm_name", type=str, default='gpt-4o', help="Name of the LLM model. Currently, only OpenAI API is supported.")
     parser.add_argument("--verbose", type=bool, default=False, help="False: Only show important logs. True: Show all logs.")
     
     args = parser.parse_args()

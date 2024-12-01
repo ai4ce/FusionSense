@@ -269,37 +269,57 @@ if __name__ == "__main__":
         camera_path_filename=experiment_configs["camera_path_filename"]
     )
 
-    CONSOLE.log("Step 1: Selecte images for training...")
+    if not load_touches_set:
+        CONSOLE.log("[Module 1] 1/9 Selecte images for training...")
+    else:
+        CONSOLE.log("[Module 3] 1/4 Prepare re-training with tactile data...")
     with suppress_output(verbose):
         init_recon.select_frames()
-    # CONSOLE.log("Step 2: Generate Mask Images using Grounded SAM...")
-    CONSOLE.log("Step 2: Generate visual hull...")
+
+    if not load_touches_set:
+        CONSOLE.log("[Module 1] 2/9 Generate visual hull...")
     with suppress_output(verbose):
         init_recon.generate_visual_hull(error=5)
-    CONSOLE.log("Step 3: Running metric3d depth for ")
+    
+    if not load_touches_set:
+        CONSOLE.log("[Module 1] 3/9 Running metric3d depth...")
     with suppress_output(verbose):
         init_recon.run_metric3d_depth(vram_size=vram_size)
-    CONSOLE.log("Step 4: Initialize pcd")
+    
+    if not load_touches_set:
+        CONSOLE.log("[Module 1] 4/9 Initialize pcd...")
     with suppress_output(verbose):
         init_recon.init_pcd_generation()
-    CONSOLE.log("Step 5: Generate normals")
+    
+    if not load_touches_set:
+        CONSOLE.log("[Module 1] 5/9 Generate normals...")
     with suppress_output(verbose):
         init_recon.generate_normals()
-    CONSOLE.log("Step 6: Set transforms.json")
+    
+    if not load_touches_set:
+        CONSOLE.log("[Module 1] 6/9 Set transforms.json...")
     with suppress_output(verbose):
         init_recon.set_transforms_and_configs()
 
     configs.load_touches = load_touches_set
-    # configs.load_cameras = False
-    # configs.camera_path_filename = "outputs/transparent_bunny/9view/camera_paths/cam_9v_interpl.json"
-    CONSOLE.log("Step 7: Initialize training")
+
+    if load_touches_set:
+        CONSOLE.log("[Module 1] 7/9 Initialize training...")
+    else:
+        CONSOLE.log("[Module 3] 2/4 Add tactile data...")
     init_recon.train_model(configs=configs)
     torch.cuda.empty_cache() # Clear GPU memory so we can do extraction.
 
-    CONSOLE.log("Step 8: Extract mesh")
+    if not load_touches_set:
+        CONSOLE.log("[Module 1] 8/9 Extract mesh...")
+    else:
+        CONSOLE.log("[Module 3] 3/4 Extract mesh...")
     with suppress_output(verbose):
         init_recon.extract_mesh(config_path=os.path.join(configs.output_dir, "config.yml"))
 
-    CONSOLE.log("Step 9: Evaluate rendering")
+    if not load_touches_set:
+        CONSOLE.log("[Module 1] 9/9 Evaluate rendering...")
+    else:
+        CONSOLE.log("[Module 3] 4/4 Evaluate rendering...")
     with suppress_output(verbose):
         init_recon.evaluation(rendering_eval=True, mask_rendering=True, chamfer=True)

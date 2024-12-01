@@ -56,7 +56,10 @@ The project assume that all the folders in the HuggingFace repo are put under `F
 #### b. Extract Mask
 
 <details>
-<summary>If you want to let VLM classify the object, click here. If you want to manually specify the name, please read ahead.</summary>
+<summary>
+If you want to let VLM classify the object, click this line. 
+
+If you want to manually specify the name, please read ahead.</summary>
 
 Inside our main conda env
 ```bash
@@ -66,11 +69,12 @@ Run this script.
 ```bash
 python scripts/VLM.py --mode partname --data_name {DATASET_NAME}
 ```
+- `mode`: Operation mode of our VLM pipeline. In this case we want it to give us partname.
 - `data_name`: Name of the specific dataset folder. Example: transparent_bunny
 </details>
 
 
-Whether you got the name from VLM or not, we can proceed.
+Whether you got the name from VLM or your own brain, we can proceed with that.
 
 Switch your conda env first
 ```bash
@@ -135,61 +139,3 @@ python scripts/render_video.py camera-path --load_config your-model-config --cam
 ```
 more details in nerfstudio `ns-render`.
 
-## Dataset Format
-```bash
-datasets/
-    ds_name/
-    │
-    ├── transforms.json # need for training
-    │
-    ├── train.txt
-    │
-    ├── images/
-    │   ├── rgb_1.png
-    │   └── rgb_2.png
-    │ 
-    ├── realsense_depth/
-    │   ├── depth_1.png
-    │   └── depth_2.png
-    │
-    │── tactile/
-    │   ├── image
-    │   ├── mask
-    │   ├── normal
-    │   └── patch
-    │
-    ├── model.stl       # need for evaluation
-    │
-    ├── normals_from_pretrain/ # generated
-    │   ├── rgb_1.png
-    │   └── rgb_2.png
-    │
-    ├── foreground_pcd.ply
-    │
-    └── merged_pcd.ply
-```
-
-## Outputs Format
-```bash
-outputs/
-    ds_name/
-    │
-    ├── MESH/
-    │   └── mesh.ply
-    │
-    ├── nerfstudio_models/
-    │   └── 30000.ckpt
-    │   
-    ├── cluster_centers.npy
-    │
-    ├── config.yml
-    │
-    ├── high_grad_pts.pcd
-    │
-    ├── high_grad_pts_ascii.pcd
-    │
-    └── dataparser_transforms.json
-
-eval/
-    ds_name/ *evaluation results files*
-```
