@@ -65,6 +65,10 @@ Inside our main conda env
 ```bash
 conda activate fusionsense
 ```
+Set your OpenAI API key as an environment variable. Please do not directly use your API key in your code, as you may accidentally commit it to an online public repo.
+```bash
+export OPENAI_API_KEY='Your Key'
+```
 Run this script.
 ```bash
 python scripts/VLM.py --mode partname --data_name {DATASET_NAME}
