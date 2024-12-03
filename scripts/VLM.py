@@ -311,7 +311,7 @@ class VLM:
         for points in final_selection:
             print(points)
     
-    def _partname_extraction_call(self, image_path, model_name="gpt-4o"):
+    def _partname_extraction_call(self, image_path, vlm_name="gpt-4o"):
         '''
         Extract the part names from the image using the VLM model, and rank them in terms of which one to touch first
         '''
@@ -340,7 +340,7 @@ class VLM:
             },
         ]
         
-        response = self._call_openai_api(PROMPT_MESSAGES, model_name)
+        response = self._call_openai_api(PROMPT_MESSAGES, vlm_name)
 
         if response is None:
             print("Failed to get a response from OpenAI API")
@@ -355,12 +355,12 @@ class VLM:
         with open(image_path, "rb") as image_file:
             return base64.b64encode(image_file.read()).decode('utf-8')
 
-    def _call_openai_api(self, prompt_messages, model_name) -> Union[PartResponse, None]:
+    def _call_openai_api(self, prompt_messages, vlm_name) -> Union[PartResponse, None]:
         '''
         Wrapper function to call OpenAI API
         '''
         params = {
-            "model": model_name,
+            "model": vlm_name,
             "messages": prompt_messages,
             "max_tokens": 400,
             "temperature": 0,
