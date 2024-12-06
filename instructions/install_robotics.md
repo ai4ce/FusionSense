@@ -10,8 +10,6 @@
 
 ## GelSight Mini Tactile Sensor
 3. Install the [GelSight tactile sensor interface package](https://github.com/ai4ce/gelsight_ROS2_interface). 
-    - **Unfortunately**, this package is built upon a codebase that has not been open-source. We will update the link within a few weeks when the dependency is fully open. Stay tuned!
-
     - Note that this is not the same as the official GelSight implementation. We made some tweaks and (hopefully) improvements, so you are strongly encouraged to use our own package.
 
 **Note:** See [3D Printing Instructions](3d_printing.md) for some caveats on the dimension of the camera/sensor mount and the world-frame coordinates of the camera and the tactile sensor.
