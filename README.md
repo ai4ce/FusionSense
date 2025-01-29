@@ -1,5 +1,7 @@
 **This Documentation is functionally complete as of 12/1/2024. More minor details will be added from time to time.**
 
+:new: [2025-1-27] *FusionSense has been accepted by ICRA2025. See you in Atlanta!*
+
 :new: [2024-12-1] *Tutorial on Module 2 Active Touch Selection and Module 3 Local Geometric Optimization Updated.*
 
 :new: [2024-11-15] *Installation for VLM Reasoning & Active Touch Selection Updated.*
@@ -187,3 +189,16 @@ python scripts/render_video.py camera-path --load_config your-model-config --cam
 ```
 more details in nerfstudio `ns-render`.
 
+## Citation
+If you find our work useful, please consider citing it with
+```
+@misc{fang2024fusionsensebridgingcommonsense,
+      title={FusionSense: Bridging Common Sense, Vision, and Touch for Robust Sparse-View Reconstruction}, 
+      author={Irving Fang and Kairui Shi and Xujin He and Siqi Tan and Yifan Wang and Hanwen Zhao and Hung-Jui Huang and Wenzhen Yuan and Chen Feng and Jing Zhang},
+      year={2024},
+      eprint={2410.08282},
+      archivePrefix={arXiv},
+      primaryClass={cs.RO},
+      url={https://arxiv.org/abs/2410.08282}, 
+}
+``` 
