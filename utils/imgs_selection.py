@@ -8,9 +8,9 @@ import json
 # args = parser.parse_args()
 # path = args.path
 
-def select_imgs(path):
+def select_imgs(path, output_dir):
     source_folder = f'{path}/images'
-    destination_folder = f'{path}/selected_images'
+    destination_folder = f'{output_dir}/selected_images'
     indices_file = f'{path}/train.txt'
 
     if not os.path.exists(destination_folder):

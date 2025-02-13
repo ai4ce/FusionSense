@@ -48,7 +48,7 @@ def get_pointcloud(color, depth, w2c, FX, FY, CX, CY, transform_pts=True, mask=N
     return fore_pcd, back_pcd # [num_points, 6]
 
 
-def init_pcd_generate(path):
+def init_pcd_generate(path, output_dir):
     # create cam_info
     cam_info = readCamerasFromTransforms(path, "transforms.json", white_background=False)
 
@@ -64,7 +64,7 @@ def init_pcd_generate(path):
     file_name = 'metric3d_depth_result'
     # file_name = 'realsense_depths'
     # file_name = 'depth'
-    depth_path = os.path.join(path, file_name)
+    depth_path = os.path.join(output_dir, file_name)
     # natural sorting
     file_list = sorted(os.listdir(depth_path), key=lambda x: int(x.split('_')[1].split('.')[0]))
 
@@ -104,7 +104,7 @@ def init_pcd_generate(path):
     # back_pcds = back_pcds.voxel_down_sample(voxel_size=0.02)
     # pcds = back_pcds
 
-    fore_pcds_path = os.path.join(path, 'foreground_pcd.ply')
+    fore_pcds_path = os.path.join(output_dir, 'foreground_pcd.ply')
     if os.path.exists(fore_pcds_path):
         fore_pcds = o3d.io.read_point_cloud(fore_pcds_path)
         fore_pcds.paint_uniform_color([0,0,0])
@@ -114,5 +114,5 @@ def init_pcd_generate(path):
         pcds = back_pcds + fore_pcds
         # pcds = fore_pcds
     print( len(pcds.points))
-    o3d.io.write_point_cloud(os.path.join(path, f'merged_pcd.ply'), pcds)
+    o3d.io.write_point_cloud(os.path.join(output_dir, f'merged_pcd.ply'), pcds)
 

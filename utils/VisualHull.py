@@ -84,7 +84,7 @@ def ConvertVoxelList2Voxel3D(voxels_number, voxel_size, voxel):
   return voxel3D
 
 
-def VisualHull(path, error=5):
+def VisualHull(path, output_path, error=5):
     # create cam_info
     cam_info = readCamerasFromTransforms(path, "transforms.json", white_background=False)
 
@@ -190,11 +190,11 @@ def VisualHull(path, error=5):
     # save as pcd
     pcd = o3d.geometry.PointCloud()
     pcd.points = o3d.utility.Vector3dVector(filtered_voxels[:, :3])
-    o3d.io.write_point_cloud(f'{path}/foreground_pcd.ply', pcd)
+    o3d.io.write_point_cloud(f'{output_path}/foreground_pcd.ply', pcd)
     # Plot the voxels
     ax.scatter(x, y, z, c='r', marker='o')
     # Set labels
     ax.set_xlabel('X')
     ax.set_ylabel('Y')
     ax.set_zlabel('Z')
-    plt.savefig(f'{path}/voxels.png', dpi=600, bbox_inches='tight', pad_inches=0.05)
+    plt.savefig(f'{output_path}/voxels.png', dpi=600, bbox_inches='tight', pad_inches=0.05)

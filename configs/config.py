@@ -15,7 +15,7 @@ use_normal_loss: bool = True
 normal_supervision: str = "mono"
 load_pcd_normals: bool = True
 load_3D_points: bool = True
-load_touches: bool = True
+load_touches: bool = False
 load_cameras: bool = False
 camera_path_filename: Path = Path("camera_path.json")
 

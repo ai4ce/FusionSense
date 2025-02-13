@@ -54,6 +54,8 @@ class NormalNerfstudioConfig(NerfstudioDataParserConfig):
 
     _target: Type = field(default_factory=lambda: NormalNerfstudio)
     """target class to instantiate"""
+    output_dir: Path = Path("outputs")
+    """output dir"""
     load_3D_points: bool = True
     """Whether to load the 3D points from the colmap reconstruction."""
     load_normals: bool = True
@@ -135,10 +137,11 @@ class NormalNerfstudio(Nerfstudio):
         assert (
             self.config.data.exists()
         ), f"Data directory {self.config.data} does not exist."
-        self.normal_save_dir = self.config.data / Path("normals_from_pretrain")
+        self.normal_save_dir = self.config.output_dir / Path("normals_from_pretrain")
         
         meta = load_from_json(self.config.data / "transforms.json")
         data_dir = self.config.data
+        output_dir = self.config.output_dir
         self.touch_meta_dir = self.config.data / "gelsight_transform.json"
         self.touch_data_dir = self.config.data / "tactile"
 
@@ -218,7 +221,7 @@ class NormalNerfstudio(Nerfstudio):
                 mask_filepath = Path(frame["mask_path"])
                 mask_fname = self._get_fname(
                     mask_filepath,
-                    data_dir,
+                    output_dir,
                     downsample_folder_prefix="masks_",
                 )
                 mask_filenames.append(mask_fname)
@@ -490,7 +493,7 @@ class NormalNerfstudio(Nerfstudio):
         # Load 3D points
         if self.config.load_3D_points:
             if "ply_file_path" in meta:
-                ply_file_path = data_dir / meta["ply_file_path"]
+                ply_file_path = output_dir / meta["ply_file_path"]
 
             elif colmap_path.exists():
                 from rich.prompt import Confirm
@@ -520,10 +523,10 @@ class NormalNerfstudio(Nerfstudio):
                         create_ply_from_colmap(
                             filename=ply_filename,
                             recon_dir=colmap_path,
-                            output_dir=self.config.data,
+                            output_dir=self.config.output_dir,
                             applied_transform=applied_transform,
                         )
-                        ply_file_path = data_dir / ply_filename
+                        ply_file_path = output_dir / ply_filename
                         transforms["ply_file_path"] = ply_filename
 
                     # This was the applied_transform value
@@ -550,7 +553,7 @@ class NormalNerfstudio(Nerfstudio):
             self.prompted_user = True
 
         if "object_pc_path" in meta:
-            object_pc_path = data_dir / meta["object_pc_path"]
+            object_pc_path = output_dir / meta["object_pc_path"]
             visual_hull = self._load_3D_points(
                 object_pc_path, transform_matrix, scale_factor
             )

@@ -73,11 +73,11 @@ class Initial_Reconstruction:
             self.transforms = json.load(f)
     
     def select_frames(self):
-        select_imgs(self.base_path)
+        select_imgs(self.base_path, self.output_dir)
         filter_transform_json(self.base_path)
     
     def generate_visual_hull(self, error):
-        VisualHull(self.base_path, error)
+        VisualHull(self.base_path, self.output_dir, error)
     
     def run_metric3d_depth(self, vram_size="large"):
         fl_x = self.transforms['fl_x']
@@ -89,15 +89,16 @@ class Initial_Reconstruction:
         img_dir = self.transforms['frames'][0]['file_path'].split('/')[0]
         intrinsics = [fl_x, 0, cx, 0, fl_y, cy, 0, 0, 1]
         frame_size = [W, H]
-        metric3d_depth_generation(self.base_path, intrinsics, frame_size, img_dir=img_dir, vram_size=vram_size)
+        metric3d_depth_generation(self.base_path, self.output_dir, intrinsics, frame_size, img_dir=img_dir, vram_size=vram_size)
     
     def init_pcd_generation(self):
-        init_pcd_generate(self.base_path)
+        init_pcd_generate(self.base_path, self.output_dir)
     
     def generate_normals(self):
         """Step 6: Generate normals"""
         print("Generating normals...")
-        command = f"python dn_splatter/scripts/normals_from_pretrain.py --data-dir {self.base_path} --model-type dsine"
+        save_path = Path(self.output_dir) / "normals_from_pretrain"
+        command = f"python dn_splatter/scripts/normals_from_pretrain.py --data-dir {self.base_path} --save-path {save_path} --model-type dsine"
         subprocess.run(command, shell=True, check=True)
         print("Normals generated.")
     
@@ -134,6 +135,7 @@ class Initial_Reconstruction:
             "--viewer.quit-on-train-completion", 'True',
             str(configs.model_type),
             "--data", configs.data_path,
+            "--output-dir", configs.output_dir,
             "--load-pcd-normals", str(configs.load_pcd_normals),
             "--load-3D-points", str(configs.load_3D_points),
             "--normal-format", configs.normal_format,
@@ -322,4 +324,4 @@ if __name__ == "__main__":
     else:
         CONSOLE.log("[Module 3] 4/4 Evaluate rendering...")
     with suppress_output(verbose):
-        init_recon.evaluation(rendering_eval=True, mask_rendering=True, chamfer=True)
+        init_recon.evaluation(rendering_eval=True, mask_rendering=True, chamfer=False)

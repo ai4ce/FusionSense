@@ -235,12 +235,12 @@ class VisualPipeline:
         plt.show()
         
 
-def metric3d_depth_generation(root_dir, intrinsics, frame_size, output_depth_path='metric3d_depth_result', output_normal_path='metric3d_normal_result', img_dir='images', viz=False, vram_size='large'):
+def metric3d_depth_generation(root_dir, output_dir, intrinsics, frame_size, output_depth_path='metric3d_depth_result', output_normal_path='metric3d_normal_result', img_dir='images', viz=False, vram_size='large'):
     
     imgs_path = os.path.join(root_dir, img_dir)
     
-    output_depth_path = os.path.join(root_dir, output_depth_path)
-    output_normal_path = os.path.join(root_dir, output_normal_path)
+    output_depth_path = os.path.join(output_dir, output_depth_path)
+    output_normal_path = os.path.join(output_dir, output_normal_path)
     
     visual_pipeline = VisualPipeline(root_img_dir=imgs_path, output_depth_path=output_depth_path, output_normal_path=output_normal_path, new_intrinsics=intrinsics, new_size=frame_size, vram_size=vram_size)
     
