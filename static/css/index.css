@@ -1,26 +1,52 @@
 body {
-  font-family: 'Noto Sans', sans-serif;
+    font-family: 'Noto Sans', sans-serif;
 }
 
-
-#copyButton{
-
-  margin-top: 0px;
-  margin-right: 10px;
-  border-radius: 5px;
-  border: 0px solid #ccc;
-  background-color: #fff;
-  padding: 5px;
-  font-size: 12px;
-  cursor: pointer;
+:root {
+    --swiper-theme-color: #8900e1 !important;
 }
 
-#copyButton:hover{
-  background-color: #eee;
+.tldr {
+    font-size: 20px;
+    margin-top: 20px;
+    margin-bottom: 20px;
+    padding: 8px;
+    background: linear-gradient(45deg, #9860ff33, #d2cb0033);
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
 }
 
-#bibtexTitle{
-  margin-bottom: 0px;
+video {
+    border-radius: 8px;
+}
+
+.image-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    grid-gap: 10px;
+}
+
+.image-grid img {
+    width: 236px; /* Make images responsive */
+    height: auto;
+    border-radius: 8px; /* Optional: Rounded corners */
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2); /* Optional: Add shadow */
+}
+
+#copyButton {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    border-radius: 5px;
+    border: none;
+    background: none;
+    padding: 5px;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+#copyButton:hover {
+    background-color: #ccc;
 }
 
 .footer .icon-link {
@@ -28,51 +54,28 @@ body {
     color: #000;
 }
 
-.link-block a {
-    margin-top: 5px;
-    margin-bottom: 5px;
+.link-block {
+    margin: 5px;
+    display: inline-block;
 }
 
 .dnerf {
-  font-variant: small-caps;
-}
-
-
-.teaser .hero-body {
-  padding-top: 0;
-  padding-bottom: 3rem;
+    font-variant: small-caps;
 }
 
 .teaser {
-  font-family: 'Google Sans', sans-serif;
-}
-
-
-.publication-title {
-}
-
-.publication-banner {
-  max-height: parent;
-
-}
-
-.publication-banner video {
-  position: relative;
-  left: auto;
-  top: auto;
-  transform: none;
-  object-fit: fit;
+    font-family: 'Noto Sans', sans-serif;
 }
 
 .publication-header .hero-body {
 }
 
 .publication-title {
-    font-family: 'Google Sans', sans-serif;
+    font-family: 'Noto Sans', sans-serif;
 }
 
 .publication-authors {
-    font-family: 'Google Sans', sans-serif;
+    font-family: 'Noto Sans', sans-serif;
 }
 
 .publication-venue {
@@ -91,7 +94,7 @@ body {
 }
 
 .publication-authors a {
-   color: hsl(204, 86%, 53%) !important;
+    color: hsl(204, 86%, 53%) !important;
 }
 
 .publication-authors a:hover {
@@ -99,14 +102,14 @@ body {
 }
 
 .author-block {
-  display: inline-block;
+    display: inline-block;
 }
 
 .publication-banner img {
 }
 
 .publication-authors {
-  /*color: #4286f4;*/
+    /*color: #4286f4;*/
 }
 
 .publication-video {
@@ -131,59 +134,60 @@ body {
 }
 
 .results-carousel {
-  overflow: hidden;
+    overflow: hidden;
 }
 
 .results-carousel .item {
-  margin: 5px;
-  overflow: hidden;
-  border: 1px solid #bbb;
-  border-radius: 10px;
-  padding: 0;
-  font-size: 0;
+    margin: 5px;
+    overflow: hidden;
+    border: 1px solid #bbb;
+    border-radius: 10px;
+    padding: 0;
+    font-size: 0;
 }
 
 .results-carousel video {
-  margin: 0;
+    margin: 0;
 }
 
 
 .interpolation-panel {
-  background: #f5f5f5;
-  border-radius: 10px;
+    background: #f5f5f5;
+    border-radius: 10px;
 }
 
 .interpolation-panel .interpolation-image {
-  width: 100%;
-  border-radius: 5px;
+    width: 100%;
+    border-radius: 5px;
 }
 
 .interpolation-video-column {
 }
 
 .interpolation-panel .slider {
-  margin: 0 !important;
+    margin: 0 !important;
 }
 
 .interpolation-panel .slider {
-  margin: 0 !important;
+    margin: 0 !important;
 }
 
 #interpolation-image-wrapper {
-  width: 100%;
+    width: 100%;
 }
+
 #interpolation-image-wrapper img {
-  border-radius: 5px;
+    border-radius: 5px;
 }
 
-.slider-block{
-  display: none; /* Hide all divs initially */
-  opacity: 0;
+.slider-block {
+    display: none; /* Hide all divs initially */
+    opacity: 0;
 }
 
-.slider-block.show{
-  display: block;
-  opacity: 1;
+.slider-block.show {
+    display: block;
+    opacity: 1;
 }
 
 .sliders-container {
@@ -197,9 +201,9 @@ body {
   width: 48%; /* Make each slider 48% of the container width for side-by-side */
 }
 
-#trans_depth, #trans_normal, #trans_rgb, #trans_object, 
-#transparent_9_depth, #transparent_9_normal, #transparent_9_rgb, #transparent_9_gt, 
-#transparent_9_depth, #transparent_9_normal, #transparent_9_rgb, #transparent_9_gt, 
+#trans_depth, #trans_normal, #trans_rgb, #trans_object,
+#transparent_9_depth, #transparent_9_normal, #transparent_9_rgb, #transparent_9_gt,
+#transparent_9_depth, #transparent_9_normal, #transparent_9_rgb, #transparent_9_gt,
 #black_9_depth, #black_9_normal, #black_9_rgb, #black_9_gt,
 #black_5_depth, #black_5_normal, #black_5_rgb, #black_5_gt,
 #reflective_9_depth, #reflective_9_normal, #reflective_9_rgb, #reflective_9_gt,
@@ -210,34 +214,36 @@ body {
 }
 
 .btn {
-  background-color: #8b00e1cb !important; /* Green background */
-  color: white; /* White text */
-  padding: 10px 20px; /* Padding around the button */
-  border: none; /* Remove border */
-  border-radius: 5px; /* Rounded corners */
-  cursor: pointer; /* Pointer cursor on hover */
-  font-size: 16px; /* Font size */
-  margin: 10px; /* Space between buttons */
-  transition: background-color 0.3s ease; /* Smooth background color transition */
+    background-color: #8b00e1cb !important; /* Green background */
+    color: white; /* White text */
+    padding: 10px 20px; /* Padding around the button */
+    border: none; /* Remove border */
+    border-radius: 5px; /* Rounded corners */
+    cursor: pointer; /* Pointer cursor on hover */
+    font-size: 16px; /* Font size */
+    margin: 10px; /* Space between buttons */
+    transition: background-color 0.3s ease; /* Smooth background color transition */
 }
+
 .btn:hover {
-  background-color: #8b00e178 !important; /* Darker green on hover */
+    background-color: #8b00e178 !important; /* Darker green on hover */
 }
 
 .btn.active {
-  background-color: #8b00e178 !important;
+    background-color: #8b00e178 !important;
 }
+
 .btn.inactive {
-  background-color: #8b00e1cb !important;
+    background-color: #8b00e1cb !important;
 }
 
 /* this is for text and image block */
 .hidden {
-  display: none;
+    display: none;
 }
 
 .navbar-item.center {
-  flex-grow: 0;
-  flex-direction: column;
-  justify-content: center;
+    flex-grow: 0;
+    flex-direction: column;
+    justify-content: center;
 }

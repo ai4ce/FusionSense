@@ -12819,6 +12819,8 @@ print {
 }
 
 .footer {
+    font-size: small;
     background-color: #fafafa;
-    padding: 3rem 1.5rem 6rem
+    padding: 3rem 1.5rem 3rem;
+    margin-top: 3rem;
 }
