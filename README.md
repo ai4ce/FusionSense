@@ -12,7 +12,7 @@
 
 :new: [2024-10-11] *Made Public*
 # FusionSense
-### [[Page](https://ai4ce.github.io/FusionSense/)] | [[Paper](https://arxiv.org/abs/2410.08282)] | [[Video](https://youtu.be/thC0PeAQxe0)] | [[Data](https://huggingface.co/datasets/ai4ce/FusionSense)]
+### [[Project Page](https://ai4ce.github.io/FusionSense/)] | [[Official Paper (ICRA 2025)](https://doi.org/10.1109/ICRA55743.2025.11128188)] | [[arXiv](https://arxiv.org/abs/2410.08282)] | [[Video](https://youtu.be/thC0PeAQxe0)] | [[Data](https://huggingface.co/datasets/ai4ce/FusionSense)]
 This is the official implementation of [FusionSense: Bridging Common Sense, Vision, and Touch for Robust Sparse-View Reconstruction](https://ai4ce.github.io/FusionSense/)
 
 
@@ -192,13 +192,13 @@ more details in nerfstudio `ns-render`.
 ## Citation
 If you find our work useful, please consider citing it with
 ```
-@misc{fang2024fusionsensebridgingcommonsense,
-      title={FusionSense: Bridging Common Sense, Vision, and Touch for Robust Sparse-View Reconstruction}, 
-      author={Irving Fang and Kairui Shi and Xujin He and Siqi Tan and Yifan Wang and Hanwen Zhao and Hung-Jui Huang and Wenzhen Yuan and Chen Feng and Jing Zhang},
-      year={2024},
-      eprint={2410.08282},
-      archivePrefix={arXiv},
-      primaryClass={cs.RO},
-      url={https://arxiv.org/abs/2410.08282}, 
+@inproceedings{fang2025fusionsense,
+  title     = {{FusionSense}: Bridging Common Sense, Vision, and Touch for Robust Sparse-View Reconstruction},
+  author    = {Fang, Irving and Shi, Kairui and He, Xujin and Tan, Siqi and Wang, Yifan and Zhao, Hanwen and Huang, Hung-Jui and Yuan, Wenzhen and Feng, Chen and Zhang, Jing},
+  booktitle = {2025 IEEE International Conference on Robotics and Automation (ICRA)},
+  year      = {2025},
+  pages     = {15798--15805},
+  doi       = {10.1109/ICRA55743.2025.11128188},
+  url       = {https://doi.org/10.1109/ICRA55743.2025.11128188}
 }
 ``` 
