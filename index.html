@@ -449,13 +449,13 @@
           <div class="content has-text-justified">
             <p id="text-content"><b>1.1 Hybrid Structure Priors:</b>
               <br><b>(1) Visual Hull:</b> After taking sparse view images, we use GPT-4o to classify the centric object.
-              The classification label is fed to <a href=\"https://github.com/IDEA-Research/Grounded-SAM-2\">Grounded
+              The classification label is fed to <a href="https://github.com/IDEA-Research/Grounded-SAM-2">Grounded
                 SAM 2</a> to acquire the masks of the object. The masks along with the camera poses recorded by the
               robot are used to estimate the <b>visual hull</b>. This method is robust against traditionally challenging
               surfaces and materials
               <br><b>(2) Metric Depth Estimator:</b> For every sparse view RGB image, we use <a
-                  href=\"https://jugghm.github.io/Metric3Dv2/\">Metric3D v2</a> to estimate the depth. We do not use the
-              more accurate depth captured by our <a href=\"https://www.intelrealsense.com/depth-camera-d405/\">RealSense</a>
+                  href="https://jugghm.github.io/Metric3Dv2/">Metric3D v2</a> to estimate the depth. We do not use the
+              more accurate depth captured by our <a href="https://www.realsenseai.com/products/d405-series/">RealSense</a>
               camera because we found estimated depth smoother and less noisy.
               <br><b>(3) Gaussians Initialization:</b> The visual hull and estimated depth are combined to initialize
               the 3D Gaussian Primitives.
@@ -464,7 +464,7 @@
               floaters around it. Empircally, we notice that those floaters around objects, while small at first, often
               snowball to very large negative impact on the overall reconstruction quality.
               <br><b>(5) Supervision:</b> We then use RGB-D images captured by our RealSense camera and normals
-              estimated from <a href=\"https://baegwangbin.github.io/DSINE/\">DSINE</a> to supervise the subsequent
+              estimated from <a href="https://baegwangbin.github.io/DSINE/">DSINE</a> to supervise the subsequent
               training.
             </p>
             <center>
@@ -490,7 +490,7 @@
                 if (buttonNumber === 1) {
                     textElement.innerHTML = "<b>1.1 Hybrid Structure Priors:</b> \
                                            <br><b>(1) Visual Hull:</b> After taking sparse view images, we use GPT-4o to classify the centric object. The classification label is fed to <a href=\"https://github.com/IDEA-Research/Grounded-SAM-2\">Grounded SAM 2</a> to acquire the masks of the object. The masks along with the camera poses recorded by the robot are used to estimate the <b>visual hull</b>. This method is robust against traditionally challenging surfaces and materials \
-                                           <br><b>(2) Metric Depth Estimator:</b> For every sparse view RGB image, we use <a href=\"https://jugghm.github.io/Metric3Dv2/\">Metric3D v2</a> to estimate the depth. We do not use the more accurate depth captured by our <a href=\"https://www.intelrealsense.com/depth-camera-d405/\">RealSense</a> camera because we found estimated depth smoother and less noisy \
+                                           <br><b>(2) Metric Depth Estimator:</b> For every sparse view RGB image, we use <a href=\"https://jugghm.github.io/Metric3Dv2/\">Metric3D v2</a> to estimate the depth. We do not use the more accurate depth captured by our <a href=\"https://www.realsenseai.com/products/d405-series/\">RealSense</a> camera because we found estimated depth smoother and less noisy \
                                            <br><b>(3) Gaussians Initialization:</b> The visual hull and estimated depth are combined to initialize the 3D Gaussian Primitives.  \
                                            <br><br><b>1.2 Hull Pruning:</b> \
                                            <br><b>(4) Visual Hull Pruning:</b> During training, we design a \"shell\" around the visual hull to remove floaters around it. Empircally, we notice that those floaters around objects, while small at first, often snowball to very large negative impact on the overall reconstruction quality. \
